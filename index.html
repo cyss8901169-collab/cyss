@@ -3,6 +3,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>臺大醫院雲林分院神經肌肉阻斷劑查核表</title>
 <style>
@@ -214,6 +215,7 @@ input.exp-danger{border-color:#E24B4A!important;background:#FFF5F5!important}
 .ov-summary-chip.none{background:var(--bg2);color:var(--text2);border-color:var(--border)}
 .ov-summary-chip.expwarn{background:#FFFBEB;color:#D97706;border-color:#D97706}
 </style>
+
 </head>
 <body>
 
@@ -397,10 +399,22 @@ input.exp-danger{border-color:#E24B4A!important;background:#FFF5F5!important}
  </div>
  </div>
 </div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 console.log('NMBA v2 JS loaded OK');
+// ── Firebase dynamic loader ──────────────────────────────────────────────────
+(function(){
+  function loadScript(url,cb){var s=document.createElement('script');s.src=url;s.onload=cb;document.head.appendChild(s);}
+  loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js',function(){
+    loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js',function(){
+      var fbCfg={apiKey:"AIzaSyAtdqlh5gG2GrA1VG-lQX0sJHR4hePUKhU",authDomain:"ntuh-yunlin-nmba.firebaseapp.com",projectId:"ntuh-yunlin-nmba",storageBucket:"ntuh-yunlin-nmba.firebasestorage.app",messagingSenderId:"24391917036",appId:"1:24391917036:web:2326e2d135c401b30074c9"};
+      firebase.initializeApp(fbCfg);
+      window.db=firebase.firestore();
+      console.log('Firebase ready');
+    });
+  });
+})();
+
 const EMP_RE=/^Y\d{5}$/;
 var currentUser=null;
 const DRUGS=["Relaxin 500 mg/vial","Nimbex 10 mg/5 mL /amp","Esmeron 50 mg/5 mL /vial"];
@@ -1109,14 +1123,37 @@ function doSave(){
  var records=loadRecords();
  records.unshift(_pendingRecord);
  localStorage.setItem(STORAGE_KEY,JSON.stringify(records));
+  saveToFirebase(_pendingRecord);
  closeConfirm();
  showToast('查核記錄已儲存 ✓');
  _pendingRecord=null;
 }
 
 function loadRecords(){
- try{var d=localStorage.getItem(STORAGE_KEY);return d?JSON.parse(d):[];}catch(e){return[];}
+ try{var d=localStorage.getItem(STORAGE_KEY);return d?JSON.parse(d):[];}
+ catch(e){return[];}
 }
+// ── Firebase sync helpers ────────────────────────────────────────────────────
+function syncFromFirebase(cb){
+  if(!window.db){if(cb)cb();return;}
+  window.db.collection('records').orderBy('savedAt','desc').get()
+    .then(function(snap){
+      var recs=[];snap.forEach(function(d){recs.push(d.data());});
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(recs));
+      if(cb)cb();
+    }).catch(function(e){console.warn(e);if(cb)cb();});
+}
+function saveToFirebase(rec){
+  if(!window.db)return;
+  window.db.collection('records').doc(String(rec.id)).set(rec)
+    .catch(function(e){console.warn(e);});
+}
+function deleteFromFirebase(id){
+  if(!window.db)return;
+  window.db.collection('records').doc(String(id)).delete()
+    .catch(function(e){console.warn(e);});
+}
+
 
 // ── History ───────────────────────────────────────────────────────────────────
 function renderHistory(){
@@ -1368,7 +1405,7 @@ function exportYearPDF(){
  +'<span style="color:rgba(255,255,255,.7);font-size:11px;margin-left:12px">共 '+keys.length+' 張工作表　｜　'+rocYr+' 年度（'+year+'）</span>'
  +'</div>'
  +pages.join('')
- +'</body></html>';
+ +'<\/body><\/html>';
 
  var blob2=new Blob([html],{type:'text/html;charset=utf-8'});
  var url2=URL.createObjectURL(blob2);
@@ -1411,7 +1448,6 @@ function deleteRecord(id){
  if(!confirm('確定要刪除此查核記錄？'))return;
  var records=loadRecords().filter(function(r){return r.id!==id;});
  localStorage.setItem(STORAGE_KEY,JSON.stringify(records));
- renderHistory();
  showToast('記錄已刪除');
 }
 function clearAllHistory(){
@@ -1886,7 +1922,7 @@ function exportToPDF(r){
  +'<button onclick="window.print()" style="padding:8px 28px;background:#1F3864;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-family:inherit">🖨 列印 / 儲存為 PDF</button>'
  +'<p style="margin-top:8px;font-size:11px;color:#6c757d">請在列印對話窗中選擇「另存為 PDF」即可匯出 PDF 檔案</p>'
  +'</div>'
- +'</body></html>';
+ +'<\/body><\/html>';
 
  // Download as HTML file directly (no print dialog)
  var blob=new Blob([html],{type:'text/html;charset=utf-8'});
@@ -1900,5 +1936,6 @@ function exportToPDF(r){
  setTimeout(function(){URL.revokeObjectURL(url);},1000);
 }
 </script>
+
 </body>
 </html>
