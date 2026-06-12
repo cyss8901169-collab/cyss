@@ -684,9 +684,19 @@ function switchTab(tab){
  if(tab==='settings'&&currentUser&&currentUser.empid!==ADMIN_EMPID){return;}
  document.querySelectorAll('.tab-btn').forEach(function(b,i){b.classList.toggle('active',['checklist','overview','history','settings'][i]===tab);});
  ['checklist','overview','history','settings'].forEach(function(t){document.getElementById('panel-'+t).classList.toggle('active',t===tab);});
- if(tab==='history')renderHistory();
+ if(tab==='history'){
+   showSyncLoading('history-list','正在同步雲端資料...');
+   syncFromFirebase(function(){renderHistory();});
+ }
+ if(tab==='overview'){
+   showSyncLoading('ov-content','正在同步雲端資料...');
+   syncFromFirebase(function(){renderOverview();});
+ }
  if(tab==='settings')renderSettings();
- if(tab==='overview')renderOverview();
+}
+function showSyncLoading(containerId,msg){
+ var el=document.getElementById(containerId);
+ if(el)el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text2);font-size:13px">⟳ '+msg+'</div>';
 }
 
 // ── Overview ──────────────────────────────────────────────────────────────────
@@ -1135,13 +1145,21 @@ function loadRecords(){
 }
 // ── Firebase sync helpers ────────────────────────────────────────────────────
 function syncFromFirebase(cb){
-  if(!window.db){if(cb)cb();return;}
+  if(!window.db){
+    console.warn('Firebase db not ready, retrying in 1s...');
+    setTimeout(function(){syncFromFirebase(cb);},1000);
+    return;
+  }
   window.db.collection('records').orderBy('savedAt','desc').get()
     .then(function(snap){
       var recs=[];snap.forEach(function(d){recs.push(d.data());});
       localStorage.setItem(STORAGE_KEY,JSON.stringify(recs));
+      console.log('Firebase sync OK: '+recs.length+' records');
       if(cb)cb();
-    }).catch(function(e){console.warn(e);if(cb)cb();});
+    }).catch(function(e){
+      console.warn('Firebase sync error:',e);
+      if(cb)cb(); // still render with local data
+    });
 }
 function saveToFirebase(rec){
   if(!window.db)return;
