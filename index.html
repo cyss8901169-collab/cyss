@@ -1222,6 +1222,9 @@ function exportYearExcel(){
  var records=loadRecords().filter(function(r){return r.checkDate&&r.checkDate.startsWith(year);});
  if(records.length===0){alert('找不到 '+rocYearFromAD(year)+' 年度（'+year+'）的查核記錄。');return;}
 
+ // Sort by savedAt ascending so latest record overwrites earlier ones for same month
+ records.sort(function(a,b){return (a.savedAt||a.checkDate).localeCompare(b.savedAt||b.checkDate);});
+
  var unitOrder=ALL_UNITS.douliu.concat(ALL_UNITS.huwey);
  // grouped[unit][drug][month] = entry (month 1-12)
  var grouped={};
