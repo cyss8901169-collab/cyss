@@ -214,6 +214,27 @@ input.exp-danger{border-color:#E24B4A!important;background:#FFF5F5!important}
 .ov-summary-chip.done{background:#F0FBF4;color:#217346;border-color:#A8D5B5}
 .ov-summary-chip.none{background:var(--bg2);color:var(--text2);border-color:var(--border)}
 .ov-summary-chip.expwarn{background:#FFFBEB;color:#D97706;border-color:#D97706}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+/* Mobile: stack hist-item vertically */
+@media(max-width:600px){
+  .hist-item{flex-direction:column;gap:8px}
+  .hist-actions{display:flex;flex-wrap:wrap;gap:6px;width:100%}
+  .hist-actions .hist-btn{flex:1;min-width:60px;text-align:center;padding:6px 4px}
+  .fields-row{grid-template-columns:repeat(3,1fr)}
+  .meta-grid{grid-template-columns:1fr}
+  .sig-block{flex-direction:column}
+  .header h1{font-size:18px}
+  .tab-bar{gap:4px}
+  .tab-btn{font-size:11px;padding:.4rem .3rem}
+  .uh-fields{grid-template-columns:1fr}
+  .unithead-fields{grid-template-columns:1fr}
+}
+/* Tablet */
+@media(min-width:601px) and (max-width:900px){
+  .fields-row{grid-template-columns:repeat(3,1fr)}
+  .hist-actions{flex-wrap:wrap}
+}
 </style>
 
 </head>
@@ -929,7 +950,6 @@ function buildDrugCards(uid,unitName){
  var chg="validateQty('"+uid+"',"+di+")";
  html+='<div class="drug-card"><div class="drug-card-header"><span class="drug-seq">'+seq+'</span><span class="ha-badge">高警訊</span><span class="drug-name-text">'+d+'</span></div>'
  +'<div class="drug-card-body">'
- +'<div style="font-size:10px;color:#6c757d;margin-bottom:6px;padding:4px 8px;background:#f8f9fa;border-radius:6px">公式：<strong>常備量 = 現品量 + 耗用量</strong>　｜　<strong>點斑本數量 = 現品量 + 耗用量</strong></div>'
  +'<div class="fields-row">'
  +'<div class="field-item"><label>常備量 <span style="color:#A32D2D">*</span></label><input type="number" min="0" id="u'+uid+'d'+di+'stock" value="'+sd[di]+'" oninput="clearInvalid(this);'+chg+'" style="'+iBase+';height:30px;font-size:12px;text-align:center;width:100%"></div>'
  +'<div class="field-item"><label>點斑本數量 <span style="color:#A32D2D">*</span></label><input type="number" min="0" placeholder="0" id="u'+uid+'d'+di+'total" oninput="clearInvalid(this);'+chg+'" style="'+iBase+';height:30px;font-size:12px;text-align:center;width:100%"></div>'
