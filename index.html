@@ -184,7 +184,7 @@ input.exp-danger{border-color:#E24B4A!important;background:#FFF5F5!important}
 .err-msg-title{font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:6px}
 .err-list{list-style:none;display:flex;flex-direction:column;gap:4px}
 .err-list li{cursor:pointer;padding:3px 6px;border-radius:4px;display:flex;align-items:center;gap:6px;font-size:11px}
-.err-list li:hover{background:#FDECEA}
+.sticky-top{position:sticky;top:0;z-index:50;background:var(--bg3);padding-bottom:4px}
 .err-list li::before{content:"→";color:#E24B4A;font-weight:600;flex-shrink:0}
 /* field highlight shake */
 @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-4px)}40%,80%{transform:translateX(4px)}}
@@ -269,6 +269,7 @@ input.exp-danger{border-color:#E24B4A!important;background:#FFF5F5!important}
 <div class="toast" id="toast"></div>
 
 <div class="page" id="main-wrap" style="display:none">
+<div class="sticky-top">
  <div class="user-bar">
  <i class="ti ti-user-circle" style="color:#2E75B6;font-size:16px"></i>
  <span>已登入：<strong id="display-name"></strong></span>
@@ -288,6 +289,7 @@ input.exp-danger{border-color:#E24B4A!important;background:#FFF5F5!important}
  <button class="tab-btn" id="tab-btn-settings" onclick="switchTab('settings')"> 藥品設定</button>
  </div>
 
+</div><!-- end sticky-top -->
  <!-- 查核填寫 -->
  <div class="panel active" id="panel-checklist">
  <!-- 注意事項 -->
@@ -362,11 +364,18 @@ input.exp-danger{border-color:#E24B4A!important;background:#FFF5F5!important}
  <div class="card">
  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:8px">
  <div class="field-label" style="margin-bottom:0"> 已儲存的查核記錄</div>
- <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
- <select id="export-year" style="height:32px;padding:0 8px;border:.5px solid var(--border);border-radius:var(--radius-md);font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font-sans)"></select>
- <button class="topbtn" style="color:#217346;border-color:#A8D5B5;padding:4px 12px" onclick="exportYearExcel()"> 匯出年度 Excel</button>
- <button class="topbtn" style="color:#C0392B;border-color:#F09595;padding:4px 12px" onclick="exportYearPDF()"> 匯出年度 PDF</button>
- <button class="topbtn" onclick="clearAllHistory()" style="color:#A32D2D;border-color:#F09595">清除全部</button>
+ <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+   <select id="export-year" onchange="renderHistory()" style="height:32px;padding:0 8px;border:.5px solid var(--border);border-radius:var(--radius-md);font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font-sans)"></select>
+   <select id="filter-month" onchange="renderHistory()" style="height:32px;padding:0 8px;border:.5px solid var(--border);border-radius:var(--radius-md);font-size:12px;background:var(--bg);color:var(--text);font-family:var(--font-sans)">
+     <option value="">全部月份</option>
+     <option value="01">1 月</option><option value="02">2 月</option><option value="03">3 月</option>
+     <option value="04">4 月</option><option value="05">5 月</option><option value="06">6 月</option>
+     <option value="07">7 月</option><option value="08">8 月</option><option value="09">9 月</option>
+     <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+   </select>
+   <button class="topbtn" style="color:#217346;border-color:#A8D5B5;padding:4px 12px" onclick="exportYearExcel()"> 匯出年度 Excel</button>
+   <button class="topbtn" style="color:#C0392B;border-color:#F09595;padding:4px 12px" onclick="exportYearPDF()"> 匯出年度 PDF</button>
+   <button class="topbtn" onclick="clearAllHistory()" style="color:#A32D2D;border-color:#F09595">清除全部</button>
  </div>
  </div>
  <div id="history-list"></div>
@@ -399,6 +408,7 @@ input.exp-danger{border-color:#E24B4A!important;background:#FFF5F5!important}
  </div>
  </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 console.log('NMBA v2 JS loaded OK');
@@ -479,6 +489,10 @@ const PHARMACISTS={
  'Y09773':'余映萱','Y09858':'李學怡','Y10040':'黃亦妡','Y10248':'吳岱容'
 };
 const ADMIN_EMPID='Y01643'; // 管理者帳號
+const EMAILJS_SERVICE='service_eef6ywx';
+const EMAILJS_TEMPLATE='template_8575rju';
+const EMAILJS_PUBKEY='H8bHOcbd5L8ycf4VR';
+const ADMIN_EMAIL='Y01643@ms1.ylh.gov.tw';
 
 function autoFillName(empid){
  console.log('autoFillName called with:',empid);
@@ -929,8 +943,15 @@ function buildDrugCards(uid,unitName){
  return html;
 }
 function buildUnitOptions(ph){
- var units=ph?ALL_UNITS[ph]:[];var opts='<option value="">— 請選擇單位 —</option>';
- units.forEach(function(u){opts+='<option value="'+u+'">'+u+'</option>';});return opts;
+ var units=ph?ALL_UNITS[ph]:[];
+ var opts='<option value="">— 請選擇單位 —</option>';
+ units.forEach(function(u){
+   // only show units that have at least one drug enabled
+   var enabled=unitDrugMap[u]||[false,false,false];
+   if(!enabled.some(Boolean))return;
+   opts+='<option value="'+u+'">'+u+'</option>';
+ });
+ return opts;
 }
 function addUnit(){
  var ph=document.getElementById('pharmacy').value;var uid=unitCount++;
@@ -1139,19 +1160,127 @@ function closeConfirm(){
 function doSave(){
  if(!_pendingRecord)return;
  var records=loadRecords();
- records.unshift(_pendingRecord);
- localStorage.setItem(STORAGE_KEY,JSON.stringify(records));
-  saveToFirebase(_pendingRecord);
+ var newRec=_pendingRecord;
+ var newYearMonth=newRec.checkDate.substring(0,7); // YYYY-MM
+ var newPharmacy=newRec.pharmacy;
+ // Get units in the new record
+ var newUnits=newRec.rows.map(function(row){return row.unit;});
+ var newUnitSet=[...new Set(newUnits)];
+
+ var removedCount=0;
+ var updatedRecords=[];
+
+ records.forEach(function(r){
+   // Only process same pharmacy + same year-month
+   if(r.checkDate&&r.checkDate.substring(0,7)===newYearMonth&&r.pharmacy===newPharmacy){
+     // Remove rows that belong to units in the new record
+     var filteredRows=r.rows.filter(function(row){
+       return newUnitSet.indexOf(row.unit)===-1;
+     });
+     if(filteredRows.length===0){
+       // All units replaced → delete entire old record from Firebase
+       deleteFromFirebase(r.id);
+       removedCount++;
+     }else if(filteredRows.length<r.rows.length){
+       // Some units replaced → update the old record with remaining rows
+       var updatedRec=Object.assign({},r,{rows:filteredRows});
+       updatedRecords.push(updatedRec);
+       saveToFirebase(updatedRec);
+       removedCount+=(r.rows.length-filteredRows.length);
+     }else{
+       updatedRecords.push(r);
+     }
+   }else{
+     updatedRecords.push(r);
+   }
+ });
+
+ updatedRecords.unshift(newRec);
+ localStorage.setItem(STORAGE_KEY,JSON.stringify(updatedRecords));
+ saveToFirebase(newRec);
+ sendCheckNotification(newRec);
  closeConfirm();
- showToast('查核記錄已儲存 ✓');
+ if(removedCount>0){
+   showToast('查核記錄已儲存，已更新 '+removedCount+' 筆同單位同月份舊資料 ✓');
+ }else{
+   showToast('查核記錄已儲存 ✓');
+ }
  _pendingRecord=null;
+ // ── 清空表單 ──────────────────────────────────────────────────────────────
+ resetChecklist();
+}
+
+
+// ── Email notification ────────────────────────────────────────────────────────
+function sendCheckNotification(record){
+  if(typeof emailjs==='undefined'){console.warn('EmailJS not loaded');return;}
+  // lazy init
+  try{emailjs.init({publicKey:EMAILJS_PUBKEY});}catch(e){}
+  var units=[...new Set(record.rows.map(function(r){return r.unit;}))].join('、');
+  var rocYr=rocYear(record.checkDate);
+  var moNum=parseInt(record.checkDate.substring(5,7),10);
+  var yearMonth=rocYr+'年'+moNum+'月';
+  var params={
+    to_email: ADMIN_EMAIL,
+    to_name: '謝姍珊 藥師',
+    pharmacy: record.pharmacy,
+    year_month: yearMonth,
+    check_date: rocYr+'年'+moNum+'月'+parseInt(record.checkDate.substring(8,10),10)+'日',
+    pharmacist_name: record.pharmacist.name,
+    pharmacist_id: record.pharmacist.empid,
+    unit_head: record.unitHead.name,
+    unit_head_id: record.unitHead.empid,
+    units: units,
+    message: record.pharmacy+' '+yearMonth+' 查核記錄已完成儲存，共 '+record.rows.length+' 筆。'
+  };
+  emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, params)
+    .then(function(){console.log('通知郵件已寄出 ✓');})
+    .catch(function(e){console.warn('郵件寄送失敗：',e);});
+}
+
+function resetChecklist(){
+ // reset pharmacy selector
+ var phSel=document.getElementById('pharmacy');
+ if(phSel)phSel.value='';
+
+ // reset check date to today
+ var cdEl=document.getElementById('check-date');
+ if(cdEl)cdEl.value=new Date().toISOString().split('T')[0];
+
+ // remove all unit blocks
+ document.getElementById('units-container').innerHTML='';
+ unitCount=0;
+
+ // add one fresh empty unit block
+ addUnit();
+
+ // reset unit head fields
+ var uhEmpid=document.getElementById('uh-empid');
+ var uhName=document.getElementById('uh-name');
+ if(uhEmpid){uhEmpid.value='';uhEmpid.classList.remove('invalid');}
+ if(uhName){uhName.value='';uhName.classList.remove('invalid');}
+ var hint=document.getElementById('uh-empid-hint');
+ if(hint){hint.className='eid-hint';hint.textContent='格式：Y + 5碼數字';}
+
+ // clear signature
+ clearSig('unithead');
+
+ // hide error messages
+ document.getElementById('global-err').style.display='none';
+
+ // re-init signature pad after DOM settles
+ setTimeout(function(){initSigPad('unithead');},300);
 }
 
 function loadRecords(){
  try{var d=localStorage.getItem(STORAGE_KEY);return d?JSON.parse(d):[];}
  catch(e){return[];}
 }
-// ── Firebase sync helpers ────────────────────────────────────────────────────
+function pruneOldRecords(records){
+  var cutoff=new Date();cutoff.setFullYear(cutoff.getFullYear()-2);
+  var cutoffStr=cutoff.toISOString().split('T')[0];
+  return records.filter(function(r){return r.checkDate&&r.checkDate>=cutoffStr;});
+}
 function syncFromFirebase(cb){
   if(!window.db){
     console.warn('Firebase db not ready, retrying in 1s...');
@@ -1161,12 +1290,22 @@ function syncFromFirebase(cb){
   window.db.collection('records').orderBy('savedAt','desc').get()
     .then(function(snap){
       var recs=[];snap.forEach(function(d){recs.push(d.data());});
+      // auto-delete records older than 2 years from Firebase
+      var cutoff=new Date();cutoff.setFullYear(cutoff.getFullYear()-2);
+      var cutoffStr=cutoff.toISOString().split('T')[0];
+      recs.forEach(function(r){
+        if(r.checkDate&&r.checkDate<cutoffStr){
+          window.db.collection('records').doc(String(r.id)).delete()
+            .catch(function(e){console.warn('Auto-delete error:',e);});
+        }
+      });
+      recs=pruneOldRecords(recs);
       localStorage.setItem(STORAGE_KEY,JSON.stringify(recs));
-      console.log('Firebase sync OK: '+recs.length+' records');
+      console.log('Firebase sync OK: '+recs.length+' records (2yr retention)');
       if(cb)cb();
     }).catch(function(e){
       console.warn('Firebase sync error:',e);
-      if(cb)cb(); // still render with local data
+      if(cb)cb();
     });
 }
 function saveToFirebase(rec){
@@ -1184,60 +1323,102 @@ function deleteFromFirebase(id){
 // ── History ───────────────────────────────────────────────────────────────────
 function renderHistory(){
  var list=document.getElementById('history-list');
- var records=loadRecords();
+ var allRecords=loadRecords();
 
- // populate year dropdown
+ // ── populate year dropdown ────────────────────────────────────────────────
  var yearSel=document.getElementById('export-year');
- var years=[...new Set(records.map(function(r){
- return r.checkDate?r.checkDate.substring(0,4):null;
+ var monthSel=document.getElementById('filter-month');
+ var years=[...new Set(allRecords.map(function(r){
+   return r.checkDate?r.checkDate.substring(0,4):null;
  }).filter(Boolean))].sort().reverse();
  var curYear=yearSel.value;
  yearSel.innerHTML='';
  if(years.length===0){
- var opt=document.createElement('option');opt.value='';opt.textContent='（無記錄）';yearSel.appendChild(opt);
+   var opt=document.createElement('option');opt.value='';opt.textContent='（無記錄）';yearSel.appendChild(opt);
  }else{
- years.forEach(function(y){
- var opt=document.createElement('option');opt.value=y;opt.textContent=rocYearFromAD(y)+' 年度（'+y+'）';
- if(y===curYear)opt.selected=true;
- yearSel.appendChild(opt);
- });
+   years.forEach(function(y){
+     var opt=document.createElement('option');opt.value=y;
+     opt.textContent=rocYearFromAD(y)+' 年（'+y+'）';
+     if(y===curYear)opt.selected=true;
+     yearSel.appendChild(opt);
+   });
  }
 
- if(records.length===0){
- list.innerHTML='<div class="history-empty"><i class="ti ti-clipboard-off" style="font-size:2rem;display:block;margin-bottom:.5rem"></i>目前無查核記錄</div>';
- return;
+ // ── filter records by year + month ───────────────────────────────────────
+ var selYear=yearSel.value;
+ var selMonth=monthSel?monthSel.value:'';
+ var records=allRecords.filter(function(r){
+   if(!r.checkDate)return false;
+   if(selYear&&!r.checkDate.startsWith(selYear))return false;
+   if(selMonth&&r.checkDate.substring(5,7)!==selMonth)return false;
+   return true;
+ });
+
+ if(allRecords.length===0){
+   list.innerHTML='<div class="history-empty">目前無查核記錄</div>';
+   return;
  }
- list.innerHTML='';
+ if(records.length===0){
+   list.innerHTML='<div class="history-empty">此期間無查核記錄</div>';
+   return;
+ }
+
+ // ── group by pharmacy ─────────────────────────────────────────────────────
+ var phGroups=[
+   {key:'斗六',label:'雲林斗六藥局',records:[]},
+   {key:'虎尾',label:'雲林虎尾藥局',records:[]}
+ ];
+ var others=[];
  records.forEach(function(r){
- var warnCount=r.rows.filter(function(row){return row.expStatus;}).length;
- var div=document.createElement('div');div.className='hist-item';
- var savedTime=new Date(r.savedAt).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
- var rocDate=toROC(r.checkDate); // e.g. 115/06/01
- var rocYearNum=rocYear(r.checkDate); // e.g. 115
- var monthNum=parseInt(r.checkDate.substring(5,7),10); // e.g. 6
- div.innerHTML='<div class="hist-meta">'
- +'<div class="hist-date">'
- +'<span style="background:#1F3864;color:#fff;font-size:11px;padding:1px 8px;border-radius:4px;margin:0 6px">'+rocYearNum+' 年 '+monthNum+' 月</span>'
- +rocDate+'　'+r.pharmacy+'</div>'
- +'<div class="hist-info">藥師：'+r.pharmacist.name+'（'+r.pharmacist.empid+'）　負責人：'+r.unitHead.name+'（'+r.unitHead.empid+'）　儲存：'+savedTime+'</div>'
- +'<div class="hist-badges">'
- +'<span class="hist-badge ok"> '+r.rows.length+' 筆記錄</span>'
- +(warnCount?'<span class="hist-badge warn"> '+warnCount+' 筆效期警示</span>':'')
- +'</div>'
- +(function(){
+   if(r.pharmacy&&r.pharmacy.indexOf('斗六')>-1) phGroups[0].records.push(r);
+   else if(r.pharmacy&&r.pharmacy.indexOf('虎尾')>-1) phGroups[1].records.push(r);
+   else others.push(r);
+ });
+ if(others.length>0) phGroups.push({key:'other',label:'其他',records:others});
+
+ list.innerHTML='';
+
+ function buildRecordItem(r){
+   var warnCount=r.rows.filter(function(row){return row.expStatus;}).length;
+   var div=document.createElement('div');div.className='hist-item';
+   var savedTime=new Date(r.savedAt).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+   var rocDate=toROC(r.checkDate);
+   var rocYearNum=rocYear(r.checkDate);
+   var monthNum=parseInt(r.checkDate.substring(5,7),10);
    var units=[...new Set(r.rows.map(function(rw){return rw.unit;}))];
-   return '<div style="font-size:10px;margin-top:4px;display:flex;flex-wrap:wrap;gap:3px">'
+   div.innerHTML='<div class="hist-meta">'
+     +'<div class="hist-date">'
+     +'<span style="background:#1F3864;color:#fff;font-size:11px;padding:1px 8px;border-radius:4px;margin-right:6px">'+rocYearNum+' 年 '+monthNum+' 月</span>'
+     +rocDate+'</div>'
+     +'<div class="hist-info">藥師：'+r.pharmacist.name+'（'+r.pharmacist.empid+'）　負責人：'+r.unitHead.name+'（'+r.unitHead.empid+'）　儲存：'+savedTime+'</div>'
+     +'<div class="hist-badges">'
+     +'<span class="hist-badge ok">'+r.rows.length+' 筆記錄</span>'
+     +(warnCount?'<span class="hist-badge warn">'+warnCount+' 筆效期警示</span>':'')
+     +'</div>'
+     +'<div style="font-size:10px;margin-top:4px;display:flex;flex-wrap:wrap;gap:3px">'
      +units.map(function(u){return '<span style="background:#EBF5FB;border:.5px solid #2E75B6;border-radius:4px;padding:1px 7px;color:#1F3864">'+u+'</span>';}).join('')
+     +'</div>'
+     +'</div>'
+     +'<div class="hist-actions">'
+     +'<button class="hist-btn hist-btn-view" onclick="viewRecord('+r.id+')">查看</button>'
+     +'<button class="hist-btn" style="background:#EBF5FB;color:#217346" onclick="exportRecordExcel('+r.id+')">Excel</button>'
+     +'<button class="hist-btn" style="background:#FDECEA;color:#C0392B" onclick="exportRecordPDF('+r.id+')">PDF</button>'
+     +(currentUser&&(currentUser.empid===ADMIN_EMPID||currentUser.empid===r.pharmacist.empid)?
+       '<button class="hist-btn hist-btn-del" style="background:#FDECEA;color:#A32D2D;min-width:40px" onclick="deleteRecord('+r.id+')">刪除</button>':
+       '<button class="hist-btn" style="background:#f1f3f5;color:#adb5bd;min-width:40px;cursor:not-allowed" disabled title="僅查核藥師或管理者可刪除">刪除</button>'
+     )
      +'</div>';
- }())
- +'</div>'
- +'<div class="hist-actions">'
- +'<button class="hist-btn hist-btn-view" onclick="viewRecord('+r.id+')"> 查看</button>'
- +'<button class="hist-btn" style="background:#EBF5FB;color:#217346" onclick="exportRecordExcel('+r.id+')"> Excel</button>'
- +'<button class="hist-btn" style="background:#FDECEA;color:#C0392B" onclick="exportRecordPDF('+r.id+')"> PDF</button>'
- +'<button class="hist-btn hist-btn-del" onclick="deleteRecord('+r.id+')"></button>'
- +'</div>';
- list.appendChild(div);
+   return div;
+ }
+
+ phGroups.forEach(function(pg){
+   if(pg.records.length===0)return;
+   var hdr=document.createElement('div');
+   hdr.style.cssText='background:#1F3864;color:#fff;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;margin-bottom:6px;margin-top:10px;display:flex;justify-content:space-between;align-items:center';
+   hdr.innerHTML='<span>'+pg.label+'</span><span style="font-weight:400;font-size:11px">'+pg.records.length+' 筆</span>';
+   list.appendChild(hdr);
+   pg.records.sort(function(a,b){return b.checkDate.localeCompare(a.checkDate);});
+   pg.records.forEach(function(r){list.appendChild(buildRecordItem(r));});
  });
 }
 
@@ -1474,16 +1655,27 @@ function closeModal(){document.getElementById('hist-modal').classList.remove('sh
 document.getElementById('hist-modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
 
 function deleteRecord(id){
+ var r=loadRecords().find(function(x){return x.id===id;});
+ if(!r)return;
+ // permission check
+ if(!currentUser||(currentUser.empid!==ADMIN_EMPID&&currentUser.empid!==r.pharmacist.empid)){
+   alert('您沒有權限刪除此記錄。');return;
+ }
  if(!confirm('確定要刪除此查核記錄？'))return;
- var records=loadRecords().filter(function(r){return r.id!==id;});
+ var records=loadRecords().filter(function(x){return x.id!==id;});
  localStorage.setItem(STORAGE_KEY,JSON.stringify(records));
- showToast('記錄已刪除');
+ deleteFromFirebase(id);
+ renderHistory();
+ showToast('記錄已刪除 ✓');
 }
 function clearAllHistory(){
  if(!confirm('確定要清除所有查核記錄？此操作無法復原。'))return;
+ // delete all from Firebase
+ var records=loadRecords();
+ records.forEach(function(r){deleteFromFirebase(r.id);});
  localStorage.removeItem(STORAGE_KEY);
  renderHistory();
- showToast('所有記錄已清除');
+ showToast('所有記錄已清除 ✓');
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
