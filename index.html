@@ -71,6 +71,7 @@ input.exp-danger{border-color:#E24B4A!important;background:#FFF5F5!important}
 .field-item label{font-size:10px;color:var(--text2);display:block;margin-bottom:3px;font-weight:500}
 .field-item input{height:30px;font-size:12px;text-align:center;padding:0 6px}
 input[type=date]{text-align:left}
+input[type=date]::-webkit-date-and-time-value{text-align:left}
 .field-date input{text-align:left;font-size:11px}
 .calc-bar{font-size:10px;padding:5px 10px;border-radius:var(--radius-md);margin-bottom:6px;display:none}
 .calc-bar.ok{background:#F0FBF4;color:#217346;border:.5px solid #A8D5B5;display:block}
@@ -378,7 +379,7 @@ input,select,textarea{max-width:100%}
  </div>
  <div>
  <div class="field-label"> 查核日期<span class="req">*</span></div>
- <input type="date" id="check-date" oninput="clearInvalid(this);recheckAllExp()" style="width:100%;height:36px;padding:0 10px;border:.5px solid var(--border);border-radius:var(--radius-md);background:var(--bg);color:var(--text);font-size:13px;font-family:var(--font-sans);-webkit-appearance:none;appearance:none;text-align:left">
+ <input type="date" id="check-date" oninput="clearInvalid(this);recheckAllExp()" style="width:100%;height:36px;padding:0 10px;border:.5px solid var(--border);border-radius:var(--radius-md);background:var(--bg);color:var(--text);font-size:13px;font-family:var(--font-sans);-webkit-appearance:none;appearance:none;text-align:left;display:block">
  </div>
  </div>
  </div>
