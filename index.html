@@ -1349,7 +1349,7 @@ function loadRecords(){
  catch(e){return[];}
 }
 function pruneOldRecords(records){
-  var cutoff=new Date();cutoff.setFullYear(cutoff.getFullYear()-2);
+  var cutoff=new Date();cutoff.setFullYear(cutoff.getFullYear()-6);
   var cutoffStr=cutoff.toISOString().split('T')[0];
   return records.filter(function(r){return r.checkDate&&r.checkDate>=cutoffStr;});
 }
@@ -1363,7 +1363,7 @@ function syncFromFirebase(cb){
     .then(function(snap){
       var recs=[];snap.forEach(function(d){recs.push(d.data());});
       // auto-delete records older than 2 years from Firebase
-      var cutoff=new Date();cutoff.setFullYear(cutoff.getFullYear()-2);
+      var cutoff=new Date();cutoff.setFullYear(cutoff.getFullYear()-6);
       var cutoffStr=cutoff.toISOString().split('T')[0];
       recs.forEach(function(r){
         if(r.checkDate&&r.checkDate<cutoffStr){
