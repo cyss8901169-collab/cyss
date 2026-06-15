@@ -1267,6 +1267,10 @@ function doSave(){
  localStorage.setItem(STORAGE_KEY,JSON.stringify(updatedRecords));
  saveToFirebase(newRec);
  sendCheckNotification(newRec);
+// SharePoint 同步寫入（非同步，不阻塞本地儲存）
+ saveToSharePoint(newRec)
+   .then(function(){ console.log('SharePoint 同步成功 ✓'); })
+   .catch(function(e){ console.warn('SharePoint 同步失敗（不影響本地儲存）:', e); }); 
  closeConfirm();
  if(removedCount>0){
    showToast('查核記錄已儲存，已更新 '+removedCount+' 筆同單位同月份舊資料 ✓');
@@ -2223,6 +2227,58 @@ function exportToPDF(r){
  a.click();
  document.body.removeChild(a);
  setTimeout(function(){URL.revokeObjectURL(url);},1000);
+}
+// ── SharePoint REST API 寫入 ─────────────────────────────────────────────────
+async function saveToSharePoint(record) {
+  const siteUrl = 'https://ntuhgovtw.sharepoint.com/sites/msteams_eb4e2f';
+  let digest = '';
+  try {
+    const digestRes = await fetch(siteUrl + '/_api/contextinfo', {
+      method: 'POST',
+      headers: { 'Accept': 'application/json;odata=verbose' },
+      credentials: 'include'
+    });
+    const digestData = await digestRes.json();
+    digest = digestData.d.GetContextWebInformation.FormDigestValue;
+  } catch(e) {
+    console.warn('無法取得 FormDigest:', e);
+  }
+
+  const units = [...new Set(record.rows.map(r => r.unit))].join('、');
+  const body = {
+    '__metadata': { 'type': 'SP.Data.神經肌肉阻斷劑查核記錄ListItem' },
+    'Title': record.checkDate + ' ' + record.pharmacy,
+    '查核日期': record.checkDate,
+    '藥局': record.pharmacy,
+    '藥師姓名': record.pharmacist.name,
+    '藥師員編': record.pharmacist.empid,
+    '單位負責人': record.unitHead.name,
+    '負責人員編': record.unitHead.empid,
+    '查核單位': units,
+    '查核筆數': String(record.rows.length),
+    '儲存時間': record.savedAt
+  };
+
+  const res = await fetch(
+    siteUrl + "/_api/web/lists/getbytitle('神經肌肉阻斷劑查核記錄')/items",
+    {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json;odata=verbose',
+        'Content-Type': 'application/json;odata=verbose',
+        'X-RequestDigest': digest
+      },
+      credentials: 'include',
+      body: JSON.stringify(body)
+    }
+  );
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error('SharePoint 寫入失敗（' + res.status + '）: ' + errText);
+  }
+  console.log('SharePoint 寫入成功 ✓');
+  return await res.json();
 }
 </script>
 
