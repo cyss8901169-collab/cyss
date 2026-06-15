@@ -802,9 +802,13 @@ function renderOverview(){
  var curMonth=now.getMonth()+1;
 
  // populate year dropdown: current year ± 1
- var years=[curYear-1,curYear,curYear+1].filter(function(y){return y>=2024;});
- if(!ovYear.options.length){
- years.forEach(function(y){
+ var years=[...new Set(records.map(function(r){
+  return r.checkDate?parseInt(r.checkDate.substring(0,4),10):null;
+}).filter(Boolean))].sort();
+if(years.indexOf(curYear)===-1)years.push(curYear);
+years.sort();
+if(!ovYear.options.length){
+years.forEach(function(y){
  var opt=document.createElement('option');
  opt.value=y;
  opt.textContent=rocYearFromAD(y)+' 年（'+y+'）';
