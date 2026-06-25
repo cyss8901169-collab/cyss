@@ -674,6 +674,9 @@
     <div class="sticky-top">
       <!-- Date nav -->
       <div class="date-nav">
+        <label style="font-size:13px;color:var(--gray-500)">年月</label>
+        <input type="month" id="monthPicker" onchange="onMonthChange(this.value)"
+          style="padding:7px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:14px;font-weight:600;background:white;cursor:pointer;font-family:inherit;">
         <label style="font-size:13px;color:var(--gray-500)">院區</label>
         <select id="campusSel" onchange="onCampusChange(this.value)"
           style="padding:7px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:14px;font-weight:600;background:white;cursor:pointer;font-family:inherit;">
@@ -1147,6 +1150,13 @@ function setSession(s, btn) {
 }
 
 // ══════════ MONTH / TABLE ══════════
+function onMonthChange(ym) {
+  if(!ym) return;
+  currentMonth = ym;
+  loadData(ym);
+  loadMonth();
+}
+
 function loadMonth() {
   const now = new Date();
   currentMonth = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
