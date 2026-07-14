@@ -1,0 +1,4085 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>藥品冰箱溫度登記表</title>
+<style>
+  :root{
+    --navy:#0f3057;
+    --blue:#1f6f9c;
+    --pale:#eef5f9;
+    --line:#cfd9e0;
+    --ink:#1c2b36;
+    --muted:#5e7385;
+    --danger:#b3261e;
+    --danger-bg:#fdecea;
+    --ok:#1c7a4d;
+    --paper:#ffffff;
+    --bg:#f4f7f9;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+  }
+  .topbar-wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:4px 16px 0;
+  }
+  .topbar{
+    background:linear-gradient(135deg,var(--navy),var(--blue));
+    color:#fff;
+    padding:8px 16px;
+    border-radius:10px;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .topbar-row1{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .topbar-row2{
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:8px;
+    min-height:22px;
+  }
+  .topbar .icon{
+    width:26px;
+    height:26px;
+    flex:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .topbar .icon svg{width:20px; height:20px;}
+  .topbar-text{
+    display:flex;
+    flex-direction:column;
+    gap:1px;
+    line-height:1.25;
+  }
+  .topbar h1{
+    margin:0;
+    font-size:15px;
+    font-weight:700;
+    letter-spacing:0.5px;
+  }
+  .topbar p{
+    margin:0;
+    font-size:11px;
+    color:#e3f3ec;
+  }
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:2px 16px 60px;
+  }
+  .sticky-zone{
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:var(--bg);
+    padding-top:2px;
+  }
+  .controls{
+    background:var(--bg);
+    padding:0 0 4px;
+  }
+  .controls-inner{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:7px 14px;
+    display:flex;
+    flex-wrap:nowrap;
+    gap:8px;
+    align-items:center;
+    width:100%;
+  }
+  .ctrl-label{
+    font-size:12px;
+    color:var(--muted);
+    font-weight:600;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    flex:1;
+    min-width:0;
+  }
+  .field select,
+  .field input{
+    width:100%;
+  }
+  .field label{
+    font-size:11px;
+    color:var(--muted);
+    font-weight:600;
+  }
+  select, input[type=number], input[type=month], input[type=text]{
+    font-family:inherit;
+    font-size:13px;
+    padding:5px 7px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:#fff;
+    color:var(--ink);
+  }
+  select:focus, input:focus{
+    outline:2px solid var(--blue);
+    outline-offset:1px;
+  }
+  .manager-field{flex:1; min-width:160px;}
+  .manager-field input{width:100%;}
+  .note{
+    background:var(--danger-bg);
+    border:1px solid #f3c2bd;
+    color:var(--danger);
+    border-radius:8px;
+    padding:7px 12px;
+    font-size:12px;
+    margin:0 0 8px;
+    line-height:1.5;
+  }
+  .status{
+    font-size:12px;
+    color:var(--ok);
+    margin-bottom:4px;
+    min-height:14px;
+  }
+  .table-card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:10px;
+  }
+  .table-scroll{
+    border-radius:10px;
+  }
+  table{
+    border-collapse:separate;
+    border-spacing:0;
+    width:100%;
+    min-width:640px;
+  }
+  thead th{
+    background:var(--pale);
+    color:var(--navy);
+    font-size:13px;
+    padding:10px 8px;
+    border-bottom:2px solid var(--line);
+    border-right:1px solid var(--line);
+    white-space:nowrap;
+  }
+  #tableHeadRow1 th{
+    position:sticky;
+    top:0;
+    z-index:4;
+  }
+  #tableHeadRow2 th{
+    position:sticky;
+    z-index:3;
+  }
+  thead th:last-child, tbody td:last-child{border-right:none;}
+  tbody td{
+    border-bottom:1px solid var(--line);
+    border-right:1px solid var(--line);
+    padding:4px 6px;
+    text-align:center;
+    font-size:13px;
+  }
+  tbody tr:nth-child(even){background:#fafcfd;}
+  tbody tr.weekend{background:#fff8f0;}
+  .date-cell{
+    font-weight:700;
+    color:var(--navy);
+    background:var(--pale)!important;
+    min-width:46px;
+  }
+  td input[type=number],
+  .fridge-card input[type=number]{
+    width:62px;
+    height:32px;
+    text-align:center;
+    padding:4px 2px;
+    font-size:13px;
+    line-height:1.2;
+    -moz-appearance:textfield;
+  }
+  td input[type=number]::-webkit-outer-spin-button,
+  td input[type=number]::-webkit-inner-spin-button,
+  .fridge-card input[type=number]::-webkit-outer-spin-button,
+  .fridge-card input[type=number]::-webkit-inner-spin-button{
+    -webkit-appearance:none;
+    margin:0;
+  }
+  .fridge-group{
+    display:flex;
+    gap:4px;
+    justify-content:center;
+  }
+  .fridge-group .sub-field{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .fridge-group .sub-label{
+    font-size:10px;
+    color:var(--muted);
+    text-align:center;
+  }
+  thead th.fridge-header{
+    padding-bottom:4px;
+  }
+  td input.abn-input{
+    width:100%;
+    min-width:140px;
+    text-align:left;
+  }
+  td input.sign-input{
+    width:90px;
+    text-align:center;
+  }
+  td input.checker-input{
+    width:100%;
+    min-width:90px;
+    text-align:center;
+  }
+  td input.out-of-range{
+    background:var(--danger-bg);
+    border-color:var(--danger);
+    color:var(--danger);
+    font-weight:700;
+  }
+  td input.logic-error, .fridge-card .sub-row input.logic-error{
+    background:#fff4e0;
+    border-color:#d98c00;
+    color:#a35f00;
+    font-weight:700;
+    box-shadow:0 0 0 1px #d98c00 inset;
+  }
+  .reviewer-cell{
+    background:#fbfaf6;
+    vertical-align:middle;
+  }
+  .legend{
+    display:flex;
+    gap:16px;
+    flex-wrap:wrap;
+    font-size:12px;
+    color:var(--muted);
+    margin:10px 2px 0;
+  }
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .swatch{width:12px; height:12px; border-radius:3px; display:inline-block;}
+  .sw-range{background:var(--danger-bg); border:1px solid var(--danger);}
+  .footer-actions{
+    display:flex;
+    gap:10px;
+    margin-top:16px;
+    flex-wrap:wrap;
+  }
+  button{
+    font-family:inherit;
+    font-size:13px;
+    padding:9px 16px;
+    border-radius:7px;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--navy);
+    cursor:pointer;
+  }
+  button.primary{
+    background:var(--blue);
+    border-color:var(--blue);
+    color:#fff;
+  }
+  button:hover{filter:brightness(0.97);}
+
+  /* ===== Mode toggle ===== */
+  .topbar-user{
+    display:flex; align-items:center; gap:8px; flex-shrink:0;
+  }
+  .user-badge{
+    background:rgba(255,255,255,0.2);
+    color:#fff;
+    font-size:12px;
+    font-weight:600;
+    padding:4px 10px;
+    border-radius:20px;
+    white-space:nowrap;
+  }
+  .logout-btn{
+    background:rgba(255,255,255,0.15);
+    border:1px solid rgba(255,255,255,0.4);
+    color:#fff;
+    font-size:12px;
+    padding:4px 10px;
+    border-radius:6px;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .logout-btn:hover{ background:rgba(255,255,255,0.25); }
+  .topbar-login{
+    display:flex; align-items:center; gap:6px; flex-shrink:0;
+  }
+  .login-select{
+    font-size:12px;
+    padding:4px 8px;
+    border-radius:6px;
+    border:1px solid rgba(255,255,255,0.4);
+    background:rgba(255,255,255,0.1);
+    color:#fff;
+  }
+  .login-select option{ color:var(--ink); background:#fff; }
+  .login-btn{
+    background:#fff;
+    border:none;
+    color:var(--navy);
+    font-size:12px;
+    font-weight:700;
+    padding:4px 12px;
+    border-radius:6px;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .login-btn:hover{ background:var(--pale); }
+
+  .login-overlay{
+    position:fixed;
+    inset:0;
+    background:linear-gradient(150deg, #6b8fa3 0%, #8fa8a0 50%, #b2bfb8 100%);
+    z-index:1000;
+    display:flex;
+    flex-direction:column;
+  }
+  .login-overlay.hidden{ display:none; }
+  .login-topbar{
+    width:100%;
+    background:rgba(80,110,122,0.55);
+    backdrop-filter:blur(8px);
+    padding:10px 20px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-shrink:0;
+    box-shadow:0 2px 8px rgba(0,0,0,0.2);
+  }
+  .login-topbar-icon{
+    width:32px; height:32px;
+    background:rgba(255,255,255,0.15);
+    border-radius:8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+  .login-topbar-title{
+    font-size:15px;
+    font-weight:800;
+    color:#fff;
+    margin-bottom:2px;
+  }
+  .login-topbar-sub{
+    font-size:11px;
+    color:rgba(255,255,255,0.75);
+  }
+  .login-modal{
+    background:#fff;
+    border-radius:20px;
+    width:320px;
+    max-width:90vw;
+    box-shadow:0 24px 80px rgba(0,0,0,0.35);
+    text-align:center;
+    padding:32px 24px 28px;
+    margin:auto;
+    position:relative;
+    top:-20px;
+  }
+  .login-icon-wrap{
+    width:68px; height:68px;
+    background:linear-gradient(135deg,#0f3057,#1f6f9c);
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:0 auto 14px;
+  }
+  .login-modal-title{
+    font-size:18px;
+    font-weight:800;
+    color:var(--navy);
+    margin-bottom:4px;
+  }
+  .login-modal-sub{
+    font-size:10px;
+    color:var(--muted);
+    line-height:1.6;
+    margin-bottom:22px;
+  }
+  .login-field-group{
+    text-align:left;
+    margin-bottom:14px;
+  }
+  .login-field-label{
+    font-size:12px;
+    font-weight:700;
+    color:var(--navy);
+    display:block;
+    margin-bottom:5px;
+  }
+  .login-id-row{
+    display:flex;
+    align-items:stretch;
+    border:2px solid #8fa8a0;
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .login-id-prefix{
+    background:#6b8fa3;
+    color:#fff;
+    font-size:20px;
+    font-weight:900;
+    width:50px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+  .login-id-input{
+    flex:1;
+    border:none;
+    outline:none;
+    font-size:20px;
+    font-weight:700;
+    color:var(--navy);
+    padding:10px 12px;
+    letter-spacing:6px;
+    text-align:center;
+    background:#fff;
+    min-width:0;
+  }
+  .login-id-input::placeholder{ color:#ccc; letter-spacing:3px; font-weight:400; font-size:14px; }
+  .login-name-display{
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:11px 14px;
+    font-size:14px;
+    color:var(--muted);
+    background:#f9fafb;
+    min-height:42px;
+  }
+  .login-name-display.found{
+    color:#6b8fa3;
+    font-weight:700;
+    background:#eef3f5;
+    border-color:#8fa8a0;
+  }
+  .login-hint{
+    font-size:12px;
+    color:var(--danger);
+    font-weight:600;
+    min-height:16px;
+    margin-bottom:6px;
+    text-align:left;
+  }
+  .login-submit-btn{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:10px;
+    background:linear-gradient(135deg,#6b8fa3,#8fa8a0);
+    color:#fff;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    font-family:inherit;
+    margin-top:4px;
+    box-shadow:0 4px 14px rgba(31,111,156,0.4);
+  }
+  .login-submit-btn:hover{ filter:brightness(1.08); }
+
+  /* topbar-controls: date + shift pills + mode buttons */
+  .topbar-controls{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:6px;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:6px 10px;
+    margin-bottom:4px;
+  }
+  #dateSelect{
+    flex:0 0 auto;
+    width:150px;
+    font-size:15px;
+    font-weight:700;
+    padding:6px 8px;
+    border:1.5px solid var(--blue);
+    border-radius:8px;
+    color:var(--navy);
+    text-align:center;
+    background:#fff;
+  }
+  .shift-pills-top{
+    display:flex;
+    gap:5px;
+    flex-wrap:wrap;
+    flex:1;
+    min-width:0;
+  }
+  .top-actions-right-controls{
+    display:flex;
+    gap:5px;
+    margin-left:auto;
+    flex-shrink:0;
+  }
+  .site-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:0 4px;
+    margin-bottom:6px;
+  }
+  .site-row select{
+    font-size:13px;
+    padding:4px 8px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:#fff;
+    color:var(--ink);
+  }
+  .top-stats-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:6px;
+  }
+  #modeButtons{
+    margin-left:auto;
+    flex-shrink:0;
+  }
+  /* ===== Export PDF button ===== */
+  .export-pdf-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:8px 12px;
+    border-radius:8px;
+    border:none;
+    background:linear-gradient(135deg,var(--navy),var(--blue));
+    color:#fff;
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .export-pdf-btn:hover{ filter:brightness(0.95); }
+  .export-pdf-btn.hidden-in-mode{ display:none; }
+  .stat-card-extra.hidden-in-mode{ display:none; }
+
+  /* ===== Stat cards row ===== */
+  .stat-cards-row{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .stat-card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-left:4px solid var(--line);
+    border-radius:8px;
+    padding:6px 12px;
+  }
+  .stat-card.stat-days{ background:#eef5ff; border-left-color:#2f6fd1; }
+  .stat-card.stat-days .stat-value{ color:#1c4d8f; }
+  .stat-card.stat-abnormal{ background:#fff6ea; border-left-color:#e08a1e; }
+  .stat-card.stat-abnormal .stat-value{ color:#c46a00; }
+  .stat-card.stat-rate{ background:#eefaf1; border-left-color:#28a35a; }
+  .stat-card.stat-rate .stat-value{ color:#1c7a4d; }
+  .stat-card.stat-rate.incomplete{ background:var(--danger-bg); border-left-color:var(--danger); }
+  .stat-card.stat-rate.incomplete .stat-value{ color:var(--danger); }
+  #statCardToday{
+    border-left:4px solid var(--blue);
+    min-width:120px;
+    padding:6px 16px;
+  }
+  #statCardToday.incomplete{
+    border-left-color:var(--danger);
+    background:var(--danger-bg);
+  }
+  #statCardToday.incomplete .stat-label{ color:var(--danger); }
+  #statCardToday.incomplete .stat-value{ color:var(--danger); }
+  .stat-label{ font-size:10px; color:var(--muted); margin-bottom:2px; }
+  .stat-value{ font-size:14px; font-weight:700; color:var(--navy); }
+  .stat-value.warn{ color:#c98a1f; }
+
+  /* ===== Monthly feed view (blue) ===== */
+  .feed-header-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:10px;
+    font-size:14px;
+    font-weight:700;
+    color:var(--navy);
+  }
+  .feed-card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:0 0 12px;
+    margin-bottom:16px;
+    overflow-x:auto;
+  }
+  .feed-table-wrap{ width:100%; max-height:65vh; overflow:auto; }
+  .feed-sticky-head{ display:none; }
+  table.feed-table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0;
+    min-width:600px;
+  }
+  table.feed-table th{
+    position:sticky;
+    top:0;
+    z-index:5;
+    background:var(--pale);
+    color:var(--navy);
+    font-size:12px;
+    padding:8px 6px;
+    border-bottom:2px solid var(--line);
+    white-space:nowrap;
+    text-align:center;
+  }
+  table.feed-table td{
+    border-bottom:1px solid var(--line);
+    padding:7px 6px;
+    font-size:13px;
+    text-align:center;
+  }
+  table.feed-table td.feed-date-cell{
+    font-weight:700;
+    color:var(--navy);
+    background:var(--pale);
+  }
+  table.feed-table td.feed-shift-cell{ color:var(--blue); font-weight:600; white-space:nowrap; }
+  table.feed-table tr.feed-group-even td:not(.feed-date-cell){ background:#f3f8fc; }
+  table.feed-table tr.feed-group-today td{ background:#e4f0fb; }
+  table.feed-table td.feed-out-of-range{ color:var(--danger); font-weight:700; }
+  table.feed-table td.feed-empty{ color:var(--muted); }
+  .today-pin{ color:#c0392b; margin-left:2px; }
+
+  .checker-inline-row td{
+    background:var(--pale);
+    border-top:2px solid var(--blue);
+    border-bottom:2px solid var(--blue);
+    padding:7px 12px;
+    font-size:12px;
+    color:var(--navy);
+    font-weight:600;
+    text-align:left !important;
+    vertical-align:middle;
+  }
+  .checker-inline-label{ margin-right:8px; }
+  .checker-inline-input{
+    font-size:12px;
+    padding:4px 8px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    width:160px;
+  }
+    border-top:1px dashed var(--line);
+    margin-top:10px;
+    padding-top:8px;
+  }
+  .weekly-checker-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    padding:6px 2px;
+    font-size:12px;
+  }
+  .weekly-checker-row .wk-label{ color:var(--muted); min-width:160px; }
+  .weekly-checker-row input{
+    flex:1;
+    min-width:120px;
+    max-width:220px;
+    font-size:13px;
+    padding:6px 9px;
+  }
+  .weekly-checker-row .wk-status{
+    font-size:12px;
+    color:var(--ok);
+    white-space:nowrap;
+  }
+  .weekly-checker-row .wk-status.empty{ color:var(--muted); }
+
+  /* ===== Approval card ===== */
+  .approval-card{
+    background:#eef3fb;
+    border:1px solid #cfe0f5;
+    border-left:4px solid var(--blue);
+    border-radius:10px;
+    padding:14px 18px;
+    margin-bottom:18px;
+  }
+  .approval-card .ap-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:10px;
+    font-size:14px;
+    font-weight:700;
+    color:var(--navy);
+  }
+  .approval-card .ap-header .ap-meta{ font-size:12px; font-weight:500; color:var(--muted); }
+  .approval-card .ap-status{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:13px; font-weight:700;
+    margin-bottom:8px;
+  }
+  .approval-card .ap-status.approved{ color:var(--ok); }
+  .approval-card .ap-status.pending{ color:#9a6400; }
+  .approval-card .ap-detail{ font-size:12px; color:var(--ink); margin-bottom:4px; }
+  .approval-card .ap-form{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-top:10px;
+  }
+  .approval-card .ap-form input,
+  .approval-card .ap-form textarea{
+    width:100%;
+    font-size:13px;
+    padding:8px 10px;
+  }
+  .approval-card .ap-form textarea{ min-height:50px; resize:vertical; }
+  .approval-card button{
+    align-self:flex-start;
+    background:var(--blue);
+    border-color:var(--blue);
+    color:#fff;
+  }
+
+  .view-toggle{
+    display:flex;
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .mode-btn{
+    padding:5px 12px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--muted);
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .mode-btn.active{
+    background:var(--navy);
+    border-color:var(--navy);
+    color:#fff;
+  }
+
+  /* ===== Daily check-in view ===== */
+  .daily-view{ display:flex; flex-direction:column; align-items:flex-start; gap:6px; margin-bottom:10px; }
+  .status-card{
+    display:inline-flex;
+    align-self:flex-start;
+    width:auto;
+    align-items:center;
+    gap:14px;
+    background:#fff;
+    border:1px solid var(--line);
+    border-left:4px solid var(--blue);
+    border-radius:8px;
+    padding:10px 16px;
+  }
+  .status-card.incomplete{ border-left-color:#c98a1f; }
+  .status-card .sc-label{ font-size:12px; color:var(--muted); }
+  .status-card .sc-value{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:14px; font-weight:700; color:var(--blue);
+    background:var(--pale); padding:4px 10px; border-radius:6px;
+  }
+  .status-card.incomplete .sc-value{ color:#9a6400; background:#fdf1dc; }
+
+  .abn-banner{
+    background:var(--danger-bg);
+    border:1px solid #f3c2bd;
+    color:var(--danger);
+    border-radius:8px;
+    padding:9px 14px;
+    font-size:13px;
+    width:100%;
+    display:none;
+  }
+  .abn-banner.show{ display:block; }
+
+  .daily-card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:6px 10px;
+    width:100%;
+  }
+  .daily-card-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .daily-title{
+    font-size:15px;
+    font-weight:700;
+    color:var(--navy);
+  }
+  .daily-selectors{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:nowrap;
+    margin-bottom:2px;
+  }
+  .daily-selectors .ds-label{
+    font-size:12px;
+    color:var(--muted);
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .daily-selectors .field{
+    display:contents;
+  }
+  .daily-selectors .field select{
+    width:auto;
+    min-width:80px;
+    font-size:12px;
+    padding:4px 6px;
+    border-radius:6px;
+    border:1px solid var(--line);
+  }
+  .shift-pills{ display:flex; gap:6px; flex-wrap:wrap; }
+  .shift-pill{
+    padding:4px 9px;
+    border-radius:14px;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .shift-pill.active{
+    background:var(--blue);
+    border-color:var(--blue);
+    color:#fff;
+  }
+  .daily-chip-row{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:10px;
+  }
+  .chip{
+    display:inline-flex; align-items:center; gap:5px;
+    background:var(--pale);
+    color:var(--blue);
+    font-size:12px;
+    font-weight:600;
+    padding:5px 11px;
+    border-radius:6px;
+  }
+  .past-window-note{
+    background:#fdf6e3;
+    border:1px solid #f0dca0;
+    color:#8a6300;
+    font-size:12px;
+    padding:8px 12px;
+    border-radius:7px;
+    margin-bottom:12px;
+  }
+  .fridge-cards{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    margin-bottom:6px;
+  }
+  .fridge-card{
+    background:#fff;
+    border:1px solid #e8edf2;
+    border-left:4px solid var(--blue);
+    border-radius:12px;
+    padding:4px 10px 6px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.05);
+  }
+  .fridge-card-title{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:12px;
+    font-weight:700;
+    color:#fff;
+    background:linear-gradient(90deg,var(--blue),#4a9cc7);
+    border-radius:6px;
+    padding:2px 8px;
+    margin-bottom:4px;
+    width:fit-content;
+  }
+  .fridge-card-title::before{
+    content:'❄';
+    font-size:12px;
+  }
+  .fridge-card-body{
+    display:flex;
+    gap:6px;
+  }
+  .fridge-temp-warning{
+    margin-top:8px;
+    padding:6px 10px;
+    border-radius:8px;
+    font-size:12px;
+    font-weight:600;
+    line-height:1.4;
+  }
+  .fridge-temp-warning.warn-logic{ background:#fdf3e0; color:#8a5a00; }
+  .fridge-temp-warning.warn-range{ background:#fdecea; color:#b3261e; }
+  .fridge-card .sub-col{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+  }
+  .fridge-card .sub-col label{
+    font-size:10px;
+    color:#8a9ab0;
+    font-weight:600;
+    white-space:nowrap;
+    text-align:center;
+    line-height:1.2;
+    margin-bottom:0;
+  }
+  .fridge-card .sub-col label small{
+    color:var(--danger);
+    font-size:10px;
+    font-weight:700;
+  }
+  .fridge-card .sub-col input{
+    width:100%;
+    font-size:36px;
+    font-weight:700;
+    color:var(--navy);
+    text-align:center;
+    border:none;
+    border-radius:10px;
+    padding:18px 4px;
+    background:#e8f1f9;
+    outline:none;
+    box-sizing:border-box;
+    -moz-appearance:textfield;
+    box-shadow:0 2px 8px rgba(31,111,156,0.12);
+    transition:box-shadow 0.15s, background 0.15s;
+  }
+  .fridge-card .sub-col input::placeholder{
+    color:#d0d8e4;
+    font-size:28px;
+    font-weight:300;
+  }
+  .fridge-card .sub-col input:focus{
+    background:#fff;
+    box-shadow:0 0 0 2px var(--blue), 0 2px 8px rgba(31,111,156,0.15);
+    outline:none;
+  }
+  .fridge-card .sub-col input.out-of-range{
+    background:var(--danger-bg);
+    color:var(--danger);
+    font-weight:800;
+    box-shadow:0 0 0 2px var(--danger);
+  }
+  .fridge-card .sub-col input.logic-error{
+    background:#fff4e0;
+    color:#a35f00;
+    box-shadow:0 0 0 2px #d98c00;
+  }
+  .fridge-card .sub-row input{
+    flex:1;
+    min-width:0;
+    width:100%;
+    max-width:84px;
+    box-sizing:border-box;
+    text-align:center;
+    font-size:14px;
+    font-weight:700;
+    padding:5px 4px;
+  }
+  .fridge-card .sub-row input.out-of-range{
+    background:var(--danger-bg);
+    border-color:var(--danger);
+    color:var(--danger);
+  }
+  .reason-block{
+    background:#fffbe6;
+    border:1px solid #f0d060;
+    border-left:4px solid #e8a000;
+    border-radius:10px;
+    padding:10px 12px;
+    margin-bottom:8px;
+  }
+  .reason-block-title{
+    font-size:12px;
+    font-weight:700;
+    color:#a36000;
+    margin-bottom:8px;
+  }
+  .reason-canned-btns{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-bottom:8px;
+  }
+  .reason-canned-btn{
+    font-family:inherit;
+    font-size:11px;
+    font-weight:600;
+    padding:5px 11px;
+    border-radius:20px;
+    border:1px solid #e8c060;
+    background:#fff8e0;
+    color:#8a5a00;
+    cursor:pointer;
+  }
+  .reason-canned-btn:hover{ background:#e8a000; color:#fff; border-color:#e8a000; }
+  .reason-text-input{
+    width:100%;
+    font-family:inherit;
+    font-size:13px;
+    padding:8px 10px;
+    border:1px solid #e8c060;
+    border-radius:8px;
+    background:#fff;
+    box-sizing:border-box;
+    margin-bottom:8px;
+  }
+  .reason-text-input:focus{ outline:2px solid #e8a000; }
+  .reason-supervisor-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    color:#8a5a00;
+  }
+  .reason-supervisor-label{ font-weight:700; }
+  .reason-supervisor-name{
+    font-weight:600;
+    background:#fff;
+    border:1px solid #e8c060;
+    border-radius:6px;
+    padding:3px 10px;
+  }
+  .last-saved{
+    font-size:12px;
+    color:var(--ok);
+    margin-bottom:10px;
+  }
+  .last-saved.empty{ color:var(--muted); }
+  .confirm-btn{
+    width:100%;
+    padding:13px;
+    border-radius:9px;
+    border:none;
+    background:linear-gradient(135deg,var(--navy),var(--blue));
+    color:#fff;
+    font-size:15px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .confirm-btn:hover{ filter:brightness(0.95); }
+  .staff-select-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+    padding:8px 10px;
+    background:var(--pale);
+    border-radius:8px;
+    border:1px solid var(--line);
+  }
+  .staff-select-label{
+    font-size:12px;
+    font-weight:700;
+    color:var(--navy);
+    white-space:nowrap;
+  }
+  .staff-select-input{
+    flex:1;
+    font-size:13px;
+    padding:5px 7px;
+    border:1px solid var(--line);
+    border-radius:6px;
+  }
+
+  .abn-record-section{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px 18px 18px;
+    margin-bottom:18px;
+  }
+  .abn-record-title{
+    font-size:14px;
+    font-weight:700;
+    color:var(--danger);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .abn-count-badge{
+    background:var(--danger-bg);
+    color:var(--danger);
+    font-size:11px;
+    font-weight:700;
+    padding:2px 9px;
+    border-radius:10px;
+  }
+  .abn-table-wrap{ overflow-x:auto; }
+  table.abn-table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:560px;
+  }
+  table.abn-table th, table.abn-table td{
+    border:1px solid var(--line);
+    padding:8px 8px;
+    font-size:12px;
+    text-align:center;
+  }
+  table.abn-table th{ background:var(--pale); color:var(--navy); }
+  table.abn-table td.left{ text-align:left; }
+  table.abn-table input{
+    width:100%;
+    font-size:12px;
+    padding:5px 6px;
+  }
+  .abn-empty{
+    font-size:13px;
+    color:var(--muted);
+    padding:8px 2px;
+  }
+
+  /* ===== PDF export area (mimics paper log sheet, A4 portrait, one page per fridge) ===== */
+  .pdf-area{ display:none; }
+  body.pdf-mode{ background:#525659; }
+  body.pdf-mode .topbar-wrap,
+  body.pdf-mode .wrap{ display:none!important; }
+  body.pdf-mode .pdf-area{
+    display:block;
+    max-height:100vh;
+    overflow:auto;
+    padding:16px 0 40px;
+  }
+  .pdf-toolbar{
+    position:sticky; top:0; z-index:20;
+    background:#323639; padding:10px 16px;
+    display:flex; justify-content:flex-end; gap:10px;
+  }
+  .pdf-toolbar button{
+    font-family:inherit; font-size:13px; padding:8px 16px;
+    border-radius:6px; border:none; cursor:pointer; font-weight:700;
+  }
+  #pdfPrintBtn{ background:#1f6f9c; color:#fff; }
+  #pdfCloseBtn{ background:#666; color:#fff; }
+  #pdfAreaContent{
+    max-width:210mm; margin:16px auto 0; background:#fff;
+    box-shadow:0 2px 16px rgba(0,0,0,0.35);
+  }
+  .pdf-page{ page-break-after:always; break-after:page; padding:2mm 4mm; box-sizing:border-box; }
+  .pdf-page:last-child{ page-break-after:auto; break-after:auto; }
+  .pdf-area .pdf-header{ text-align:center; margin-bottom:3px; }
+  .pdf-area .pdf-org{ font-size:16px; font-weight:700; margin:0 0 1px; }
+  .pdf-area .pdf-title{ font-size:13px; font-weight:700; margin:0; }
+  .pdf-area table{ width:100%; border-collapse:collapse; table-layout:fixed; margin-bottom:6px; }
+  .pdf-area table.pdf-table th.pdf-date-col{ width:6%; background:#cdeed7; color:#155c39; }
+  .pdf-area table.pdf-table tbody tr:not(.pdf-week-row) td:first-child{
+    width:6%; background:#eef7f0; color:#1c7a4d; font-weight:700;
+  }
+  .pdf-area table.pdf-table th,
+  .pdf-area table.pdf-table td{
+    border:1px solid #000; padding:3px 2px; text-align:center; font-size:13px; line-height:1.25; overflow:hidden;
+  }
+  .pdf-area table.pdf-table thead th{ background:#eee; font-weight:700; }
+  .pdf-area tr.pdf-week-row td{
+    color:#1c7a4d; font-weight:700;
+    text-align:left; padding:2px 6px; font-size:9.5px; line-height:1.3;
+  }
+  .pdf-area .pdf-abn-title{
+    text-align:left; font-weight:700; font-size:12px; color:#b3261e; margin:6px 0 3px;
+  }
+  .pdf-area .pdf-abn-note{ font-size:9px; font-weight:500; color:#5e7385; }
+  .pdf-area table.pdf-abn-table th,
+  .pdf-area table.pdf-abn-table td{
+    border:1px solid #000; padding:3.5px 3px; text-align:center; font-size:10.5px;
+  }
+  .pdf-area table.pdf-abn-table td.process-cell{ text-align:left; }
+  .pdf-area table.pdf-abn-table td.recover-cell{ text-align:center; white-space:nowrap; }
+  .pdf-area .pdf-approval{
+    margin-top:6px; padding:5px 10px; border:1px solid #000; border-radius:4px;
+    font-size:11px; display:flex; gap:16px; flex-wrap:wrap; align-items:center;
+  }
+  .pdf-area .pdf-approval.approved{ background:#eef7f0; }
+  .pdf-area .pdf-approval.pending{ background:#fafafa; color:#5e7385; }
+  .pdf-area .pdf-approval-detail{ font-size:10.5px; }
+  .pdf-area .pdf-sign-image{ max-height:32px; max-width:100px; object-fit:contain; }
+  @media print{
+    @page{ size:A4 portrait; margin:4mm 5mm; }
+    html, body{
+      -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact;
+    }
+    body *{ visibility:hidden; }
+    .pdf-area, .pdf-area *{
+      visibility:visible;
+      -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact;
+    }
+    .pdf-area{ position:absolute; top:0; left:0; width:100%; max-height:none!important; overflow:visible!important; padding:0!important; }
+    .pdf-toolbar{ display:none!important; }
+    #pdfAreaContent{ max-width:none!important; margin:0!important; box-shadow:none!important; }
+    body.pdf-mode{ background:#fff; }
+  }
+
+  /* ===== Abnormal Modal ===== */
+  .abn-modal{
+    position:fixed; inset:0;
+    background:rgba(15,48,87,0.6);
+    z-index:900;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .abn-modal.hidden{ display:none; }
+  .abn-modal-box{
+    background:#fff;
+    border-radius:16px;
+    width:92vw; max-width:480px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.3);
+    overflow:hidden;
+  }
+  .abn-modal-header{
+    background:linear-gradient(135deg,#b3261e,#d94f44);
+    color:#fff;
+    padding:14px 18px;
+    display:flex; align-items:center; gap:10px;
+    font-size:15px; font-weight:700;
+  }
+  .abn-modal-icon{ font-size:20px; }
+  .abn-modal-body{ padding:16px 18px; max-height:70vh; overflow-y:auto; }
+  .abn-detail-row{
+    background:#fdecea;
+    border:1px solid #f3c2bd;
+    border-radius:8px;
+    padding:8px 12px;
+    font-size:12px;
+    color:var(--danger);
+    font-weight:600;
+    margin-bottom:14px;
+  }
+  .abn-field{ margin-bottom:14px; }
+  .abn-field label{ display:block; font-size:12px; font-weight:700; color:var(--navy); margin-bottom:6px; }
+  .abn-required{ color:var(--danger); font-size:11px; font-weight:600; margin-left:4px; }
+  .abn-canned-btns{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+  .canned-btn{
+    font-family:inherit; font-size:11px; font-weight:600;
+    padding:5px 10px; border-radius:16px;
+    border:1px solid var(--line);
+    background:#f8fafc; color:var(--navy);
+    cursor:pointer;
+  }
+  .canned-btn:hover{ background:var(--pale); border-color:var(--blue); color:var(--blue); }
+  .canned-btn.selected{ background:var(--blue); border-color:var(--blue); color:#fff; }
+  .abn-field textarea{
+    width:100%; font-family:inherit; font-size:13px;
+    padding:8px 10px; border:1px solid var(--line);
+    border-radius:8px; resize:vertical; box-sizing:border-box;
+  }
+  .abn-field textarea:focus{ outline:2px solid var(--blue); }
+  .abn-modal-footer{
+    padding:12px 18px;
+    display:flex; gap:10px; justify-content:flex-end;
+    border-top:1px solid var(--line);
+  }
+  .abn-skip-btn{
+    font-family:inherit; font-size:13px; padding:9px 16px;
+    border-radius:8px; border:1px solid var(--line);
+    background:#fff; color:var(--muted); cursor:pointer;
+  }
+  .abn-submit-btn{
+    font-family:inherit; font-size:13px; font-weight:700;
+    padding:9px 20px; border-radius:8px; border:none;
+    background:linear-gradient(135deg,var(--navy),var(--blue));
+    color:#fff; cursor:pointer;
+  }
+
+
+
+  .fridge-reason-section{
+    display:block;
+    width:100%;
+    border-top:1px dashed #f0d060;
+    margin-top:6px;
+    padding-top:8px;
+    box-sizing:border-box;
+  }
+  .fridge-reason-title{
+    font-size:11px;
+    font-weight:700;
+    color:#a36000;
+    margin-bottom:6px;
+  }
+  .abn-done-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:#e6f6ef;
+    border:1px solid #a8d9c0;
+    border-radius:8px;
+    padding:8px 12px;
+    margin-top:6px;
+    font-size:13px;
+    font-weight:600;
+    color:#1c7a4d;
+  }
+  .abn-edit-btn{
+    font-family:inherit;
+    font-size:12px;
+    font-weight:600;
+    padding:4px 12px;
+    border:1px solid #a8d9c0;
+    border-radius:6px;
+    background:#fff;
+    color:#1c7a4d;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .abn-edit-btn:hover{ background:#e6f6ef; }
+    width:100%;
+    padding:8px;
+    margin-top:6px;
+    border:none;
+    border-radius:8px;
+    background:linear-gradient(135deg,#e8a000,#c97b2e);
+    color:#fff;
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .fridge-abn-record-btn{
+    display:block !important;
+    width:100% !important;
+    box-sizing:border-box;
+    padding:12px;
+    margin-top:8px;
+    border:none;
+    border-radius:8px;
+    background:linear-gradient(135deg,#e8a000,#c97b2e) !important;
+    color:#fff !important;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    font-family:inherit;
+    text-align:center;
+  }
+  .fridge-abn-record-btn:disabled{ cursor:not-allowed; }
+  .abn-record-modal{
+    position:fixed; inset:0;
+    background:rgba(15,48,87,0.45);
+    z-index:950;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .abn-record-modal.hidden{ display:none; }
+  .abn-record-modal-box{
+    background:#fff; border-radius:14px;
+    width:92vw; max-width:440px;
+    box-shadow:0 16px 50px rgba(0,0,0,0.25);
+  }
+  .abn-record-modal-header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 18px 10px;
+    font-size:16px; font-weight:700; color:var(--navy);
+    border-bottom:1px solid var(--line);
+  }
+  .abn-modal-close{
+    background:none; border:none; font-size:18px;
+    color:var(--muted); cursor:pointer; line-height:1;
+  }
+  .abn-record-modal-meta{
+    padding:4px 18px 10px;
+    font-size:12px; color:var(--muted);
+  }
+  .abn-record-modal-body{ padding:4px 18px 12px; }
+  .abn-rm-field{ margin-bottom:12px; }
+  .abn-rm-field label{
+    display:block; font-size:12px; font-weight:600;
+    color:var(--muted); margin-bottom:5px;
+  }
+  .abn-rm-row{ display:flex; gap:12px; margin-bottom:12px; }
+  .abn-rm-readonly{
+    width:100%; font-family:inherit; font-size:13px;
+    padding:8px 10px; border:1px solid var(--line);
+    border-radius:8px; background:#f9fafb; color:var(--ink);
+    box-sizing:border-box;
+  }
+  .abn-rm-select{
+    width:100%; font-family:inherit; font-size:13px;
+    padding:8px 10px; border:1px solid var(--line);
+    border-radius:8px; background:#fff; color:var(--ink);
+    box-sizing:border-box;
+  }
+  .abn-supervisor-pending{
+    text-align:center; font-size:12px; color:var(--muted);
+    padding:4px 0 6px;
+  }
+  .abn-record-modal-footer{
+    padding:0 18px 16px;
+  }
+  .abn-submit-btn.full-width{
+    width:100%; padding:13px;
+    border:none; border-radius:10px;
+    background:#2e8b6e;
+    color:#fff; font-size:15px; font-weight:700;
+    cursor:pointer; font-family:inherit;
+  }
+  .abn-submit-btn.full-width:hover{ background:#267a5f; }
+
+  .success-toast{
+    position:fixed;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%) scale(1);
+    background:#1c7a4d;
+    color:#fff;
+    font-size:18px;
+    font-weight:700;
+    padding:24px 40px;
+    border-radius:16px;
+    box-shadow:0 16px 50px rgba(0,0,0,0.35);
+    z-index:3000;
+    display:none;
+    align-items:center;
+    gap:10px;
+    white-space:nowrap;
+    transition:opacity 0.25s, transform 0.25s;
+  }
+
+  /* Tablet (≤900px) */
+  @media (max-width:900px){
+    .login-modal{ width:90vw; max-width:360px; }
+    .topbar-controls{ flex-wrap:wrap; gap:6px; }
+    .top-stats-row{ flex-wrap:wrap; gap:6px; }
+    .stat-card{ flex:1; min-width:120px; }
+    .fridge-cards{ grid-template-columns:repeat(2,1fr); }
+    .wrap{ padding:4px 10px 60px; }
+    .topbar-wrap{ padding:4px 10px 0; }
+    .feed-table-wrap{ overflow-x:auto; }
+    .abn-table-wrap{ overflow-x:auto; }
+  }
+
+  /* Mobile (≤600px) */
+  @media (max-width:600px){
+    /* Topbar 維持原樣不動 */
+
+    /* sticky-zone 去除多餘padding */
+    .sticky-zone{ padding-top:2px; }
+    .topbar-wrap{ padding:4px 10px 0; }
+    .wrap{ padding:2px 8px 40px; }
+
+    /* 控制列手機優化 */
+    #dateSelect{ width:130px; font-size:13px; }
+    .shift-pills-top{ gap:3px; }
+    .shift-pill{ padding:4px 7px; font-size:10px; }
+    .top-actions-right-controls{ gap:3px; }
+    .mode-btn{ font-size:10px; padding:4px 6px; }
+    .export-pdf-btn{ font-size:10px; padding:4px 6px; }
+
+    /* 統計卡片 */
+    .top-stats-row{ gap:4px; }
+    .stat-card{ min-width:60px; padding:4px 6px; }
+    .stat-label{ font-size:9px; }
+    .stat-value{ font-size:12px; }
+
+    /* 每日登記卡片 */
+    .daily-view{ gap:4px; }
+    .daily-card{ padding:6px 8px; }
+    .fridge-cards{ gap:6px; margin-bottom:8px; }
+    .fridge-card-title{ font-size:11px; padding:4px 10px; }
+    .fridge-card .sub-col input{ font-size:20px; padding:8px 2px; }
+    .fridge-card .sub-col{ padding:6px 2px; }
+    .confirm-btn{ font-size:14px; padding:11px; }
+
+    /* 其他 */
+    .login-modal{ width:92vw; padding:20px 14px 18px; }
+    .login-modal-title{ font-size:15px; }
+    .abn-table{ font-size:11px; }
+    .abn-table th, .abn-table td{ padding:4px 3px; }
+    table.feed-table th, table.feed-table td{ font-size:11px; padding:4px 3px; }
+    .checker-inline-input{ width:100px; }
+    .approval-card{ padding:8px 10px 12px; }
+    .nk{ padding:12px 0; font-size:18px; }
+  }
+
+  @media print{
+
+    .controls, .footer-actions, .note, .status, .legend{display:none!important;}
+    .topbar{background:var(--navy)!important; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+    body{background:#fff;}
+    .table-card{border:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar-wrap">
+  <div class="topbar">
+    <div class="topbar-row1">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/><line x1="12" y1="12" x2="12" y2="16"/>
+        </svg>
+      </span>
+      <div class="topbar-text" style="flex:1;">
+        <h1>藥品冰箱溫度登記表</h1>
+        <p id="topbarSubtitle">國立臺灣大學醫學院附設醫院雲林分院－藥劑部</p>
+      </div>
+    </div>
+    <div class="topbar-row2">
+      <div class="topbar-user" id="topbarUser" style="display:none;">
+        <span class="user-badge" id="userBadge"></span>
+        <button class="logout-btn" id="logoutBtn">登出</button>
+      </div>
+      <div class="topbar-login" id="topbarLogin">
+        <button class="login-btn" id="openLoginBtn">🔑 登入</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Login Overlay ===== -->
+<div id="loginOverlay" class="login-overlay">
+
+  <div class="login-topbar">
+    <span class="login-topbar-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="5" y="2" width="14" height="20" rx="3"/>
+        <path d="M9 7h6M9 11h6M9 15h4"/>
+        <circle cx="16" cy="15" r="1.5" fill="#fff" stroke="none"/>
+        <path d="M16 13.5V10" stroke="#fff" stroke-width="1.8"/>
+      </svg>
+    </span>
+    <div>
+      <div class="login-topbar-title">藥品冰箱溫度登記系統</div>
+      <div class="login-topbar-sub">國立臺灣大學醫學院附設醫院雲林分院－藥劑部</div>
+    </div>
+  </div>
+
+  <div class="login-modal">
+    <div class="login-icon-wrap">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="5" y="2" width="14" height="20" rx="3"/>
+        <path d="M9 7h6M9 11h6M9 15h4"/>
+        <circle cx="16" cy="15" r="2" fill="#fff" stroke="none"/>
+        <path d="M16 13V9" stroke="#fff" stroke-width="2"/>
+      </svg>
+    </div>
+    <div class="login-modal-title">藥品冰箱溫度登記系統</div>
+    <div class="login-modal-sub">國立臺灣大學醫學院附設醫院雲林分院－藥劑部</div>
+
+    <div class="login-field-group">
+      <label class="login-field-label">員工編號</label>
+      <div class="login-id-row">
+        <span class="login-id-prefix">Y</span>
+        <input type="tel" id="loginIdInput" class="login-id-input"
+          maxlength="5" inputmode="numeric" pattern="[0-9]*"
+          placeholder="00000" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="login-field-group">
+      <label class="login-field-label">員工姓名（自動帶入）</label>
+      <div id="loginNameDisplay" class="login-name-display">輸入員工編號後自動顯示</div>
+    </div>
+
+    <div id="loginHint" class="login-hint"></div>
+    <button class="login-submit-btn" id="numOk">登入系統</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="sticky-zone">
+    <!-- 單列：日期 + 時段 + 院區 + 模式切換 -->
+    <div class="topbar-controls">
+      <input type="date" id="dateSelect">
+      <div class="shift-pills-top" id="shiftPillsTop"></div>
+      <span class="ctrl-label" id="siteLabel" style="flex-shrink:0;">院區</span>
+      <select id="siteSelect" style="font-size:13px; padding:5px 6px; border:1px solid var(--line); border-radius:6px; min-width:0;"></select>
+      <select id="shiftSelect" style="display:none;"></select>
+      <input type="text" id="managerInput" style="display:none;">
+      <input type="month" id="monthSelect" style="display:none;">
+      <div class="top-actions-right-controls">
+        <button class="mode-btn active" id="modeDailyBtn">📅 今日</button>
+        <button class="mode-btn" id="modeGridBtn">📋 本月</button>
+        <button id="exportPdfBtn" class="export-pdf-btn hidden-in-mode">🖨 匯出</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="status" id="statusText"></div>
+
+  <div class="top-stats-row stat-card-extra" id="topStatsRow">
+    <div class="stat-card stat-card-extra stat-days">
+      <div class="stat-label">本月登記天數</div>
+      <div class="stat-value" id="statDaysLogged">0</div>
+    </div>
+    <div class="stat-card stat-card-extra stat-abnormal">
+      <div class="stat-label">溫度異常次數</div>
+      <div class="stat-value warn" id="statAbnormalCount">0</div>
+    </div>
+    <div class="stat-card stat-card-extra stat-rate">
+      <div class="stat-label">本月完成率</div>
+      <div class="stat-value" id="statCompletionRate">0%</div>
+    </div>
+  </div>
+
+  <div class="abn-banner" id="abnBanner"></div>
+
+  <!-- ===== Daily check-in view ===== -->
+  <div id="dailyView" class="daily-view">
+
+    <div class="daily-card">
+
+      <div class="past-window-note" id="pastWindowNote" style="display:none;"></div>
+
+      <div class="fridge-cards" id="fridgeCards"></div>
+
+      <button class="abn-record-trigger-btn" id="abnRecordBtn" style="display:none;" disabled></button>
+      <input type="text" id="reasonInput" style="display:none;">
+      <select id="dailyStaffSelect" style="display:none;"></select>
+
+      <button class="confirm-btn" id="confirmDailyBtn">✓ 確認本次登記</button>
+    </div>
+  </div>
+
+
+  <!-- ===== Monthly overview (feed-style) ===== -->
+  <div id="gridView" style="display:none;">
+
+    <div class="feed-header-bar" id="feedHeaderBar"></div>
+
+    <div class="feed-sticky-head" id="feedStickyHead"></div>
+
+    <div class="feed-card">
+      <div class="feed-table-wrap">
+        <table class="feed-table" id="feedTable">
+          <thead id="feedTableHead"><tr id="feedTableHeadRow"></tr></thead>
+          <tbody id="feedTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="abn-record-section" id="abnRecordSectionGrid">
+      <div class="abn-record-title">⚠ 異常處理記錄 <span class="abn-count-badge" id="abnCountBadgeGrid">0 筆異常</span></div>
+      <div class="abn-table-wrap">
+        <table class="abn-table" id="abnTableGrid">
+          <thead><tr>
+            <th>日期</th><th>時段</th><th style="min-width:150px;">異常溫度</th>
+            <th style="min-width:140px;">原因說明</th><th>登記人員</th>
+            <th>是否解除</th><th style="min-width:140px;">處理方式</th>
+            <th>回復溫度</th><th>確認人員</th>
+          </tr></thead>
+          <tbody id="abnTableBodyGrid"></tbody>
+        </table>
+        <div class="abn-empty" id="abnEmptyMsgGrid" style="display:none;">本月目前沒有異常紀錄。</div>
+      </div>
+    </div>
+
+    <div class="approval-card" id="approvalCard"></div>
+
+  </div>
+
+</div>
+
+<!-- ===== Abnormal Record Modal ===== -->
+<div id="abnRecordModal" class="abn-record-modal hidden">
+  <div class="abn-record-modal-box">
+    <div class="abn-record-modal-header">
+      <span>⚠ 異常處理紀錄</span>
+      <button class="abn-modal-close" id="abnRecordSkipBtn">✕</button>
+    </div>
+    <div class="abn-record-modal-meta" id="abnRecordMeta"></div>
+    <div class="abn-record-modal-body">
+
+      <div class="abn-rm-field">
+        <label>異常原因</label>
+        <input type="text" id="abnReasonDisplay" class="abn-rm-readonly" readonly>
+      </div>
+
+      <div class="abn-rm-row">
+        <div class="abn-rm-field" style="flex:1;">
+          <label>是否解除</label>
+          <select id="abnResolvedSelect" class="abn-rm-select">
+            <option value="">－ 請選擇 －</option>
+            <option value="Y">Y（是）</option>
+            <option value="N">N（否）</option>
+          </select>
+        </div>
+        <div class="abn-rm-field" style="flex:1;">
+          <label>回復溫度（℃）</label>
+          <input type="text" inputmode="decimal" id="abnRecoverInput" class="reason-text-input" placeholder="例如 4.5">
+        </div>
+      </div>
+
+      <div class="abn-rm-field">
+        <label>處理方式</label>
+        <div class="reason-canned-btns" id="abnProcessCannedBtns">
+          <button class="reason-canned-btn" data-val="已通知工務組報修">已通知工務組報修</button>
+          <button class="reason-canned-btn" data-val="已將藥品移至備用冰箱">已將藥品移至備用冰箱</button>
+          <button class="reason-canned-btn" data-val="已關緊冰箱門">已關緊冰箱門</button>
+          <button class="reason-canned-btn" data-val="已重新插好電源插頭">已重新插好電源插頭</button>
+          <button class="reason-canned-btn" data-val="已放置冰寶">已放置冰寶</button>
+          <button class="reason-canned-btn" data-val="溫度已回復正常範圍">溫度已回復正常範圍</button>
+          <button class="reason-canned-btn" data-val="已通知緊急連絡人">已通知緊急連絡人</button>
+          <button class="reason-canned-btn" data-val="已聯繫廠商維修">已聯繫廠商維修</button>
+        </div>
+        <input type="text" id="abnProcessInput" class="reason-text-input" placeholder="請填寫實際處理方式">
+      </div>
+
+      <div class="abn-supervisor-pending">待組長確認</div>
+
+    </div>
+    <div class="abn-record-modal-footer">
+      <button class="abn-submit-btn full-width" id="abnRecordSubmitBtn">✓ 儲存並關閉</button>
+    </div>
+  </div>
+</div>
+
+<div id="successToast" class="success-toast hidden">
+  <span id="successToastMsg"></span>
+</div>
+
+<div id="pdfArea" class="pdf-area">
+  <div class="pdf-toolbar" id="pdfToolbar">
+    <button id="pdfPrintBtn">🖨 列印 / 儲存 PDF</button>
+    <button id="pdfCloseBtn">✕ 關閉預覽</button>
+  </div>
+  <div id="pdfAreaContent"></div>
+</div>
+
+<!-- ===== Abnormal Temperature Modal ===== -->
+<div id="abnModal" class="abn-modal hidden">
+  <div class="abn-modal-box">
+    <div class="abn-modal-header">
+      <span class="abn-modal-icon">⚠</span>
+      <span class="abn-modal-title">偵測到溫度異常，請填寫說明</span>
+    </div>
+    <div class="abn-modal-body">
+      <div class="abn-detail-row" id="abnDetailRow"></div>
+
+      <div class="abn-field">
+        <label>異常原因 <span class="abn-required">*必填</span></label>
+        <div class="abn-canned-btns">
+          <button class="canned-btn" data-val="停電">停電</button>
+          <button class="canned-btn" data-val="冰箱故障">冰箱故障</button>
+          <button class="canned-btn" data-val="冰箱門未關緊">冰箱門未關緊</button>
+          <button class="canned-btn" data-val="開門時間過長">開門時間過長</button>
+          <button class="canned-btn" data-val="藥品取放過於頻繁">藥品取放過於頻繁</button>
+          <button class="canned-btn" data-val="感應器異常">感應器異常</button>
+        </div>
+        <textarea id="abnReasonInput" rows="2" placeholder="請選擇上方罐頭語言或自行輸入異常原因"></textarea>
+      </div>
+
+      <div class="abn-field">
+        <label>異常處理方式 <span class="abn-required">*必填</span></label>
+        <div class="abn-canned-btns">
+          <button class="canned-btn" data-target="process" data-val="已通知工務組報修">已通知工務組報修</button>
+          <button class="canned-btn" data-target="process" data-val="已將藥品移至備用冰箱">已將藥品移至備用冰箱</button>
+          <button class="canned-btn" data-target="process" data-val="已關緊冰箱門">已關緊冰箱門</button>
+          <button class="canned-btn" data-target="process" data-val="已重新插好電源插頭">已重新插好電源插頭</button>
+          <button class="canned-btn" data-target="process" data-val="已放置冰寶">已放置冰寶</button>
+          <button class="canned-btn" data-target="process" data-val="溫度已回復正常範圍">溫度已回復正常範圍</button>
+          <button class="canned-btn" data-target="process" data-val="已通知緊急連絡人">已通知緊急連絡人</button>
+          <button class="canned-btn" data-target="process" data-val="已聯繫廠商維修">已聯繫廠商維修</button>
+        </div>
+        <textarea id="abnProcessInput" rows="2" placeholder="請選擇上方罐頭語言或自行輸入處理方式"></textarea>
+      </div>
+    </div>
+    <div class="abn-modal-footer">
+      <button class="abn-skip-btn" id="abnSkipBtn">略過（稍後填寫）</button>
+      <button class="abn-submit-btn" id="abnSubmitBtn">✓ 確認送出</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STAFF = {
+  "斗六院區": [
+    {name:"黃永成",id:"Y00243"},{name:"沈倩如",id:"Y00326"},
+    {name:"蔡佩玲",id:"Y00516"},{name:"鄭佩珊",id:"Y00614"},{name:"謝姍珊",id:"Y01643"},
+    {name:"林淑貞",id:"Y01735"},{name:"張文河",id:"Y02190"},{name:"楊淑珍",id:"Y03129"},
+    {name:"彭虹迪",id:"Y04045"},{name:"魏沛瀅",id:"Y04330"},{name:"吳坦螢",id:"Y04423"},
+    {name:"李佩芷",id:"Y05180"},{name:"陳力宇",id:"Y05306"},{name:"李怡萱",id:"Y05379"},
+    {name:"黃詩婷",id:"Y05474"},{name:"蔡孟夏",id:"Y05490"},{name:"陳麗珺",id:"Y06100"},
+    {name:"沈煒勛",id:"Y06632"},{name:"葉啟楠",id:"Y07034"},{name:"李哲安",id:"Y07691"},
+    {name:"林友立",id:"Y07692"},{name:"洪紹恩",id:"Y07693"},{name:"廖益樟",id:"Y07833"},
+    {name:"李心愉",id:"Y07944"},{name:"林語嫻",id:"Y08213"},{name:"王玟璇",id:"Y08215"},
+    {name:"王鈺婷",id:"Y08733"},{name:"陳憶萱",id:"Y08855"},{name:"呂昆羲",id:"Y08868"},
+    {name:"李昱柔",id:"Y08994"},{name:"張耿誠",id:"Y09223"},
+    {name:"陳妍勳",id:"Y09625"},{name:"李學怡",id:"Y09858"},{name:"吳岱容",id:"Y10248"},
+    {name:"施昭瑜",id:"Y10318"}
+  ],
+  "虎尾院區": [
+    {name:"陳宜屏",id:"Y00230"},{name:"張正穎",id:"Y01406"},{name:"劉士宏",id:"Y01526"},
+    {name:"林家薐",id:"Y01644"},{name:"林姿佑",id:"Y01986"},{name:"黃憶如",id:"Y02414"},
+    {name:"曾彥哲",id:"Y03020"},{name:"魏若蘭",id:"Y04130"},{name:"黃昇慧",id:"Y04559"},
+    {name:"李凱芸",id:"Y06271"},{name:"林亭君",id:"Y07620"},{name:"吳采芳",id:"Y07690"},
+    {name:"王俞婷",id:"Y07694"},{name:"吳宏明",id:"Y07695"},{name:"許嘉容",id:"Y07697"},
+    {name:"賴嘉淩",id:"Y08214"},{name:"陳怡伶",id:"Y08219"},{name:"張凱珽",id:"Y08220"},
+    {name:"葉宜婷",id:"Y08953"},{name:"李奕萱",id:"Y09383"},{name:"余映萱",id:"Y09773"},
+    {name:"黃亦妡",id:"Y10040"},{name:"吳榮斌",id:"Y00244"},{name:"林怡君",id:"Y00800"},
+    {name:"謝玉秀",id:"Y02745"},{name:"林虹孜",id:"Y09139"},{name:"王貞予",id:"Y06993"}
+  ],
+  "藥庫": [
+    {name:"廖瑋儀",id:"Y01422"},{name:"陳家君",id:"Y01434"},{name:"林秀芳",id:"Y01458"},
+    {name:"沈梅菊",id:"Y01515"},{name:"余孟蓁",id:"Y01645"},{name:"吳秋宜",id:"Y00287"},
+    {name:"李玉珍",id:"Y00325"},{name:"陳盈君",id:"Y00955"},{name:"李秋玫",id:"Y03223"},
+    {name:"莊謹如",id:"Y00329"},{name:"謝承穎",id:"Y04409"}
+  ]
+};
+
+// 各院區「每週檢核者」預設人員（尚未手動填寫時自動帶入）
+const SITE_DEFAULT_CHECKER_ID = {
+  "斗六院區": "Y00326"
+};
+function getSiteDefaultCheckerName(siteName){
+  const id = SITE_DEFAULT_CHECKER_ID[siteName];
+  if(!id) return '';
+  const found = (STAFF[siteName] || []).find(s => s.id === id);
+  return found ? found.name : '';
+}
+
+// 各院區「組長」設定：異常處理記錄的確認人員、以及組長月底核定的核定人員，
+// 都固定使用此人員身分（先前 confirmedBy 已寫死為 Y06100，這裡統一集中管理）。
+const SITE_TEAM_LEAD_ID = {
+  "斗六院區": "Y06100"
+};
+function findStaffById(siteName, id){
+  return (STAFF[siteName] || []).find(s => s.id === id) || null;
+}
+function getSiteTeamLead(siteName){
+  const id = SITE_TEAM_LEAD_ID[siteName];
+  if(!id) return null;
+  return findStaffById(siteName, id);
+}
+function getSiteTeamLeadName(siteName){
+  const lead = getSiteTeamLead(siteName);
+  return lead ? lead.name : '';
+}
+// 依儲存的 confirmedBy（可能是員工編號或名字）解析出顯示用姓名；
+// 若該筆紀錄尚未指定確認人員，預設回退為該院區組長。
+function resolveConfirmedByName(siteName, confirmedByRaw){
+  if(confirmedByRaw){
+    const found = findStaffById(siteName, confirmedByRaw) ||
+      (STAFF[siteName] || []).find(s => s.name === confirmedByRaw);
+    if(found) return found.name;
+    return confirmedByRaw;
+  }
+  return getSiteTeamLeadName(siteName) || '待組長確認';
+}
+
+// ===== 內建示範資料：斗六院區 2026年6月／7月 =====
+// 這兩個月不需要手動「匯入」，只要切換到這兩個月份就會自動顯示，
+// 方便直接檢視「本月總覽」與「PDF匯出」填滿後的樣子（不依賴 window.storage 是否可用）。
+const BUILT_IN_DEMO_SITE = '斗六院區';
+const BUILT_IN_DEMO_MONTHS = ['2026-06', '2026-07'];
+
+// 每月固定安插幾筆「異常」示範紀錄，方便檢視異常處理紀錄與PDF呈現
+const DEMO_ABNORMAL_EVENTS = [
+  { day: 5,  shiftKey: 'pm',    fridgeIdx: 1, field:'max', value:'8.6',
+    reason:'冷氣故障導致室溫升高', process:'已通報總務及冷氣維修人員到場處理', resolved:'是', recoverTemp:'7.2' },
+  { day: 12, shiftKey: 'night', fridgeIdx: 3, field:'min', value:'1.4',
+    reason:'停電導致冰箱短暫斷電', process:'已聯繫工務室確認供電並啟動備用電源', resolved:'是', recoverTemp:'3.0' },
+  { day: 20, shiftKey: 'am',    fridgeIdx: 0, field:'max', value:'8.3',
+    reason:'冰箱門未確實關閉', process:'已重新關緊冰箱門並持續監測30分鐘', resolved:'是', recoverTemp:'6.8' }
+];
+
+function buildBuiltInDemoData(site, ym){
+  const siteConf = SITES[site];
+  if(!siteConf) return null;
+  const numDays = daysInMonth(ym);
+  const staffList = STAFF[site] || [];
+  const defaultChecker = getSiteDefaultCheckerName(site) || (staffList[0] && staffList[0].name) || '';
+  const patterns = [
+    {min:'2.3', now:'4.5', max:'6.8'},
+    {min:'2.5', now:'5.0', max:'7.0'},
+    {min:'2.1', now:'4.2', max:'6.5'},
+    {min:'2.8', now:'5.5', max:'7.5'},
+    {min:'2.4', now:'4.8', max:'7.2'}
+  ];
+  const blob = { shifts:{}, checkers:{}, approval:null };
+  siteConf.shifts.forEach((shift, shiftIdx)=>{
+    const rows = {};
+    for(let d=1; d<=numDays; d++){
+      const day = String(d);
+      const temps = siteConf.fridges.map((f, fridgeIdx)=> ({ ...patterns[(d + shiftIdx + fridgeIdx) % patterns.length] }));
+      const signer = staffList.length ? staffList[(d + shiftIdx) % staffList.length].name : '';
+      const row = {
+        temps, reason:'', abn:'', sign: signer,
+        savedAt: `${ym}-${String(d).padStart(2,'0')}T00:00:00.000Z`,
+        savedBy: signer
+      };
+
+      const ev = DEMO_ABNORMAL_EVENTS.find(e => e.day === d && e.shiftKey === shift.key && d <= numDays);
+      if(ev){
+        temps[ev.fridgeIdx][ev.field] = ev.value;
+        row.reason = ev.reason;
+        row.abn = ev.process;
+        row.resolved = ev.resolved;
+        row.recoverTemp = ev.recoverTemp;
+        row.confirmedBy = SITE_TEAM_LEAD_ID[site] || '';
+        row.fridgeAbn = { [ev.fridgeIdx]: {
+          abn: ev.process, recoverTemp: ev.recoverTemp, resolved: ev.resolved,
+          confirmed: true, savedAt: `${ym}-${String(d).padStart(2,'0')}`
+        }};
+      }
+      rows[day] = row;
+    }
+    blob.shifts[shift.key] = { rows };
+  });
+  const numBlocks = Math.ceil(numDays / 7);
+  for(let b=0; b<numBlocks; b++){
+    blob.checkers[b] = { name: defaultChecker, date: `${ym}-01` };
+  }
+  return blob;
+}
+
+function getBuiltInDemoData(site, ym){
+  if(site === BUILT_IN_DEMO_SITE && BUILT_IN_DEMO_MONTHS.includes(ym)){
+    return buildBuiltInDemoData(site, ym);
+  }
+  return null;
+}
+
+// 組長月底核定的內建示範值（尚未有實際核定紀錄時使用）
+// 示範用組長簽名圖（以SVG手繪簽名產生，僅供展示核定簽名檔預覽功能）
+function svgToDataUri(svg){
+  return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+}
+function buildDemoSignatureDataUri(name){
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="100" viewBox="0 0 240 100">
+    <rect width="240" height="100" fill="#ffffff"/>
+    <path d="M12 65 C 35 20, 55 20, 68 55 S 105 85, 128 40 S 158 8, 180 48 S 205 78, 228 32"
+          stroke="#1c3d6e" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="12" y="90" font-family="sans-serif" font-size="11" fill="#5e7385">${escapeHtml(name)}（示範簽名）</text>
+  </svg>`;
+  return svgToDataUri(svg);
+}
+
+function getBuiltInDemoApproval(site, ym){
+  if(site === BUILT_IN_DEMO_SITE && BUILT_IN_DEMO_MONTHS.includes(ym)){
+    const numDays = daysInMonth(ym);
+    const teamLead = getSiteTeamLead(site);
+    return {
+      approved: true,
+      signFileName: `組長核定簽名_${ym}.png`,
+      signImageData: buildDemoSignatureDataUri(teamLead ? teamLead.name : '組長'),
+      approverName: teamLead ? teamLead.name : '',
+      approverId: teamLead ? teamLead.id : '',
+      approvedAt: `${ym}-${String(numDays).padStart(2,'0')}`
+    };
+  }
+  return null;
+}
+
+function buildStaffSelect(siteName, extraClass='', placeholder='請選擇登記人員'){
+  const sel = document.createElement('select');
+  sel.className = extraClass;
+  const empty = document.createElement('option');
+  empty.value = '';
+  empty.textContent = placeholder;
+  sel.appendChild(empty);
+  const list = STAFF[siteName] || [];
+  list.forEach(s=>{
+    const opt = document.createElement('option');
+    opt.value = s.name;
+    opt.textContent = `${s.name}（${s.id}）`;
+    sel.appendChild(opt);
+  });
+  return sel;
+}
+
+const FRIDGE_COLORS = [
+  { border:'#1f6f9c', titleBg:'linear-gradient(90deg,#1f6f9c,#4a9cc7)', inputBg:'#e8f2fb', shadow:'rgba(31,111,156,0.13)' },  // 藍
+  { border:'#2e8b6e', titleBg:'linear-gradient(90deg,#2e8b6e,#4dbf99)', inputBg:'#e6f6f1', shadow:'rgba(46,139,110,0.13)' },  // 綠
+  { border:'#7c4dbe', titleBg:'linear-gradient(90deg,#7c4dbe,#a67de0)', inputBg:'#f0ebfb', shadow:'rgba(124,77,190,0.13)' },  // 紫
+  { border:'#c97b2e', titleBg:'linear-gradient(90deg,#c97b2e,#e8a04a)', inputBg:'#fdf3e6', shadow:'rgba(201,123,46,0.13)' },  // 橙
+  { border:'#c9404a', titleBg:'linear-gradient(90deg,#c9404a,#e8686f)', inputBg:'#fde9ea', shadow:'rgba(201,64,74,0.13)' },   // 紅
+  { border:'#1a8fa8', titleBg:'linear-gradient(90deg,#1a8fa8,#3dbcd6)', inputBg:'#e5f6fa', shadow:'rgba(26,143,168,0.13)' }, // 青
+  { border:'#7a8c2e', titleBg:'linear-gradient(90deg,#7a8c2e,#a8be45)', inputBg:'#f2f6e5', shadow:'rgba(122,140,46,0.13)' }, // 黃綠
+];
+
+const SITES = {
+  "斗六院區": {
+    fridges: ["IA", "IB-1", "IB-2", "IC"],
+    shifts: [
+      {key:"am", label:"上午時段（7:00～10:00）"},
+      {key:"pm", label:"下午時段（12:00～15:00）"},
+      {key:"night", label:"大夜時段（23:00～24:00）"}
+    ]
+  },
+  "虎尾院區": {
+    fridges: ["IA", "IB"],
+    shifts: [
+      {key:"am", label:"上午時段（7:00～10:00）"},
+      {key:"pm", label:"下午時段（12:00～15:00）"},
+      {key:"night", label:"大夜時段（23:00～24:00）"}
+    ]
+  },
+  "藥庫": {
+    fridges: ["庫1","庫2","庫3","庫4","庫5","庫6","庫7"],
+    shifts: [
+      {key:"am", label:"上午時段（8:00～9:00）"},
+      {key:"noon", label:"中午時段（12:00～13:00）"},
+      {key:"pm", label:"下午時段（16:00～17:00）"}
+    ]
+  }
+};
+
+const siteSelect = document.getElementById('siteSelect');
+const shiftSelect = document.getElementById('shiftSelect');
+const monthSelect = document.getElementById('monthSelect');
+const managerInput = document.getElementById('managerInput');
+const statusText = document.getElementById('statusText');
+const tableHeadRow1 = document.getElementById('tableHeadRow1');
+const tableHeadRow2 = document.getElementById('tableHeadRow2');
+const tableBody = document.getElementById('tableBody');
+
+// populate site select
+Object.keys(SITES).forEach(name=>{
+  const opt = document.createElement('option');
+  opt.value = name; opt.textContent = name;
+  siteSelect.appendChild(opt);
+});
+
+function populateShifts(){
+  shiftSelect.innerHTML = '';
+  const site = SITES[siteSelect.value];
+  site.shifts.forEach(s=>{
+    const opt = document.createElement('option');
+    opt.value = s.key; opt.textContent = s.label;
+    shiftSelect.appendChild(opt);
+  });
+}
+
+function todayMonthValue(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  return `${y}-${m}`;
+}
+
+function daysInMonth(ym){
+  const [y,m] = ym.split('-').map(Number);
+  return new Date(y, m, 0).getDate();
+}
+
+function storageKey(){
+  const site = siteSelect.value;
+  const shift = shiftSelect.value;
+  const ym = monthSelect.value || todayMonthValue();
+  return `temp-log:${site}:${shift}:${ym}`;
+}
+
+function setStatus(msg, isError){
+  statusText.textContent = msg;
+  statusText.style.color = isError ? 'var(--danger)' : 'var(--ok)';
+  if(msg){
+    clearTimeout(setStatus._t);
+    setStatus._t = setTimeout(()=>{ statusText.textContent=''; }, 2500);
+  }
+}
+
+const SUB_FIELDS = [
+  {key:'min', label:'最低'},
+  {key:'now', label:'現在'},
+  {key:'max', label:'最高'}
+];
+
+function buildTable(){
+  const site = SITES[siteSelect.value];
+  const fridges = site.fridges;
+  const ym = monthSelect.value || todayMonthValue();
+  const numDays = daysInMonth(ym);
+
+  // header row 1: date(rowspan2), fridge names (colspan3), reason/abnormal/sign(rowspan2), reviewer(rowspan2)
+  tableHeadRow1.innerHTML = '';
+  tableHeadRow2.innerHTML = '';
+
+  const thDate = document.createElement('th');
+  thDate.textContent = '日期';
+  thDate.rowSpan = 2;
+  tableHeadRow1.appendChild(thDate);
+
+  fridges.forEach(f=>{
+    const th = document.createElement('th');
+    th.textContent = f;
+    th.colSpan = 3;
+    th.className = 'fridge-header';
+    tableHeadRow1.appendChild(th);
+
+    SUB_FIELDS.forEach(sf=>{
+      const subTh = document.createElement('th');
+      subTh.textContent = `${sf.label}(℃)`;
+      subTh.style.fontWeight = '500';
+      tableHeadRow2.appendChild(subTh);
+    });
+  });
+
+  const thReason = document.createElement('th');
+  thReason.textContent = '異常原因';
+  thReason.rowSpan = 2;
+  tableHeadRow1.appendChild(thReason);
+
+  const thAbn = document.createElement('th');
+  thAbn.textContent = '處理方式';
+  thAbn.rowSpan = 2;
+  tableHeadRow1.appendChild(thAbn);
+
+  const thSign = document.createElement('th');
+  thSign.textContent = '簽名';
+  thSign.rowSpan = 2;
+  tableHeadRow1.appendChild(thSign);
+
+  const thReviewer = document.createElement('th');
+  thReviewer.textContent = '檢核者（每7日）';
+  thReviewer.rowSpan = 2;
+  tableHeadRow1.appendChild(thReviewer);
+
+  // body
+  tableBody.innerHTML = '';
+  const [y,m] = ym.split('-').map(Number);
+  for(let d=1; d<=numDays; d++){
+    const tr = document.createElement('tr');
+    const weekday = new Date(y, m-1, d).getDay();
+    if(weekday===0 || weekday===6) tr.classList.add('weekend');
+
+    const tdDate = document.createElement('td');
+    tdDate.className = 'date-cell';
+    tdDate.textContent = d;
+    tr.appendChild(tdDate);
+
+    fridges.forEach((f, idx)=>{
+      SUB_FIELDS.forEach(sf=>{
+        const td = document.createElement('td');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.inputMode = 'decimal';
+        input.pattern = '[0-9]*\\.?[0-9]';
+        input.placeholder = '—';
+        input.dataset.day = d;
+        input.dataset.fridgeIndex = idx;
+        input.dataset.role = 'temp';
+        input.dataset.subKey = sf.key;
+
+        function gridValidate(){
+          const v = input.value.trim();
+          if(v === '') return;
+          const n = parseFloat(v);
+          if(!isNaN(n)) input.value = n.toFixed(1);
+          onTempInput({target: input});
+          checkRowLogicError(tr, idx);
+        }
+
+        input.addEventListener('input', ()=>{
+          const v = input.value;
+          if(/^\d+\.\d$/.test(v)){
+            gridValidate();
+            const allInputs = [...tableBody.querySelectorAll('input[data-role="temp"]')];
+            const i = allInputs.indexOf(input);
+            if(i >= 0 && i < allInputs.length - 1){
+              setTimeout(()=>{ allInputs[i+1].focus(); allInputs[i+1].select(); }, 50);
+            }
+          }
+          onTempInput({target: input});
+          checkRowLogicError(tr, idx);
+        });
+        input.addEventListener('blur', gridValidate);
+        input.addEventListener('keydown', e=>{
+          if(e.key === 'Enter' || e.key === 'Tab') gridValidate();
+        });
+
+        td.appendChild(input);
+        tr.appendChild(td);
+      });
+    });
+
+    const tdReason = document.createElement('td');
+    const reasonInput = document.createElement('input');
+    reasonInput.type = 'text';
+    reasonInput.className = 'abn-input';
+    reasonInput.placeholder = '異常時請說明原因';
+    reasonInput.dataset.day = d;
+    reasonInput.dataset.role = 'reason';
+    reasonInput.addEventListener('input', scheduleSave);
+    tdReason.appendChild(reasonInput);
+    tr.appendChild(tdReason);
+
+    const tdAbn = document.createElement('td');
+    const abnInput = document.createElement('input');
+    abnInput.type = 'text';
+    abnInput.className = 'abn-input';
+    abnInput.placeholder = '正常請留空';
+    abnInput.dataset.day = d;
+    abnInput.dataset.role = 'abn';
+    abnInput.addEventListener('input', scheduleSave);
+    tdAbn.appendChild(abnInput);
+    tr.appendChild(tdAbn);
+
+    const tdSign = document.createElement('td');
+    const signSelect = document.createElement('select');
+    signSelect.className = 'sign-input';
+    signSelect.dataset.day = d;
+    signSelect.dataset.role = 'sign';
+    const emptySignOpt = document.createElement('option');
+    emptySignOpt.value = '';
+    emptySignOpt.textContent = '選擇';
+    signSelect.appendChild(emptySignOpt);
+    (STAFF[siteSelect.value] || []).forEach(s=>{
+      const opt = document.createElement('option');
+      opt.value = s.name;
+      opt.textContent = `${s.name}`;
+      signSelect.appendChild(opt);
+    });
+    signSelect.addEventListener('change', scheduleSave);
+    tdSign.appendChild(signSelect);
+    tr.appendChild(tdSign);
+
+    // weekly reviewer cell (one cell per 7-day block)
+    if((d - 1) % 7 === 0){
+      const blockIndex = Math.floor((d - 1) / 7);
+      const blockSize = Math.min(7, numDays - (d - 1));
+      const tdReviewer = document.createElement('td');
+      tdReviewer.className = 'reviewer-cell';
+      tdReviewer.rowSpan = blockSize;
+      const reviewerInput = document.createElement('input');
+      reviewerInput.type = 'text';
+      reviewerInput.className = 'checker-input';
+      reviewerInput.placeholder = '檢核者簽名';
+      reviewerInput.dataset.blockIndex = blockIndex;
+      reviewerInput.dataset.role = 'checker';
+      reviewerInput.addEventListener('input', scheduleSave);
+      tdReviewer.appendChild(reviewerInput);
+      tr.appendChild(tdReviewer);
+    }
+
+    tableBody.appendChild(tr);
+  }
+
+  tableBody.querySelectorAll('tr').forEach((tr, rowIdx)=>{
+    fridges.forEach((f, idx)=> checkRowLogicError(tr, idx));
+  });
+
+  updateStickyOffsets();
+}
+
+function checkRowLogicError(tr, fridgeIdx){
+  const getVal = key => {
+    const inp = tr.querySelector(`input[data-role="temp"][data-fridge-index="${fridgeIdx}"][data-sub-key="${key}"]`);
+    return inp ? { inp, val: inp.value === '' ? null : parseFloat(inp.value) } : { inp:null, val:null };
+  };
+  const max = getVal('max');
+  const min = getVal('min');
+  const now = getVal('now');
+
+  [max.inp, min.inp, now.inp].forEach(inp=>{ if(inp) inp.classList.remove('logic-error'); inp && inp.removeAttribute('title'); });
+
+  let errorMsg = '';
+  if(now.val !== null && max.val !== null && now.val > max.val){
+    errorMsg = '現在溫度不可大於最高溫度';
+  } else if(now.val !== null && min.val !== null && now.val < min.val){
+    errorMsg = '現在溫度不可小於最低溫度';
+  }
+  if(errorMsg){
+    if(now.inp){ now.inp.classList.add('logic-error'); now.inp.title = errorMsg; }
+    if(max.inp){ max.inp.classList.add('logic-error'); max.inp.title = errorMsg; }
+    if(min.inp){ min.inp.classList.add('logic-error'); min.inp.title = errorMsg; }
+  }
+  return !errorMsg;
+}
+
+const controlsEl = document.querySelector('.sticky-zone');
+function updateStickyOffsets(){
+  if(!tableHeadRow1 || !tableHeadRow2 || !controlsEl) return;
+  requestAnimationFrame(()=>{
+    const controlsHeight = controlsEl.offsetHeight;
+    tableHeadRow1.style.top = controlsHeight + 'px';
+    tableHeadRow2.style.top = (controlsHeight + tableHeadRow1.offsetHeight) + 'px';
+  });
+
+}
+window.addEventListener('resize', updateStickyOffsets);
+
+
+function onTempInput(e){
+  if(isTempOutOfRange(e.target.value, e.target.dataset.subKey)){
+    e.target.classList.add('out-of-range');
+  } else {
+    e.target.classList.remove('out-of-range');
+  }
+  scheduleSave();
+}
+
+let saveTimer = null;
+function scheduleSave(){
+  // Auto-save disabled to prevent storage rate limit errors
+  // Data is only saved when user explicitly clicks confirm buttons
+}
+
+function collectData(){
+  const fridges = SITES[siteSelect.value].fridges;
+  const rows = {};
+  tableBody.querySelectorAll('tr').forEach(tr=>{
+    const dateCell = tr.querySelector('.date-cell');
+    const day = dateCell.textContent;
+    const temps = fridges.map(()=>({min:'', now:'', max:''}));
+    tr.querySelectorAll('input[data-role="temp"]').forEach(inp=>{
+      const idx = Number(inp.dataset.fridgeIndex);
+      const key = inp.dataset.subKey;
+      if(temps[idx]) temps[idx][key] = inp.value || '';
+    });
+    const reasonInp = tr.querySelector('input[data-role="reason"]');
+    const reason = reasonInp ? (reasonInp.value || '') : '';
+    const abn = tr.querySelector('input[data-role="abn"]').value || '';
+    const sign = tr.querySelector('[data-role="sign"]')?.value || '';
+    rows[day] = { temps, reason, abn, sign };
+  });
+  const checkers = {};
+  tableBody.querySelectorAll('input[data-role="checker"]').forEach(inp=>{
+    checkers[inp.dataset.blockIndex] = inp.value || '';
+  });
+  return {
+    manager: managerInput.value || '',
+    fridges,
+    rows,
+    checkers
+  };
+}
+
+// 帶重試機制的儲存寫入（共用模式：shared:true，讓所有人開同一個連結
+// 都能看到、寫入同一份資料）。若遇到暫時性的頻率限制，會延遲後重試幾次，
+// 都失敗才放棄，避免使用者按下確認卻因為背景錯誤而完全沒有反應。
+async function storageSetWithRetry(key, value, maxRetries = 3){
+  for(let attempt = 0; attempt <= maxRetries; attempt++){
+    try{
+      return await window.storage.set(key, value, true);
+    }catch(err){
+      const msg = String(err);
+      if(msg.includes('rate limit') || msg.includes('Rate limit')){
+        if(attempt < maxRetries){
+          await new Promise(res => setTimeout(res, 300 * (attempt + 1)));
+          continue;
+        }
+        console.warn('Storage rate limit - giving up after retries');
+        return null;
+      }
+      throw err;
+    }
+  }
+  return null;
+}
+
+async function saveCurrent(){
+  try{
+    const data = collectData();
+    const key = storageKey();
+    const result = await storageSetWithRetry(key, JSON.stringify(data));
+    if(result){
+      setStatus('已自動儲存');
+    }
+  }catch(err){
+    console.error('儲存失敗', err);
+    setStatus('儲存失敗，請稍後再試', true);
+  }
+}
+
+async function loadCurrent(){
+  buildTable();
+  const key = storageKey();
+  try{
+    const result = await window.storage.get(key, true);
+    if(result && result.value){
+      const data = JSON.parse(result.value);
+      managerInput.value = data.manager || '';
+      Object.keys(data.rows || {}).forEach(day=>{
+        const row = data.rows[day];
+        const tr = [...tableBody.querySelectorAll('tr')].find(r=>r.querySelector('.date-cell').textContent === day);
+        if(!tr) return;
+        (row.temps || []).forEach((fridgeVals, idx)=>{
+          if(!fridgeVals) return;
+          SUB_FIELDS.forEach(sf=>{
+            const inp = tr.querySelector(`input[data-role="temp"][data-fridge-index="${idx}"][data-sub-key="${sf.key}"]`);
+            if(!inp) return;
+            const val = fridgeVals[sf.key];
+            if(val !== undefined && val !== ''){
+              inp.value = val;
+              if(isTempOutOfRange(val, sf.key)){
+                inp.classList.add('out-of-range');
+              }
+            }
+          });
+          checkRowLogicError(tr, idx);
+        });
+        const reasonInput = tr.querySelector('input[data-role="reason"]');
+        if(reasonInput) reasonInput.value = row.reason || '';
+        const abnInput = tr.querySelector('input[data-role="abn"]');
+        if(abnInput) abnInput.value = row.abn || '';
+        const signInput = tr.querySelector('[data-role="sign"]');
+        if(signInput) signInput.value = row.sign || '';
+      });
+      Object.keys(data.checkers || {}).forEach(blockIndex=>{
+        const inp = tableBody.querySelector(`input[data-role="checker"][data-block-index="${blockIndex}"]`);
+        if(inp) inp.value = data.checkers[blockIndex] || '';
+      });
+      setStatus('已載入先前儲存的紀錄');
+    } else {
+      setStatus('');
+    }
+  }catch(err){
+    // key not found is expected for first use
+    setStatus('');
+  }
+}
+
+/* ===================== Daily check-in view ===================== */
+
+// Adapt dailyDateSelect to work with the new date input (lazy - dateSelectEl declared later)
+const dailyDateSelect = {
+  get value(){ const el=document.getElementById('dateSelect'); return el ? String(parseInt((el.value||'').split('-')[2]||'1')) : '1'; },
+  set value(v){ const el=document.getElementById('dateSelect'); if(!el) return; const p=el.value.split('-'); if(p.length>=2){ el.value=`${p[0]}-${p[1]}-${String(v).padStart(2,'0')}`; } },
+  addEventListener(ev, fn){ const el=document.getElementById('dateSelect'); el && el.addEventListener(ev, fn); },
+  innerHTML: '', appendChild(){}
+};
+// shiftPillsEl shim - delegates to shiftPillsTopEl (lazy)
+const shiftPillsEl = { get innerHTML(){ return ''; }, set innerHTML(v){ const el=document.getElementById('shiftPillsTop'); if(el) el.innerHTML=v; }, appendChild(btn){ const el=document.getElementById('shiftPillsTop'); if(el) el.appendChild(btn); } };
+
+const pastWindowNoteEl = document.getElementById('pastWindowNote');
+const fridgeCardsEl = document.getElementById('fridgeCards');
+const reasonBlockEl = document.getElementById('reasonBlock');
+const reasonInputEl = document.getElementById('reasonInput');
+
+const lastSavedInfoEl = { textContent:'', classList:{ remove:()=>{}, add:()=>{} } }; // removed
+const statusCardEl = document.getElementById('statusCard');
+const statusCardValueEl = document.getElementById('statusCardValue');
+const abnBannerEl = document.getElementById('abnBanner');
+const abnTableBodyEl = null; // removed - now only in gridView
+const abnCountBadgeEl = null;
+const abnEmptyMsgEl = null;
+const abnTableEl = null;
+
+function realTodayInfo(){
+  const d = new Date();
+  return {
+    ym: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,
+    day: String(d.getDate()),
+    now: d
+  };
+}
+
+function parseShiftTimes(label){
+  const matches = label.match(/\d{1,2}:\d{2}/g);
+  if(!matches || matches.length < 2) return null;
+  const toMinutes = t=>{
+    const [h,m] = t.split(':').map(Number);
+    return h*60+m;
+  };
+  return { startMin: toMinutes(matches[0]), endMin: toMinutes(matches[1]) };
+}
+
+function populateDailyDateOptions(){
+  const ym = monthSelect.value || todayMonthValue();
+  const today = realTodayInfo();
+  const isCurrentMonth = ym === today.ym;
+  if(!dateSelectEl) return;
+  const [y,m] = ym.split('-');
+  const day = isCurrentMonth ? today.day : '01';
+  dateSelectEl.value = `${y}-${m}-${String(day).padStart(2,'0')}`;
+  monthSelect.value = ym;
+}
+
+function renderShiftPills(){
+  const site = SITES[siteSelect.value];
+  if(shiftPillsTopEl) shiftPillsTopEl.innerHTML = '';
+  site.shifts.forEach(s=>{
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'shift-pill' + (s.key === shiftSelect.value ? ' active' : '');
+    btn.textContent = s.label.replace(/時段|（.*?）|\(.*?\)/g, '').trim();
+    btn.addEventListener('click', ()=>{
+      if(shiftSelect.value !== s.key){
+        shiftSelect.value = s.key;
+        shiftSelect.dispatchEvent(new Event('change'));
+      }
+    });
+    if(shiftPillsTopEl) shiftPillsTopEl.appendChild(btn);
+  });
+}
+
+// ── Batched storage: ONE key per site+month ──────────────────
+// Format: temp-log-v2:{site}:{ym} = { shifts: { am:{rows:{}}, pm:{rows:{}}, ... }, checkers:[], approval:{} }
+
+const _memCache = {}; // in-memory fallback if storage fails
+
+function siteMonthKey(site, ym){ return `temp-log-v2:${site}:${ym}`; }
+
+async function getSiteMonthData(site, ym){
+  const key = siteMonthKey(site, ym);
+  if(_memCache[key]) return _memCache[key];
+  try{
+    const r = await window.storage.get(key, true);
+    if(r && r.value){ const d = JSON.parse(r.value); _memCache[key]=d; return d; }
+  }catch(e){}
+  const builtIn = getBuiltInDemoData(site, ym);
+  if(builtIn){ _memCache[key] = builtIn; return builtIn; }
+  return { shifts:{}, checkers:{}, approval:null };
+}
+
+async function saveSiteMonthData(site, ym, blob){
+  const key = siteMonthKey(site, ym);
+  _memCache[key] = blob; // always update memory
+  try{
+    await window.storage.set(key, JSON.stringify(blob), true);
+  }catch(e){
+    const msg = String(e);
+    if(msg.includes('rate limit') || msg.includes('Rate limit')){
+      // data is safe in memory for this session; silently ignore
+      console.warn('Storage rate limit - data kept in memory only');
+    } else {
+      throw e;
+    }
+  }
+}
+
+async function getShiftData(site, shiftKey, ym){
+  const blob = await getSiteMonthData(site, ym);
+  return (blob.shifts && blob.shifts[shiftKey]) ? blob.shifts[shiftKey] : null;
+}
+
+async function setShiftData(site, shiftKey, ym, data){
+  const blob = await getSiteMonthData(site, ym);
+  if(!blob.shifts) blob.shifts = {};
+  blob.shifts[shiftKey] = data;
+  await saveSiteMonthData(site, ym, blob);
+}
+
+async function getSiteCheckers(site, ym){
+  const blob = await getSiteMonthData(site, ym);
+  return blob.checkers || [];
+}
+
+async function setSiteCheckers(site, ym, checkers){
+  const blob = await getSiteMonthData(site, ym);
+  blob.checkers = checkers;
+  await saveSiteMonthData(site, ym, blob);
+}
+
+// 註：核定(getApproval/setApproval)改用獨立的 temp-log-approval:{site}:{ym}
+// 儲存鍵，定義於下方「Monthly approval」區塊。
+// ─────────────────────────────────────────────────────────────
+
+function isTempOutOfRange(v, subKey){
+  if(v === '' || v === undefined || v === null) return false;
+  const n = parseFloat(v);
+  if(isNaN(n)) return false;
+  // 所有欄位都必須在 2.0~8.0℃ 範圍內
+  return n < 2.0 || n > 8.0;
+}
+
+async function renderDailyView(){
+  const siteName = siteSelect.value;
+  const site = SITES[siteName];
+  const shiftKey = shiftSelect.value;
+  const shiftObj = site.shifts.find(s=>s.key === shiftKey);
+  const ym = monthSelect.value || todayMonthValue();
+  const day = dailyDateSelect.value || '1';
+
+  renderShiftPills();
+
+  const [y,m] = ym.split('-').map(Number);
+  const today = realTodayInfo();
+  const isToday = (ym === today.ym && day === today.day);
+
+  // past-window note
+  pastWindowNoteEl.style.display = 'none';
+  if(isToday && shiftObj){
+    const times = parseShiftTimes(shiftObj.label);
+    if(times){
+      const nowMin = today.now.getHours()*60 + today.now.getMinutes();
+      if(nowMin > times.endMin){
+        pastWindowNoteEl.textContent = `⚠ 現在已超過${shiftObj.label.replace('時段','')}登記時段，如為補登請繼續填寫`;
+        pastWindowNoteEl.style.display = 'block';
+      }
+    }
+  }
+
+  // load stored data for this shift/month
+  const data = await getShiftData(siteName, shiftKey, ym);
+  const row = data && data.rows ? data.rows[day] : null;
+
+  // build fridge cards
+  fridgeCardsEl.innerHTML = '';
+  site.fridges.forEach((f, idx)=>{
+    const card = document.createElement('div');
+    card.className = 'fridge-card';
+    const color = FRIDGE_COLORS[idx % FRIDGE_COLORS.length];
+    card.style.borderLeftColor = color.border;
+    const title = document.createElement('div');
+    title.className = 'fridge-card-title';
+    title.textContent = f;
+    title.style.background = color.titleBg;
+    card.appendChild(title);
+
+    const body = document.createElement('div');
+    body.className = 'fridge-card-body';
+
+    SUB_FIELDS.forEach(sf=>{
+      const subRow = document.createElement('div');
+      subRow.className = 'sub-col';
+      const label = document.createElement('label');
+      const limitText = sf.key === 'min' ? '2~8℃' : sf.key === 'max' ? '2~8℃' : '2~8℃';
+      label.innerHTML = `${sf.label}<small>${limitText}</small>`;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.inputMode = 'decimal';
+      input.pattern = '[0-9]*\\.?[0-9]';
+      input.placeholder = '—';
+      input.dataset.fridgeIndex = idx;
+      input.dataset.subKey = sf.key;
+      const storedVal = row && row.temps && row.temps[idx] ? row.temps[idx][sf.key] : '';
+      if(storedVal !== undefined && storedVal !== ''){
+        input.value = storedVal;
+        if(isTempOutOfRange(storedVal, sf.key)){
+          input.classList.add('out-of-range');
+          input.title = `⚠ 溫度超出正常範圍（2℃～8℃），目前數值：${storedVal}℃`;
+        }
+      }
+
+      function validateAndStyle(){
+        const v = input.value.trim();
+        if(v === '') return;
+        const n = parseFloat(v);
+        if(!isNaN(n)) input.value = n.toFixed(1);
+        if(isTempOutOfRange(input.value, sf.key)){
+          input.classList.add('out-of-range');
+          input.title = `⚠ 溫度超出正常範圍（2℃～8℃），目前數值：${input.value}℃`;
+        } else {
+          input.classList.remove('out-of-range');
+          input.removeAttribute('title');
+        }
+        checkCardLogicError(card, idx);
+        updateStatusCardPreview();
+        updateThisCardReasonSection();
+      }
+
+      function updateThisCardReasonSection(){
+        const hasAbn = [...card.querySelectorAll('input[data-sub-key]')].some(inp=>
+          isTempOutOfRange(inp.value, inp.dataset.subKey)
+        );
+        const sec = card.querySelector('.fridge-reason-section');
+        if(sec) sec.style.display = hasAbn ? 'block' : 'none';
+        checkAllAbnReasonsForAbnBtn();
+      }
+
+      input.addEventListener('input', ()=>{
+        const v = input.value;
+        if(/^\d+\.\d$/.test(v)){
+          validateAndStyle();
+          const allInputs = [...fridgeCardsEl.querySelectorAll('input[data-sub-key]')];
+          const i = allInputs.indexOf(input);
+          if(i >= 0 && i < allInputs.length - 1){
+            setTimeout(()=>{ allInputs[i+1].focus(); allInputs[i+1].select(); }, 50);
+          }
+        }
+        if(isTempOutOfRange(input.value, sf.key)){
+          input.classList.add('out-of-range');
+          input.title = `⚠ 溫度超出正常範圍（2℃～8℃），目前數值：${input.value}℃`;
+        } else {
+          input.classList.remove('out-of-range');
+          input.removeAttribute('title');
+        }
+        checkCardLogicError(card, idx);
+        updateStatusCardPreview();
+        updateThisCardReasonSection();
+      });
+
+      input.addEventListener('blur', validateAndStyle);
+      input.addEventListener('keydown', e=>{
+        if(e.key === 'Enter' || e.key === 'Tab') validateAndStyle();
+      });
+      input.style.background = color.inputBg;
+      input.style.boxShadow = `0 2px 8px ${color.shadow}`;
+
+      subRow.appendChild(label);
+      subRow.appendChild(input);
+      body.appendChild(subRow); // sub-col
+    });
+
+    card.appendChild(body);
+
+    const warningEl = document.createElement('div');
+    warningEl.className = 'fridge-temp-warning';
+    warningEl.style.display = 'none';
+    card.appendChild(warningEl);
+
+    // 初次渲染時，若已有存好的資料且有異常，先跑一次檢查讓文字提示同步顯示
+    checkCardLogicError(card, idx);
+
+    // inline reason section per fridge (hidden by default, shown when abnormal)
+    const reasonSection = document.createElement('div');
+    reasonSection.className = 'fridge-reason-section';
+    reasonSection.dataset.fridgeIndex = idx;
+    reasonSection.style.display = 'none';
+
+    const reasonTitle = document.createElement('div');
+    reasonTitle.className = 'fridge-reason-title';
+    reasonTitle.textContent = '⚠ 異常原因（必填）';
+    reasonSection.appendChild(reasonTitle);
+
+    // declare abnBtn first so closures can reference it
+    const abnBtn = document.createElement('button');
+    abnBtn.className = 'fridge-abn-record-btn';
+    abnBtn.dataset.fridgeIndex = idx;
+    abnBtn.textContent = '📋 填寫異常處理紀錄';
+    abnBtn.disabled = true;
+    // force full-width orange button via inline style
+    abnBtn.style.cssText = 'display:block;width:100%;box-sizing:border-box;padding:12px;margin-top:8px;border:none;border-radius:8px;background:linear-gradient(135deg,#e8a000,#c97b2e);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:center;opacity:0.4;';
+
+    const cannedBtnsDiv = document.createElement('div');
+    cannedBtnsDiv.className = 'reason-canned-btns';
+    ['停電','冰箱故障','冰箱門未關緊','開門時間過長','藥品取放過於頻繁','感應器異常'].forEach(val=>{
+      const btn = document.createElement('button');
+      btn.className = 'reason-canned-btn';
+      btn.textContent = val;
+      btn.addEventListener('click', ()=>{
+        reasonTextInput.value = val;
+        cannedBtnsDiv.style.display = 'none';
+        abnBtn.disabled = false;
+        abnBtn.style.opacity = '1';
+        abnBtn.style.cursor = 'pointer';
+        checkAllAbnReasonsForAbnBtn();
+      });
+      cannedBtnsDiv.appendChild(btn);
+    });
+    reasonSection.appendChild(cannedBtnsDiv);
+
+    const reasonTextInput = document.createElement('input');
+    reasonTextInput.type = 'text';
+    reasonTextInput.className = 'reason-text-input';
+    reasonTextInput.placeholder = '請填寫異常原因';
+    reasonTextInput.dataset.fridgeIndex = idx;
+    // restore saved reason
+    if(row && row.reason){
+      reasonTextInput.value = row.reason;
+      cannedBtnsDiv.style.display = 'none';
+      abnBtn.disabled = false;
+      abnBtn.style.opacity = '1';
+      abnBtn.style.cursor = 'pointer';
+    }
+    reasonTextInput.addEventListener('input', ()=>{
+      const filled = reasonTextInput.value.trim() !== '';
+      abnBtn.disabled = !filled;
+      abnBtn.style.opacity = filled ? '1' : '0.4';
+      abnBtn.style.cursor = filled ? 'pointer' : 'not-allowed';
+      checkAllAbnReasonsForAbnBtn();
+    });
+    reasonSection.appendChild(reasonTextInput);
+
+    abnBtn.addEventListener('click', ()=>{
+      openAbnRecordModal(idx, reasonTextInput.value.trim());
+    });
+
+    // completion status bar (shown after abn record saved)
+    const abnDoneBar = document.createElement('div');
+    abnDoneBar.className = 'abn-done-bar';
+    abnDoneBar.dataset.fridgeIndex = idx;
+    abnDoneBar.style.display = 'none';
+    abnDoneBar.innerHTML = `<span>✅ 異常處理已完成（待組長確認）</span><button class="abn-edit-btn">編輯</button>`;
+    abnDoneBar.querySelector('.abn-edit-btn').addEventListener('click', ()=>{
+      openAbnRecordModal(idx, reasonTextInput.value.trim());
+    });
+    reasonSection.appendChild(abnDoneBar);
+    reasonSection.appendChild(abnBtn);
+
+    // restore done bar if abn record already saved
+    if(row && row.abn){
+      abnDoneBar.style.display = 'flex';
+      abnBtn.style.display = 'none';
+    }
+
+    card.appendChild(reasonSection);
+    fridgeCardsEl.appendChild(card);
+    checkCardLogicError(card, idx);
+  });
+
+  checkAllAbnReasonsForAbnBtn();
+
+  // populate staff dropdown for this site
+  const staffSel = document.getElementById('dailyStaffSelect');
+  staffSel.innerHTML = '';
+  const emptyOpt = document.createElement('option');
+  emptyOpt.value = '';
+  emptyOpt.textContent = '請選擇登記人員';
+  staffSel.appendChild(emptyOpt);
+  (STAFF[siteName] || []).forEach(s=>{
+    const opt = document.createElement('option');
+    opt.value = s.name;
+    opt.textContent = `${s.name}（${s.id}）`;
+    if(row && row.savedBy === s.name) opt.selected = true;
+    staffSel.appendChild(opt);
+  });
+
+  // reason field
+  if(reasonInputEl) reasonInputEl.value = (row && row.reason) || '';
+  // restore canned buttons if no reason saved yet
+  const cannedBtns = document.getElementById('reasonCannedBtns');
+  if(cannedBtns) cannedBtns.style.display = (row && row.reason) ? 'none' : '';
+  updateReasonBlockVisibility();
+
+  // last saved info
+  if(row && row.savedAt){
+    const dt = new Date(row.savedAt);
+    const hh = String(dt.getHours()).padStart(2,'0');
+    const mm = String(dt.getMinutes()).padStart(2,'0');
+    lastSavedInfoEl.textContent = `✅ 最後登記：${row.savedBy || row.sign || '未具名'} 於 ${hh}:${mm}`;
+    lastSavedInfoEl.classList.remove('empty');
+  } else {
+    lastSavedInfoEl.textContent = '尚未登記本日此時段資料';
+    lastSavedInfoEl.classList.add('empty');
+  }
+
+  updateStatusCardPreview();
+}
+
+function checkCardLogicError(card, fridgeIdx){
+  const getInput = key => card.querySelector(`input[data-sub-key="${key}"]`);
+  const maxInp = getInput('max');
+  const minInp = getInput('min');
+  const nowInp = getInput('now');
+  [maxInp, minInp, nowInp].forEach(inp=>{ if(inp){ inp.classList.remove('logic-error'); inp.removeAttribute('title'); } });
+
+  const maxV = maxInp && maxInp.value !== '' ? parseFloat(maxInp.value) : null;
+  const minV = minInp && minInp.value !== '' ? parseFloat(minInp.value) : null;
+  const nowV = nowInp && nowInp.value !== '' ? parseFloat(nowInp.value) : null;
+
+  let errorMsg = '';
+  if(nowV !== null && maxV !== null && nowV > maxV){
+    errorMsg = '⚠ 現在溫度不可大於最高溫度';
+  } else if(nowV !== null && minV !== null && nowV < minV){
+    errorMsg = '⚠ 現在溫度不可小於最低溫度';
+  }
+  if(errorMsg){
+    [maxInp, minInp, nowInp].forEach(inp=>{ if(inp){ inp.classList.add('logic-error'); inp.title = errorMsg; } });
+  }
+
+  // 常駐文字提示（不只靠滑鼠移過去的hover title），優先顯示邏輯錯誤，
+  // 沒有邏輯錯誤時，列出超出正常範圍（2℃～8℃）的欄位，方便平板/手機使用者也能看到。
+  const warningEl = card.querySelector('.fridge-temp-warning');
+  if(warningEl){
+    warningEl.classList.remove('warn-logic', 'warn-range');
+    if(errorMsg){
+      warningEl.textContent = errorMsg;
+      warningEl.classList.add('warn-logic');
+      warningEl.style.display = 'block';
+    } else {
+      const outParts = [];
+      [{inp:minInp, label:'最低'}, {inp:nowInp, label:'現在'}, {inp:maxInp, label:'最高'}].forEach(o=>{
+        if(o.inp && o.inp.value !== '' && isTempOutOfRange(o.inp.value, o.inp.dataset.subKey)){
+          outParts.push(`${o.label}溫 ${o.inp.value}℃`);
+        }
+      });
+      if(outParts.length){
+        warningEl.textContent = `⚠ 溫度超出正常範圍（2℃～8℃）：${outParts.join('、')}`;
+        warningEl.classList.add('warn-range');
+        warningEl.style.display = 'block';
+      } else {
+        warningEl.textContent = '';
+        warningEl.style.display = 'none';
+      }
+    }
+  }
+
+  return !errorMsg;
+}
+
+function dailyHasAnyError(){
+  let hasError = false;
+  fridgeCardsEl.querySelectorAll('.fridge-card').forEach((card, idx)=>{
+    if(!checkCardLogicError(card, idx)) hasError = true;
+  });
+  return hasError;
+}
+
+function dailyHasAbnormal(){
+  let abnormal = false;
+  fridgeCardsEl.querySelectorAll('input[data-sub-key]').forEach(inp=>{
+    if(isTempOutOfRange(inp.value, inp.dataset.subKey)) abnormal = true;
+  });
+  return abnormal;
+}
+
+function updateReasonBlockVisibility(){
+  // per-fridge inline reason sections
+  fridgeCardsEl.querySelectorAll('.fridge-reason-section').forEach(section=>{
+    const idx = Number(section.dataset.fridgeIndex);
+    const card = section.closest('.fridge-card');
+    const hasAbn = [...card.querySelectorAll('input[data-sub-key]')].some(inp=>
+      isTempOutOfRange(inp.value, inp.dataset.subKey)
+    );
+    section.style.display = hasAbn ? 'block' : 'none';
+  });
+  // hide old global reason block
+  if(reasonBlockEl) reasonBlockEl.style.display = 'none';
+  checkAllAbnReasonsForAbnBtn();
+}
+
+function checkAllAbnReasonsForAbnBtn(){
+  const sections = [...fridgeCardsEl.querySelectorAll('.fridge-reason-section')].filter(s=>s.style.display!=='none');
+  const allFilled = sections.length > 0 && sections.every(s=>{
+    const inp = s.querySelector('.reason-text-input');
+    return inp && inp.value.trim() !== '';
+  });
+  const btn = document.getElementById('abnRecordBtn');
+  if(btn){
+    btn.style.display = sections.length > 0 ? 'block' : 'none';
+    btn.disabled = !allFilled;
+    btn.style.opacity = allFilled ? '1' : '0.45';
+  }
+}
+
+function updateStatusCardPreview(){
+  // status card removed; no-op kept for call-site compatibility
+}
+
+document.getElementById('confirmDailyBtn').addEventListener('click', async ()=>{
+  // Cancel any pending auto-saves first to avoid rate limit conflicts
+  if(typeof saveTimer !== 'undefined' && saveTimer) clearTimeout(saveTimer);
+  // Small delay to let any in-flight storage ops finish
+  await new Promise(r=>setTimeout(r, 300));
+
+  const siteName = siteSelect.value;
+  const site = SITES[siteName];
+  const shiftKey = shiftSelect.value;
+  const ym = monthSelect.value || todayMonthValue();
+  const day = dailyDateSelect.value || '1';
+
+  // 防呆檢查 1：現在溫度不可大於最高溫度 / 小於最低溫度
+  if(dailyHasAnyError()){
+    alert('⚠ 登記失敗：「現在溫度」不可大於「最高溫度」或小於「最低溫度」，請檢查標示為橘色的欄位後再試一次。');
+    return;
+  }
+
+  // collect abnormal info (must be before validation that uses combinedReason)
+  let dailyHasAbnormalTemps = false;
+  let abnDetailMsg = '';
+  const abnParts = [];
+  fridgeCardsEl.querySelectorAll('input[data-sub-key]').forEach(inp=>{
+    if(isTempOutOfRange(inp.value, inp.dataset.subKey)){
+      dailyHasAbnormalTemps = true;
+      const fi = Number(inp.dataset.fridgeIndex);
+      const sf = SUB_FIELDS.find(s=>s.key===inp.dataset.subKey);
+      abnParts.push(`${site.fridges[fi]} ${sf?sf.label:''} ${inp.value}℃`);
+    }
+  });
+  abnDetailMsg = abnParts.join('、');
+
+  // gather per-fridge reasons (must be before validation)
+  const fridgeReasons = [];
+  fridgeCardsEl.querySelectorAll('.fridge-reason-section').forEach(section=>{
+    if(section.style.display !== 'none'){
+      const inp = section.querySelector('.reason-text-input');
+      fridgeReasons.push(inp ? inp.value.trim() : '');
+    }
+  });
+  const combinedReason = fridgeReasons.filter(Boolean).join('；');
+
+  // 防呆檢查 2：有溫度異常時提示需填寫原因（不強制阻擋）
+  if(dailyHasAbnormal() && !combinedReason){
+    const go = confirm('⚠ 偵測到溫度超出 2℃～8℃ 範圍。\n\n建議先填寫異常原因，確定要直接儲存嗎？');
+    if(!go) return;
+  }
+
+  const data = (await getShiftData(siteName, shiftKey, ym)) || { manager: '', fridges: site.fridges, rows: {} };
+  const existingRow = data.rows[day] || { temps: site.fridges.map(()=>({min:'',now:'',max:''})), reason:'', abn:'', sign:'' };
+
+  const staffName = (currentUser && currentUser.name) || document.getElementById('dailyStaffSelect').value || '未具名';
+
+
+  const temps = site.fridges.map(()=>({min:'',now:'',max:''}));
+  fridgeCardsEl.querySelectorAll('input[data-sub-key]').forEach(inp=>{
+    const idx = Number(inp.dataset.fridgeIndex);
+    const key = inp.dataset.subKey;
+    if(temps[idx]) temps[idx][key] = inp.value || '';
+  });
+
+  data.rows[day] = {
+    temps,
+    reason: combinedReason || (reasonInputEl ? reasonInputEl.value.trim() : ''),
+    abn: existingRow.abn || '',
+    sign: staffName,
+    // 保留原本已填寫的異常處理紀錄，避免被這次登記整筆覆蓋掉
+    fridgeAbn: existingRow.fridgeAbn || undefined,
+    resolved: existingRow.resolved || '',
+    recoverTemp: existingRow.recoverTemp || '',
+    confirmedBy: existingRow.confirmedBy || (SITE_TEAM_LEAD_ID[siteName] || ''),
+    savedAt: new Date().toISOString(),
+    savedBy: staffName
+  };
+  data.manager = staffName || data.manager || '';
+
+  try{
+    await setShiftData(siteName, shiftKey, ym, data);
+    setStatus('已確認本次登記');
+    showSuccessToast('✅ 已確認本次登記');
+    // lightweight updates only - avoid expensive full re-renders
+    await renderAbnSection();
+    await renderStatCards();
+  }catch(err){
+    console.error(err);
+    const msg = String(err);
+    if(msg.includes('rate limit') || msg.includes('Rate limit')){
+      alert('⚠ 儲存失敗：系統繁忙（rate limit）\n\n請重新整理頁面後再試一次。\n（資料填寫不會消失，重整後重新輸入即可）');
+    } else {
+      setStatus('登記失敗，請稍後再試', true);
+    }
+  }
+});
+
+dailyDateSelect.addEventListener('change', renderDailyView);
+
+/* ===================== Abnormal record section ===================== */
+
+async function scanMonthAbnormal(siteName, ym){
+  const site = SITES[siteName];
+  const items = [];
+  for(const shift of site.shifts){
+    const data = await getShiftData(siteName, shift.key, ym);
+    if(!data || !data.rows) continue;
+    Object.keys(data.rows).sort((a,b)=>Number(a)-Number(b)).forEach(day=>{
+      const row = data.rows[day];
+      // per-fridge breakdown
+      (row.temps || []).forEach((t, idx)=>{
+        const fridgeName = site.fridges[idx];
+        const abnParts = [];
+        SUB_FIELDS.forEach(sf=>{
+          const v = t ? t[sf.key] : '';
+          if(isTempOutOfRange(v, sf.key)){
+            abnParts.push(`${sf.label} ${v}℃`);
+          }
+        });
+        if(abnParts.length > 0){
+          // per-fridge abn record stored in row.fridgeAbn[idx]
+          const fa = row.fridgeAbn && row.fridgeAbn[idx] ? row.fridgeAbn[idx] : {};
+          items.push({
+            day, shiftKey: shift.key, shiftLabel: shift.label.replace('時段',''),
+            fridgeName,
+            detail: `${fridgeName} ${abnParts.join('、')}`,
+            reason: (row.reason || '').split('；')[idx] || row.reason || '',
+            process: fa.abn || row.abn || '',
+            sign: row.sign || '',
+            resolved: fa.resolved || row.resolved || '',
+            recoverTemp: fa.recoverTemp || row.recoverTemp || '',
+            confirmedBy: resolveConfirmedByName(siteName, row.confirmedBy),
+            confirmedDate: fa.savedAt || `${ym}-${String(day).padStart(2,'0')}`
+          });
+        }
+      });
+      // also include rows with reason/abn but no temp anomaly
+      if((!row.temps || row.temps.every(t=>!t || (!isTempOutOfRange(t.min,'min')&&!isTempOutOfRange(t.now,'now')&&!isTempOutOfRange(t.max,'max')))) && (row.abn || row.reason)){
+        items.push({
+          day, shiftKey: shift.key, shiftLabel: shift.label.replace('時段',''),
+          fridgeName: '－', detail: '－',
+          reason: row.reason || '',
+          process: row.abn || '',
+          sign: row.sign || '',
+          resolved: row.resolved || '',
+          recoverTemp: row.recoverTemp || '',
+          confirmedBy: resolveConfirmedByName(siteName, row.confirmedBy),
+          confirmedDate: `${ym}-${String(day).padStart(2,'0')}`
+        });
+      }
+    });
+  }
+  return items;
+}
+
+async function renderAbnSection(){
+  const siteName = siteSelect.value;
+  const ym = monthSelect.value || todayMonthValue();
+  const items = await scanMonthAbnormal(siteName, ym);
+
+  if(items.length > 0){
+    abnBannerEl.textContent = `⚠ 本月有 ${items.length} 次溫度／登記異常`;
+    abnBannerEl.classList.add('show');
+  } else {
+    abnBannerEl.classList.remove('show');
+  }
+}
+
+
+/* ===================== Stat cards ===================== */
+
+async function renderStatCards(){
+  const siteName = siteSelect.value;
+  const site = SITES[siteName];
+  const ym = monthSelect.value || todayMonthValue();
+  const numDays = daysInMonth(ym);
+
+  // fetch all shifts' data for the month
+  const shiftDatas = {};
+  for(const shift of site.shifts){
+    shiftDatas[shift.key] = (await getShiftData(siteName, shift.key, ym)) || { rows:{} };
+  }
+
+  // 本月登記天數：至少一個時段有 savedAt 的日期數
+  const loggedDays = new Set();
+  let filledShiftDayCount = 0;
+  Object.values(shiftDatas).forEach(d=>{
+    Object.keys(d.rows || {}).forEach(day=>{
+      if(d.rows[day] && d.rows[day].savedAt){
+        loggedDays.add(day);
+        filledShiftDayCount++;
+      }
+    });
+  });
+  document.getElementById('statDaysLogged').textContent = loggedDays.size;
+
+  const abnormalItems = await scanMonthAbnormal(siteName, ym);
+  document.getElementById('statAbnormalCount').textContent = abnormalItems.length;
+
+  const totalSlots = numDays * site.shifts.length;
+  const rate = totalSlots > 0 ? Math.round((filledShiftDayCount / totalSlots) * 100) : 0;
+  const rateEl = document.getElementById('statCompletionRate');
+  rateEl.textContent = `${rate}%`;
+  const rateCard = rateEl.closest('.stat-card');
+  if(rateCard) rateCard.classList.toggle('incomplete', rate < 100);
+}
+
+/* ===================== Monthly feed (本月總覽) ===================== */
+
+
+async function renderMonthlyFeed(){
+  const siteName = siteSelect.value;
+  const site = SITES[siteName];
+  const ym = monthSelect.value || todayMonthValue();
+  const numDays = daysInMonth(ym);
+  const [y, m] = ym.split('-').map(Number);
+  const today = realTodayInfo();
+  const isCurrentMonth = ym === today.ym;
+
+  document.getElementById('feedHeaderBar').innerHTML = `
+    <span>【${escapeHtml(siteName)}】　${y}年${m}月　本月總覽</span>
+  `;
+
+  const shiftDatas = {};
+  for(const shift of site.shifts){
+    shiftDatas[shift.key] = (await getShiftData(siteName, shift.key, ym)) || { rows:{} };
+  }
+
+  // header — build real thead; sticky positioning is now handled purely by CSS
+  // (table.feed-table th{ position:sticky; top:0 }) relative to the
+  // .feed-table-wrap's own scroll box, so it no longer depends on a
+  // JS-computed pixel offset that could drift and overlap the first row.
+  const headRow = document.getElementById('feedTableHeadRow');
+
+  const addTh = (text, sub, styleAttr)=>{
+    const th = document.createElement('th');
+    if(styleAttr) th.style.cssText = styleAttr;
+    if(sub){
+      th.innerHTML = `${escapeHtml(text)}<br><small style="font-weight:500;font-size:10px;">${escapeHtml(sub)}</small>`;
+    } else {
+      th.textContent = text;
+    }
+    headRow.appendChild(th);
+  };
+
+  headRow.innerHTML = '';
+  addTh('日期');
+  addTh('時段');
+  site.fridges.forEach((f, fIdx)=>{
+    const color = FRIDGE_COLORS[fIdx % FRIDGE_COLORS.length];
+    const styleAttr = `background:${color.inputBg};color:${color.border};`;
+    SUB_FIELDS.forEach(sf=>{
+      addTh(f, sf.label, styleAttr);
+    });
+  });
+  addTh('登記人員');
+  addTh('異常原因說明');
+
+  // clear feedStickyHead (no longer needed)
+  const stickyHead = document.getElementById('feedStickyHead');
+  if(stickyHead) stickyHead.innerHTML = '';
+
+  const body = document.getElementById('feedTableBody');
+  body.innerHTML = '';
+
+  for(let d=1; d<=numDays; d++){
+    const day = String(d);
+    const isToday = isCurrentMonth && day === today.day;
+    const groupEven = (d % 2 === 0);
+
+    site.shifts.forEach((shift, shiftIdx)=>{
+      const tr = document.createElement('tr');
+      tr.className = (isToday ? 'feed-group-today' : (groupEven ? 'feed-group-even' : ''));
+
+      if(shiftIdx === 0){
+        const tdDate = document.createElement('td');
+        tdDate.className = 'feed-date-cell';
+        tdDate.rowSpan = site.shifts.length;
+        tdDate.innerHTML = `${d}${isToday ? '<span class="today-pin">📍</span>' : ''}`;
+        tr.appendChild(tdDate);
+      }
+
+      const tdShift = document.createElement('td');
+      tdShift.className = 'feed-shift-cell';
+      tdShift.textContent = shift.label.replace(/時段|（.*?）|\(.*?\)/g, '').trim();
+      tr.appendChild(tdShift);
+
+      const row = shiftDatas[shift.key].rows ? shiftDatas[shift.key].rows[day] : null;
+
+      site.fridges.forEach((f, idx)=>{
+        const t = row && row.temps && row.temps[idx] ? row.temps[idx] : null;
+        SUB_FIELDS.forEach(sf=>{
+          const td = document.createElement('td');
+          const v = t ? (t[sf.key] || '') : '';
+          if(v === ''){
+            td.className = 'feed-empty';
+            td.textContent = '—';
+          } else {
+            td.textContent = v;
+            if(isTempOutOfRange(v, sf.key)) td.className = 'feed-out-of-range';
+          }
+          tr.appendChild(td);
+        });
+      });
+
+      const tdSign = document.createElement('td');
+      tdSign.textContent = (row && row.sign) ? row.sign : '—';
+      if(!row || !row.sign) tdSign.className = 'feed-empty';
+      tr.appendChild(tdSign);
+
+      const tdReason = document.createElement('td');
+      tdReason.textContent = (row && row.reason) ? row.reason : '—';
+      if(!row || !row.reason) tdReason.className = 'feed-empty';
+      tr.appendChild(tdReason);
+
+      body.appendChild(tr);
+    });
+
+    // insert weekly checker row after every 7 days
+    if(d % 7 === 0){
+      const blockIndex = Math.floor((d - 1) / 7);
+      const startDay = blockIndex * 7 + 1;
+      const endDay = d;
+      const checkers = await getSiteCheckers(siteName, ym);
+      let saved = checkers[blockIndex];
+      if(!saved || !saved.name){
+        const defaultName = getSiteDefaultCheckerName(siteName);
+        if(defaultName){
+          saved = { name: defaultName, date: new Date().toISOString().slice(0,10) };
+          checkers[blockIndex] = saved;
+          await setSiteCheckers(siteName, ym, checkers);
+        }
+      }
+      const colCount = 2 + site.fridges.length * 3 + 2;
+
+      const checkerTr = document.createElement('tr');
+      checkerTr.className = 'checker-inline-row';
+      const checkerTd = document.createElement('td');
+      checkerTd.colSpan = colCount;
+
+      const label = document.createElement('span');
+      label.className = 'checker-inline-label';
+      label.textContent = `📋 第 ${blockIndex+1} 週檢核（${startDay}日–${endDay}日）　檢核者：`;
+      checkerTd.appendChild(label);
+
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.placeholder = '請輸入檢核者姓名';
+      inp.className = 'checker-inline-input';
+      inp.value = (saved && saved.name) || '';
+      const bi = blockIndex;
+      let wkTimer = null;
+      inp.addEventListener('input', ()=>{
+        clearTimeout(wkTimer);
+        wkTimer = setTimeout(async ()=>{
+          const latest = await getSiteCheckers(siteName, ym);
+          latest[bi] = { name: inp.value, date: inp.value ? new Date().toISOString().slice(0,10) : '' };
+          await setSiteCheckers(siteName, ym, latest);
+          setStatus('週檢核已更新');
+        }, 600);
+      });
+      checkerTd.appendChild(inp);
+
+      if(saved && saved.name){
+        const ok = document.createElement('span');
+        ok.style.cssText = 'margin-left:8px;font-size:11px;color:var(--ok);';
+        ok.textContent = `✅ ${saved.date||''}`;
+        checkerTd.appendChild(ok);
+      }
+      checkerTr.appendChild(checkerTd);
+      body.appendChild(checkerTr);
+    }
+  }
+
+  await renderApprovalCard(siteName, ym);
+  await renderAbnSectionGrid(siteName, ym);
+}
+
+/* ===================== Monthly approval (組長月底核定) ===================== */
+
+function getApprovalKey(siteName, ym){
+  return `temp-log-approval:${siteName}:${ym}`;
+}
+async function getApproval(siteName, ym){
+  try{
+    const result = await window.storage.get(getApprovalKey(siteName, ym), true);
+    if(result && result.value) return JSON.parse(result.value);
+  }catch(err){ /* not found */ }
+  return getBuiltInDemoApproval(siteName, ym);
+}
+async function setApproval(siteName, ym, data){
+  await storageSetWithRetry(getApprovalKey(siteName, ym), JSON.stringify(data));
+}
+
+async function renderAbnSectionGrid(siteName, ym){
+  const items = await scanMonthAbnormal(siteName, ym);
+  const badge = document.getElementById('abnCountBadgeGrid');
+  const body = document.getElementById('abnTableBodyGrid');
+  const empty = document.getElementById('abnEmptyMsgGrid');
+  const tbl = document.getElementById('abnTableGrid');
+  if(!body) return;
+
+  if(badge) badge.textContent = `${items.length} 筆異常`;
+  body.innerHTML = '';
+
+  if(items.length === 0){
+    if(tbl) tbl.style.display = 'none';
+    if(empty) empty.style.display = 'block';
+    return;
+  }
+  if(tbl) tbl.style.display = '';
+  if(empty) empty.style.display = 'none';
+
+  items.forEach(item=>{
+    const tr = document.createElement('tr');
+    const shiftShort = item.shiftLabel.replace(/（.*?）|\(.*?\)/g,'').trim();
+    tr.innerHTML = `
+      <td>${escapeHtml(formatMonthDay(ym, item.day))}</td>
+      <td>${escapeHtml(shiftShort)}</td>
+      <td style="color:var(--danger);font-weight:700;">${escapeHtml(item.detail)||'－'}</td>
+      <td>${escapeHtml(item.reason)||'－'}</td>
+      <td>${escapeHtml(item.sign)||'－'}</td>
+      <td>${escapeHtml(item.resolved||'－')}</td>
+      <td>${escapeHtml(item.process)||'－'}</td>
+      <td>${escapeHtml(item.recoverTemp)||'－'}</td>
+      <td>${item.confirmedBy ? `${escapeHtml(item.confirmedBy)}${item.confirmedDate ? '　'+escapeHtml(item.confirmedDate) : ''}` : '待組長確認'}</td>
+    `;
+    body.appendChild(tr);
+  });
+}
+
+async function checkMonthComplete(siteName, ym){
+  const site = SITES[siteName];
+  const numDays = daysInMonth(ym);
+  for(const shift of site.shifts){
+    const data = await getShiftData(siteName, shift.key, ym);
+    for(let d=1; d<=numDays; d++){
+      const row = data && data.rows && data.rows[d];
+      if(!row) return false;
+      const hasTemps = (row.temps || []).every(t=> t && t.min && t.now && t.max);
+      if(!hasTemps) return false;
+    }
+  }
+  return true;
+}
+
+async function renderApprovalCard(siteName, ym){
+  const approval = await getApproval(siteName, ym);
+  const card = document.getElementById('approvalCard');
+  if(!card) return;
+
+  const isComplete = await checkMonthComplete(siteName, ym);
+
+  if(approval && approval.approved){
+    card.innerHTML = `
+      <div class="ap-header"><span>📝 組長月底核定</span><span class="ap-meta">${escapeHtml(ym)}　${escapeHtml(siteName)}</span></div>
+      <div class="ap-status approved">✅ 已核定</div>
+      <div class="ap-detail">核定人員：${escapeHtml(approval.approverName || '')}${approval.approverId ? `（${escapeHtml(approval.approverId)}）` : ''}</div>
+      <div class="ap-detail">核定日期：${escapeHtml(approval.approvedAt || '')}</div>
+      ${approval.signImageData
+        ? `<div class="ap-detail"><div style="margin-bottom:4px;">簽名檔：</div><img src="${approval.signImageData}" style="max-width:220px;max-height:140px;border-radius:8px;border:1px solid var(--line);display:block;"></div>`
+        : (approval.signFileName ? `<div class="ap-detail">簽名檔：📎 ${escapeHtml(approval.signFileName)}</div>` : '')}
+      ${approval.note ? `<div class="ap-detail">備註：${escapeHtml(approval.note)}</div>` : ''}
+      <button id="reapproveBtn" style="margin-top:8px;">重新核定</button>
+    `;
+    document.getElementById('reapproveBtn').addEventListener('click', ()=>{ renderApprovalForm(siteName, ym, approval, true); });
+  } else if(!isComplete){
+    card.innerHTML = `
+      <div class="ap-header"><span>📝 組長月底核定</span><span class="ap-meta">${escapeHtml(ym)}　${escapeHtml(siteName)}</span></div>
+      <div class="ap-status pending" style="color:var(--muted);">🔒 本月資料尚未完整登記，無法核定</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px;">請確認所有日期與時段的溫度均已填寫完畢</div>
+    `;
+  } else {
+    renderApprovalForm(siteName, ym, approval, false);
+  }
+}
+
+function renderApprovalForm(siteName, ym, existing, reapprove){
+  const card = document.getElementById('approvalCard');
+  card.innerHTML = `
+    <div class="ap-header"><span>📝 組長月底核定</span><span class="ap-meta">${escapeHtml(ym)}　${escapeHtml(siteName)}</span></div>
+    <div class="ap-status pending">⏳ 待組長核定</div>
+    <div class="ap-form">
+      <label style="font-size:12px;font-weight:600;color:var(--navy);display:block;margin-bottom:6px;">上傳組長簽名檔</label>
+      <input type="file" id="approvalSignFile" accept="image/*,.pdf" style="font-size:13px;margin-bottom:8px;">
+      <div id="approvalSignPreview" style="margin-bottom:8px;"></div>
+      <textarea id="approvalNoteInput" placeholder="備註（選填）" style="width:100%;font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;resize:vertical;">${escapeHtml((existing && existing.note) || '')}</textarea>
+      <button id="submitApprovalBtn" style="margin-top:8px;">✓ 確認核定</button>
+    </div>
+  `;
+
+  // preview uploaded file
+  document.getElementById('approvalSignFile').addEventListener('change', e=>{
+    const file = e.target.files[0];
+    const preview = document.getElementById('approvalSignPreview');
+    if(!file){ preview.innerHTML = ''; return; }
+    if(file.type.startsWith('image/')){
+      const url = URL.createObjectURL(file);
+      preview.innerHTML = `<img src="${url}" style="max-width:100%;max-height:120px;border-radius:8px;border:1px solid var(--line);">`;
+    } else {
+      preview.innerHTML = `<span style="font-size:12px;color:var(--blue);">📎 ${escapeHtml(file.name)}</span>`;
+    }
+  });
+
+  document.getElementById('submitApprovalBtn').addEventListener('click', async ()=>{
+    const fileInput = document.getElementById('approvalSignFile');
+    if(!fileInput.files[0]){
+      alert('請上傳組長簽名檔後再確認核定');
+      return;
+    }
+    const file = fileInput.files[0];
+    const teamLead = getSiteTeamLead(siteName);
+    let signImageData = '';
+    if(file.type.startsWith('image/')){
+      try{
+        signImageData = await new Promise((resolve, reject)=>{
+          const reader = new FileReader();
+          reader.onload = ()=> resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }catch(err){ console.error('簽名檔讀取失敗', err); }
+    }
+    const data = {
+      approved: true,
+      signFileName: file.name,
+      signImageData,
+      approverName: teamLead ? teamLead.name : ((currentUser && currentUser.name) || ''),
+      approverId: teamLead ? teamLead.id : ((currentUser && currentUser.id) || ''),
+      note: document.getElementById('approvalNoteInput').value.trim(),
+      approvedAt: new Date().toISOString().slice(0,10)
+    };
+    await setApproval(siteName, ym, data);
+    setStatus('本月已核定');
+    await renderApprovalCard(siteName, ym);
+  });
+}
+
+
+/* ===================== Mode toggle ===================== */
+
+const modeDailyBtn = document.getElementById('modeDailyBtn');
+const modeGridBtn = document.getElementById('modeGridBtn');
+const dailyViewEl = document.getElementById('dailyView');
+const gridViewEl = document.getElementById('gridView');
+
+const exportPdfBtnEl = document.getElementById('exportPdfBtn');
+const statCardExtras = document.querySelectorAll('.stat-card-extra');
+const topStatsRow = document.getElementById('topStatsRow');
+
+function applyModeVisibility(mode){
+  const showExtras = (mode === 'grid');
+  exportPdfBtnEl.classList.toggle('hidden-in-mode', !showExtras);
+  if(topStatsRow) topStatsRow.style.display = showExtras ? 'flex' : 'none';
+}
+
+modeDailyBtn.addEventListener('click', ()=>{
+  modeDailyBtn.classList.add('active');
+  modeGridBtn.classList.remove('active');
+  dailyViewEl.style.display = 'flex';
+  gridViewEl.style.display = 'none';
+  applyModeVisibility('daily');
+});
+modeGridBtn.addEventListener('click', async ()=>{
+  modeGridBtn.classList.add('active');
+  modeDailyBtn.classList.remove('active');
+  dailyViewEl.style.display = 'none';
+  gridViewEl.style.display = 'block';
+  applyModeVisibility('grid');
+  await renderMonthlyFeed();
+});
+
+async function refreshAll(){
+  populateDailyDateOptions();
+  await renderDailyView();
+  await renderAbnSection();
+  await renderStatCards();
+  if(gridViewEl.style.display !== 'none'){
+    await renderMonthlyFeed();
+  }
+}
+
+function escapeHtml(str){
+  return String(str || '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  }[c]));
+}
+
+// 將「年-月」與日，格式化為 MM/DD（例如 2026-07、20 → 07/20）
+function formatMonthDay(ym, day){
+  const parts = String(ym || '').split('-');
+  const mm = parts[1] ? parts[1].padStart(2,'0') : '';
+  const dd = String(day).padStart(2,'0');
+  return mm ? `${mm}/${dd}` : dd;
+}
+
+// 將班別標籤中的括號時間，格式化為 HH:MM-HH:MM（例如「上午時段（7:00～10:00）」→「07:00-10:00」）
+function formatShiftTimeRange(label){
+  const m = String(label || '').match(/[（(]([^）)]+)[）)]/);
+  if(!m) return '';
+  return m[1].replace(/～/g, '-').replace(/~/g, '-').split('-').map(t=>{
+    const p = t.split(':');
+    return p.length === 2 ? `${p[0].padStart(2,'0')}:${p[1]}` : t;
+  }).join('-');
+}
+const SHIFT_HEADER_COLORS = [
+  { bg:'#dbeeff', fg:'#0f3057', light:'#eef7ff' },  // 上午－藍
+  { bg:'#fbeecb', fg:'#8a6d1f', light:'#fdf6e7' },  // 下午－米黃
+  { bg:'#fbdde8', fg:'#a02857', light:'#fdeef3' }   // 大夜－粉紅
+];
+
+// 將「年-月-日」字串（例如 2026-06-12）格式化為 MM/DD（例如 06/12）
+function formatSavedDateShort(dateStr){
+  const parts = String(dateStr || '').split('-');
+  if(parts.length >= 3) return `${parts[1]}/${parts[2]}`;
+  return '';
+}
+
+async function buildPdfArea(){
+  const siteName = siteSelect.value;
+  const site = SITES[siteName];
+  const fridges = site.fridges;
+  const ym = monthSelect.value || todayMonthValue();
+  const [y, m] = ym.split('-').map(Number);
+  const numDaysInMonth = daysInMonth(ym);
+
+  // fetch every shift's stored data for this site/month once
+  const shiftDataMap = {};
+  for(const shift of site.shifts){
+    shiftDataMap[shift.key] = (await getShiftData(siteName, shift.key, ym)) || { rows: {} };
+  }
+  const checkers = await getSiteCheckers(siteName, ym);
+  const approval = await getApproval(siteName, ym);
+
+  const totalCols = 1 + site.shifts.length * 4;
+
+  let html = '';
+
+  fridges.forEach((fridgeName, fridgeIdx)=>{
+    html += `<div class="pdf-page">`;
+    html += `<div class="pdf-header">
+      <p class="pdf-org">國立臺灣大學醫學院附設醫院雲林分院－藥劑部</p>
+      <p class="pdf-title">${y} 年 ${m} 月　${escapeHtml(siteName)}－${escapeHtml(fridgeName)}　冰箱溫度紀錄表</p>
+    </div>`;
+
+    // main table: one row per day, column groups per shift
+    html += '<table class="pdf-table"><thead><tr><th rowspan="2" class="pdf-date-col">日期</th>';
+    site.shifts.forEach((shift, sIdx)=>{
+      const shiftShort = shift.label.replace(/時段|（.*?）|\(.*?\)/g,'').trim();
+      const timeRange = formatShiftTimeRange(shift.label);
+      const color = SHIFT_HEADER_COLORS[sIdx % SHIFT_HEADER_COLORS.length];
+      html += `<th colspan="4" style="background:${color.bg};color:${color.fg};">${escapeHtml(shiftShort)}${timeRange ? `(${escapeHtml(timeRange)})` : ''}</th>`;
+    });
+    html += '</tr><tr>';
+    site.shifts.forEach((shift, sIdx)=>{
+      const color = SHIFT_HEADER_COLORS[sIdx % SHIFT_HEADER_COLORS.length];
+      const styleAttr = ` style="background:${color.light};color:${color.fg};"`;
+      html += `<th${styleAttr}>最低(℃)</th><th${styleAttr}>現在(℃)</th><th${styleAttr}>最高(℃)</th><th${styleAttr}>簽名</th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    const abnormalRows = [];
+
+    for(let d=1; d<=numDaysInMonth; d++){
+      const day = String(d);
+      html += `<tr><td>${day}</td>`;
+
+      site.shifts.forEach(shift=>{
+        const shiftData = shiftDataMap[shift.key];
+        const row = shiftData.rows ? shiftData.rows[day] : null;
+        const t = row && row.temps && row.temps[fridgeIdx] ? row.temps[fridgeIdx] : {min:'',now:'',max:''};
+        const sign = row ? (row.sign || '') : '';
+
+        let rowAbnormal = false;
+        const detailParts = [];
+        // order: min, now, max
+        SUB_FIELDS.forEach(sf=>{
+          const v = t[sf.key] || '';
+          const out = isTempOutOfRange(v, sf.key);
+          if(out){ rowAbnormal = true; detailParts.push(`${sf.label} ${v}℃`); }
+          html += `<td${out ? ' style="color:#b3261e;font-weight:700;"' : ''}>${escapeHtml(v)}</td>`;
+        });
+        html += `<td>${escapeHtml(sign)}</td>`;
+
+        const fa = row && row.fridgeAbn && row.fridgeAbn[fridgeIdx] ? row.fridgeAbn[fridgeIdx] : null;
+        // 只有「這個冰箱本身」溫度異常，或針對這個冰箱有留存專屬的異常處理紀錄時，
+        // 才把這筆資料列進這個冰箱的異常處理記錄——避免其他冰箱的頁面出現
+        // 「異常值」空白（因為 row.reason／row.abn 原本是整個班別共用，並非針對單一冰箱）。
+        if(row && (rowAbnormal || fa)){
+          abnormalRows.push({
+            day,
+            shiftLabel: shift.label.replace(/時段|（.*?）|\(.*?\)/g,'').trim(),
+            detail: rowAbnormal ? detailParts.join('、') : '－',
+            reason: row.reason || '',
+            process: (fa && fa.abn) || row.abn || '',
+            sign: row.sign || '',
+            resolved: (fa && fa.resolved) || row.resolved || '',
+            recoverTemp: (fa && fa.recoverTemp) || row.recoverTemp || '',
+            confirmedBy: resolveConfirmedByName(siteName, row.confirmedBy),
+            confirmedDate: (fa && fa.savedAt) ? formatSavedDateShort(fa.savedAt) : formatMonthDay(ym, day)
+          });
+        }
+      });
+
+      html += '</tr>';
+
+      // weekly reviewer row — inserted right after each 7-day block (and the final partial week)
+      const isBlockEnd = (d % 7 === 0) || (d === numDaysInMonth);
+      if(isBlockEnd){
+        const blockIndex = Math.floor((d - 1) / 7);
+        const startDay = blockIndex * 7 + 1;
+        const endDay = d;
+        const saved = checkers ? checkers[blockIndex] : null;
+        const checkerName = (saved && saved.name) ? saved.name : '＿＿＿＿＿';
+        const checkerDate = (saved && saved.date) ? saved.date : '';
+        html += `<tr class="pdf-week-row"><td colspan="${totalCols}">第 ${blockIndex+1} 週檢核（${startDay}日–${endDay}日）　檢核者簽名：${escapeHtml(checkerName)}　${escapeHtml(checkerDate)}</td></tr>`;
+      }
+    }
+    html += '</tbody></table>';
+
+    // abnormal record table (scoped to this fridge)
+    html += '<div class="pdf-abn-title">⚠ 異常處理記錄　<span class="pdf-abn-note">※　冰箱溫度需維持在 2℃～8℃</span></div>';
+    html += `<table class="pdf-abn-table"><thead><tr>
+      <th style="width:6%;">日期</th>
+      <th style="width:7%;">時段</th>
+      <th style="width:13%;">異常值</th>
+      <th style="width:14%;">原因說明</th>
+      <th style="width:8%;">登記人員</th>
+      <th style="width:7%;">是否解除</th>
+      <th>處理方式</th>
+      <th style="width:8%;">回復值</th>
+      <th style="width:9%;">確認人員</th>
+    </tr></thead><tbody>`;
+
+    if(abnormalRows.length > 0){
+      abnormalRows.forEach(r=>{
+        const shiftShort = r.shiftLabel.replace(/（.*?）|\(.*?\)/g,'').trim();
+        html += `<tr>
+          <td>${escapeHtml(formatMonthDay(ym, r.day))}</td>
+          <td>${escapeHtml(shiftShort)}</td>
+          <td>${escapeHtml(r.detail)}</td>
+          <td class="process-cell">${escapeHtml(r.reason)}</td>
+          <td>${escapeHtml(r.sign)}</td>
+          <td>${escapeHtml(r.resolved||'')}</td>
+          <td class="process-cell">${escapeHtml(r.process)}</td>
+          <td class="recover-cell">${escapeHtml(r.recoverTemp||'')}</td>
+          <td>${escapeHtml(r.confirmedBy||'')}${r.confirmedDate ? `<br>${escapeHtml(r.confirmedDate)}` : ''}</td>
+        </tr>`;
+      });
+    } else {
+      html += `<tr><td colspan="9" style="color:#5e7385;">本月無異常紀錄</td></tr>`;
+    }
+    html += '</tbody></table>';
+
+    // monthly approval footer (組長月底核定)
+    if(approval && approval.approved){
+      html += `<div class="pdf-approval approved">
+        <span>☑ 組長月底核定</span>
+        <span class="pdf-approval-detail">核定人員：${escapeHtml(approval.approverName||'')}${approval.approverId ? `（${escapeHtml(approval.approverId)}）` : ''}</span>
+        <span class="pdf-approval-detail">核定日期：${escapeHtml(approval.approvedAt||'')}</span>
+        ${approval.note ? `<span class="pdf-approval-detail">備註：${escapeHtml(approval.note)}</span>` : ''}
+        ${approval.signImageData ? `<img src="${approval.signImageData}" class="pdf-sign-image">` : ''}
+      </div>`;
+    } else {
+      html += `<div class="pdf-approval pending">
+        <span>☐ 組長月底核定：尚未核定</span>
+      </div>`;
+    }
+
+    html += '</div>'; // .pdf-page
+  });
+
+  document.getElementById('pdfAreaContent').innerHTML = html;
+}
+
+document.getElementById('exportPdfBtn').addEventListener('click', async ()=>{
+  setStatus('正在準備 PDF…');
+  await buildPdfArea();
+  document.body.classList.add('pdf-mode');
+  window.scrollTo(0, 0);
+  setStatus('PDF 預覽已開啟');
+});
+
+document.getElementById('pdfPrintBtn').addEventListener('click', ()=>{
+  window.print();
+});
+
+document.getElementById('pdfCloseBtn').addEventListener('click', ()=>{
+  document.body.classList.remove('pdf-mode');
+});
+
+/* ===================== (已改為自動內建示範資料，見 buildBuiltInDemoData) ===================== */
+
+managerInput.addEventListener('input', scheduleSave);
+
+// init
+populateShifts();
+monthSelect.value = todayMonthValue();
+applyModeVisibility('daily');
+
+/* ===== Card Login ===== */
+const topbarUser = document.getElementById('topbarUser');
+const topbarLogin = document.getElementById('topbarLogin');
+const userBadge = document.getElementById('userBadge');
+const logoutBtn = document.getElementById('logoutBtn');
+const topbarSubtitle = document.getElementById('topbarSubtitle');
+const loginOverlay = document.getElementById('loginOverlay');
+const loginIdInput = document.getElementById('loginIdInput');
+const loginNameDisplay = document.getElementById('loginNameDisplay');
+const loginHintEl = document.getElementById('loginHint');
+
+let currentUser = null;
+
+function allStaff(){
+  const all = [];
+  Object.values(STAFF).forEach(arr=> all.push(...arr));
+  return all;
+}
+
+function resetLoginForm(){
+  loginIdInput.value = '';
+  loginNameDisplay.textContent = '輸入員工編號後自動顯示';
+  loginNameDisplay.classList.remove('found');
+  loginHintEl.textContent = '';
+  loginIdInput.focus();
+}
+
+loginIdInput.addEventListener('input', ()=>{
+  const val = loginIdInput.value.replace(/\D/g,'').slice(0,5);
+  loginIdInput.value = val;
+  loginHintEl.textContent = '';
+  if(val.length === 5){
+    const target = 'Y' + val;
+    const found = allStaff().find(s => s.id.trim() === target);
+    if(found){
+      loginNameDisplay.textContent = found.name;
+      loginNameDisplay.classList.add('found');
+    } else {
+      loginNameDisplay.textContent = '找不到此員工編號';
+      loginNameDisplay.classList.remove('found');
+      loginHintEl.textContent = '找不到此員工編號，請確認後再試';
+    }
+  } else {
+    loginNameDisplay.textContent = '輸入員工編號後自動顯示';
+    loginNameDisplay.classList.remove('found');
+  }
+});
+
+loginIdInput.addEventListener('keydown', e=>{
+  if(e.key === 'Enter') attemptLogin();
+});
+
+document.getElementById('numOk').addEventListener('click', attemptLogin);
+
+function attemptLogin(){
+  const val = loginIdInput.value.replace(/\D/g,'').slice(0,5);
+  if(val.length < 5){
+    loginHintEl.textContent = '請輸入完整的5碼員工編號';
+    loginIdInput.focus();
+    return;
+  }
+  const target = 'Y' + val;
+  const found = allStaff().find(s => s.id.trim() === target);
+  if(found){
+    applyLogin(found);
+    loginOverlay.classList.add('hidden');
+    resetLoginForm();
+  } else {
+    loginHintEl.textContent = '找不到此員工編號，請重新輸入';
+    loginIdInput.select();
+  }
+}
+
+function findStaffSite(user){
+  for(const [site, list] of Object.entries(STAFF)){
+    if(list.find(s => s.id.trim() === user.id.trim())) return site;
+  }
+  return null;
+}
+
+/* ===================== Abnormal Record Modal ===================== */
+
+const abnRecordModal = document.getElementById('abnRecordModal');
+const abnProcessInput = document.getElementById('abnProcessInput');
+const abnRecoverInput = document.getElementById('abnRecoverInput');
+const abnRecordSubmitBtn = document.getElementById('abnRecordSubmitBtn');
+let _abnRecordCtx = null;
+
+// trigger button (legacy, hidden)
+document.getElementById('abnRecordBtn').addEventListener('click', ()=>{});
+
+function openAbnRecordModal(fridgeIdx, reason){
+  const siteName = siteSelect.value;
+  const site = SITES[siteName];
+  const shiftKey = shiftSelect.value;
+  const shiftObj = site.shifts.find(s=>s.key===shiftKey);
+  const dateStr = dateSelectEl ? dateSelectEl.value : '';
+
+  // find the abnBtn and doneBar for this fridge
+  const section = fridgeCardsEl.querySelector(`.fridge-reason-section[data-fridge-index="${fridgeIdx}"]`);
+  _abnRecordCtx = {
+    fridgeIdx, reason,
+    abnBtn: section ? section.querySelector('.fridge-abn-record-btn') : null,
+    doneBar: section ? section.querySelector('.abn-done-bar') : null
+  };
+
+  // fill meta
+  document.getElementById('abnRecordMeta').textContent =
+    `${dateStr}　${shiftObj ? shiftObj.label.replace(/（.*?）/,'') : ''}　${siteName}`;
+
+  // fill reason display
+  document.getElementById('abnReasonDisplay').value = reason;
+
+  // reset fields
+  abnProcessInput.value = '';
+  abnRecoverInput.value = '';
+  document.getElementById('abnResolvedSelect').value = '';
+  document.getElementById('abnProcessCannedBtns').style.display = '';
+  abnRecordModal.classList.remove('hidden');
+}
+
+// canned buttons in modal
+document.querySelectorAll('#abnProcessCannedBtns .reason-canned-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    abnProcessInput.value = btn.dataset.val;
+    document.getElementById('abnProcessCannedBtns').style.display = 'none';
+  });
+});
+
+document.getElementById('abnRecordSkipBtn').addEventListener('click', ()=>{
+  abnRecordModal.classList.add('hidden');
+});
+
+abnRecordSubmitBtn.addEventListener('click', async ()=>{
+  const siteName = siteSelect.value;
+  const shiftKey = shiftSelect.value;
+  const ym = monthSelect.value || todayMonthValue();
+  const day = String(parseInt((dateSelectEl ? dateSelectEl.value : '').split('-')[2] || '1'));
+  const fridgeIdx = _abnRecordCtx ? _abnRecordCtx.fridgeIdx : 0;
+  const site = SITES[siteName];
+  let saveOk = false;
+  try{
+    const data = (await getShiftData(siteName, shiftKey, ym)) || { rows: {} };
+    if(!data.rows) data.rows = {};
+    // 若當天這個班別的資料還沒被「確認本次登記」建立過，先建立一筆空白資料，
+    // 避免下面的寫入因為 data.rows[day] 不存在而被靜默略過
+    // （之前會出現：跳出「已儲存」提示，但實際上什麼都沒存到）。
+    if(!data.rows[day]){
+      data.rows[day] = {
+        temps: site.fridges.map(()=>({min:'',now:'',max:''})),
+        reason: (_abnRecordCtx && _abnRecordCtx.reason) || '',
+        abn: '', sign: ''
+      };
+    }
+    if(!data.rows[day].fridgeAbn) data.rows[day].fridgeAbn = {};
+    data.rows[day].fridgeAbn[fridgeIdx] = {
+      abn: abnProcessInput.value.trim(),
+      recoverTemp: abnRecoverInput.value.trim(),
+      resolved: document.getElementById('abnResolvedSelect').value,
+      confirmed: true,
+      savedAt: new Date().toISOString().slice(0,10)
+    };
+    // also keep row-level for backwards compatibility
+    data.rows[day].abn = abnProcessInput.value.trim();
+    data.rows[day].recoverTemp = abnRecoverInput.value.trim();
+    data.rows[day].resolved = document.getElementById('abnResolvedSelect').value;
+    if(!data.rows[day].reason && _abnRecordCtx && _abnRecordCtx.reason){
+      data.rows[day].reason = _abnRecordCtx.reason;
+    }
+    await setShiftData(siteName, shiftKey, ym, data);
+    saveOk = true;
+  }catch(err){
+    console.error('異常處理紀錄儲存失敗', err);
+  }
+
+  // 不論上面是否成功，都要讓彈窗確實關閉、按鈕確實有反應，
+  // 避免看起來像「按了沒反應」；失敗時另外用明確訊息告知。
+  abnRecordModal.classList.add('hidden');
+  if(saveOk){
+    setStatus('異常處理紀錄已儲存');
+    if(_abnRecordCtx && _abnRecordCtx.doneBar){
+      _abnRecordCtx.doneBar.style.display = 'flex';
+      if(_abnRecordCtx.abnBtn) _abnRecordCtx.abnBtn.style.display = 'none';
+    }
+    setTimeout(()=>{ showSuccessToast('✅ 異常處理紀錄已儲存'); }, 100);
+    await renderAbnSection();
+  } else {
+    setStatus('儲存失敗，請稍後再試', true);
+    alert('⚠ 異常處理紀錄儲存失敗，請稍後再試一次。\n（若持續發生，請重新整理頁面後再試）');
+  }
+});
+
+function showSuccessToast(msg, duration=2000){
+  const toast = document.getElementById('successToast');
+  const msgEl = document.getElementById('successToastMsg');
+  if(!toast || !msgEl) return;
+  msgEl.textContent = msg;
+  toast.style.display = 'flex';
+  toast.style.opacity = '0';
+  toast.style.transform = 'translate(-50%,-50%) scale(0.85)';
+  setTimeout(()=>{
+    toast.style.opacity = '1';
+    toast.style.transform = 'translate(-50%,-50%) scale(1)';
+  }, 10);
+  setTimeout(()=>{
+    toast.style.opacity = '0';
+    toast.style.transform = 'translate(-50%,-50%) scale(0.85)';
+    setTimeout(()=>{ toast.style.display = 'none'; }, 300);
+  }, duration);
+}
+
+function setSitePickerVisible(visible){
+  const label = document.getElementById('siteLabel');
+  const sel = document.getElementById('siteSelect');
+  if(label) label.style.display = visible ? '' : 'none';
+  if(sel) sel.style.display = visible ? '' : 'none';
+}
+
+function applyLogin(user){
+  currentUser = user;
+  userBadge.textContent = `${user.name}（${user.id}）`;
+  topbarUser.style.display = 'flex';
+  topbarLogin.style.display = 'none';
+
+  // 依員工所屬院區自動切換並鎖定
+  const site = findStaffSite(user);
+  if(site){
+    siteSelect.value = site;
+    siteSelect.disabled = true;
+    siteSelect.title = '院區已依員工所屬自動設定';
+    populateShifts();
+  }
+  setSitePickerVisible(false);
+  topbarSubtitle.textContent = `國立臺灣大學醫學院附設醫院雲林分院－藥劑部【${siteSelect.value}】`;
+  const dss = document.getElementById('dailyStaffSelect');
+  if(dss) dss.value = user.name;
+  refreshAll();
+}
+
+document.getElementById('openLoginBtn').addEventListener('click', ()=>{
+  resetLoginForm();
+  loginOverlay.classList.remove('hidden');
+});
+
+logoutBtn.addEventListener('click', ()=>{
+  currentUser = null;
+  topbarUser.style.display = 'none';
+  topbarLogin.style.display = 'flex';
+  siteSelect.disabled = false;
+  siteSelect.title = '';
+  setSitePickerVisible(true);
+  topbarSubtitle.textContent = '國立臺灣大學醫學院附設醫院雲林分院－藥劑部';
+  resetLoginForm();
+  loginOverlay.classList.remove('hidden');
+});
+
+siteSelect.addEventListener('change', async ()=>{
+  populateShifts();
+  await refreshAll();
+});
+
+// show login overlay on first load
+loginOverlay.classList.remove('hidden');
+setTimeout(()=>{ if(loginIdInput) loginIdInput.focus(); }, 100);
+
+/* ===== Date input & shift pills in topbar ===== */
+const dateSelectEl = document.getElementById('dateSelect');
+const shiftPillsTopEl = document.getElementById('shiftPillsTop');
+
+function todayDateValue(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+dateSelectEl.value = todayDateValue();
+dateSelectEl.max = todayDateValue();
+
+// sync date input → daily view
+dateSelectEl.addEventListener('change', async ()=>{
+  // 防呆：若使用者手動輸入超過今天的日期，強制拉回今天
+  if(dateSelectEl.value > todayDateValue()){
+    dateSelectEl.value = todayDateValue();
+    alert('無法登記未來日期，已自動設回今天日期。');
+  }
+  const parts = dateSelectEl.value.split('-');
+  if(parts.length === 3){
+    monthSelect.value = `${parts[0]}-${parts[1]}`;
+  }
+  await refreshAll();
+});
+
+shiftSelect.addEventListener('change', async ()=>{ renderShiftPills(); await refreshAll(); });
+
+populateShifts();
+renderShiftPills();
+
+refreshAll();
+</script>
+
+</body>
+</html>
