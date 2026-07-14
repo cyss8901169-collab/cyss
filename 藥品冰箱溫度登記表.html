@@ -29,6 +29,10 @@
     max-width:1180px;
     margin:0 auto;
     padding:4px 16px 0;
+    position:sticky;
+    top:0;
+    z-index:21;
+    background:var(--bg);
   }
   .topbar{
     background:linear-gradient(135deg,var(--navy),var(--blue));
@@ -41,6 +45,8 @@
   }
   .topbar-row1{
     display:flex;
+    flex-direction:row;
+    flex-wrap:nowrap;
     align-items:center;
     gap:10px;
   }
@@ -65,6 +71,8 @@
     flex-direction:column;
     gap:1px;
     line-height:1.25;
+    min-width:0;
+    flex:1;
   }
   .topbar h1{
     margin:0;
@@ -84,7 +92,7 @@
   }
   .sticky-zone{
     position:sticky;
-    top:0;
+    top:var(--topbar-h, 70px);
     z-index:20;
     background:var(--bg);
     padding-top:2px;
@@ -509,17 +517,22 @@
   }
   .login-submit-btn:hover{ filter:brightness(1.08); }
 
-  /* topbar-controls: date + shift pills + mode buttons */
+  /* topbar-controls: row1 = date+shift, row2 = site+mode buttons (stacked by group) */
   .topbar-controls{
     display:flex;
-    align-items:center;
-    flex-wrap:wrap;
+    flex-direction:column;
     gap:6px;
     background:var(--paper);
     border:1px solid var(--line);
     border-radius:10px;
     padding:6px 10px;
     margin-bottom:4px;
+  }
+  .controls-row{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:6px;
   }
   #dateSelect{
     flex:0 0 auto;
@@ -1074,7 +1087,7 @@
   .reason-text-input{
     width:100%;
     font-family:inherit;
-    font-size:13px;
+    font-size:16px;
     padding:8px 10px;
     border:1px solid #e8c060;
     border-radius:8px;
@@ -1443,13 +1456,13 @@
   }
   .abn-rm-row{ display:flex; gap:12px; margin-bottom:12px; }
   .abn-rm-readonly{
-    width:100%; font-family:inherit; font-size:13px;
+    width:100%; font-family:inherit; font-size:16px;
     padding:8px 10px; border:1px solid var(--line);
     border-radius:8px; background:#f9fafb; color:var(--ink);
     box-sizing:border-box;
   }
   .abn-rm-select{
-    width:100%; font-family:inherit; font-size:13px;
+    width:100%; font-family:inherit; font-size:16px;
     padding:8px 10px; border:1px solid var(--line);
     border-radius:8px; background:#fff; color:var(--ink);
     box-sizing:border-box;
@@ -1493,7 +1506,6 @@
   /* Tablet (≤900px) */
   @media (max-width:900px){
     .login-modal{ width:90vw; max-width:360px; }
-    .topbar-controls{ flex-wrap:wrap; gap:6px; }
     .top-stats-row{ flex-wrap:wrap; gap:6px; }
     .stat-card{ flex:1; min-width:120px; }
     .fridge-cards{ grid-template-columns:repeat(2,1fr); }
@@ -1513,7 +1525,7 @@
     .wrap{ padding:2px 8px 40px; }
 
     /* 控制列手機優化 */
-    #dateSelect{ width:130px; font-size:13px; }
+    #dateSelect{ width:130px; font-size:16px; }
     .shift-pills-top{ gap:3px; }
     .shift-pill{ padding:4px 7px; font-size:10px; }
     .top-actions-right-controls{ gap:3px; }
@@ -1553,6 +1565,10 @@
     body{background:#fff;}
     .table-card{border:none;}
   }
+  /* 全站防呆：iOS Safari 對字級小於16px的輸入框，點擊時會自動放大畫面，
+     導致整個頁面看起來「跑版/被裁切」。這裡統一保底設為16px。
+     （個別欄位若有更明確的樣式規則，仍可再自行調整，只是不會小於這個底線太多。） */
+  input, select, textarea{ font-size:16px; }
 </style>
 </head>
 <body>
@@ -1560,13 +1576,8 @@
 <div class="topbar-wrap">
   <div class="topbar">
     <div class="topbar-row1">
-      <span class="icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/><line x1="12" y1="12" x2="12" y2="16"/>
-        </svg>
-      </span>
       <div class="topbar-text" style="flex:1;">
-        <h1>藥品冰箱溫度登記表</h1>
+        <h1>🧊 藥品冰箱溫度登記表</h1>
         <p id="topbarSubtitle">國立臺灣大學醫學院附設醫院雲林分院－藥劑部</p>
       </div>
     </div>
@@ -1635,19 +1646,23 @@
 <div class="wrap">
 
   <div class="sticky-zone">
-    <!-- 單列：日期 + 時段 + 院區 + 模式切換 -->
+    <!-- 單列：日期 + 時段 + 院區 + 模式切換（空間不夠時才自動換行） -->
     <div class="topbar-controls">
-      <input type="date" id="dateSelect">
-      <div class="shift-pills-top" id="shiftPillsTop"></div>
-      <span class="ctrl-label" id="siteLabel" style="flex-shrink:0;">院區</span>
-      <select id="siteSelect" style="font-size:13px; padding:5px 6px; border:1px solid var(--line); border-radius:6px; min-width:0;"></select>
-      <select id="shiftSelect" style="display:none;"></select>
-      <input type="text" id="managerInput" style="display:none;">
-      <input type="month" id="monthSelect" style="display:none;">
-      <div class="top-actions-right-controls">
-        <button class="mode-btn active" id="modeDailyBtn">📅 今日</button>
-        <button class="mode-btn" id="modeGridBtn">📋 本月</button>
-        <button id="exportPdfBtn" class="export-pdf-btn hidden-in-mode">🖨 匯出</button>
+      <div class="controls-row controls-row-1">
+        <input type="date" id="dateSelect">
+        <div class="shift-pills-top" id="shiftPillsTop"></div>
+      </div>
+      <div class="controls-row controls-row-2">
+        <span class="ctrl-label" id="siteLabel" style="flex-shrink:0;">院區</span>
+        <select id="siteSelect" style="font-size:16px; padding:5px 6px; border:1px solid var(--line); border-radius:6px; min-width:0;"></select>
+        <select id="shiftSelect" style="display:none;"></select>
+        <input type="text" id="managerInput" style="display:none;">
+        <input type="month" id="monthSelect" style="display:none;">
+        <div class="top-actions-right-controls">
+          <button class="mode-btn active" id="modeDailyBtn">📅 今日</button>
+          <button class="mode-btn" id="modeGridBtn">📋 本月</button>
+          <button id="exportPdfBtn" class="export-pdf-btn hidden-in-mode">🖨 匯出</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2335,9 +2350,19 @@ function checkRowLogicError(tr, fridgeIdx){
 }
 
 const controlsEl = document.querySelector('.sticky-zone');
+const topbarWrapEl = document.querySelector('.topbar-wrap');
+function updateTopbarHeight(){
+  if(!topbarWrapEl) return;
+  document.documentElement.style.setProperty('--topbar-h', topbarWrapEl.offsetHeight + 'px');
+}
+window.addEventListener('resize', updateTopbarHeight);
+window.addEventListener('load', updateTopbarHeight);
+updateTopbarHeight();
+
 function updateStickyOffsets(){
   if(!tableHeadRow1 || !tableHeadRow2 || !controlsEl) return;
   requestAnimationFrame(()=>{
+    updateTopbarHeight();
     const controlsHeight = controlsEl.offsetHeight;
     tableHeadRow1.style.top = controlsHeight + 'px';
     tableHeadRow2.style.top = (controlsHeight + tableHeadRow1.offsetHeight) + 'px';
@@ -2396,6 +2421,7 @@ function collectData(){
 // 都能看到、寫入同一份資料）。若遇到暫時性的頻率限制，會延遲後重試幾次，
 // 都失敗才放棄，避免使用者按下確認卻因為背景錯誤而完全沒有反應。
 async function storageSetWithRetry(key, value, maxRetries = 3){
+  if(!hasStorage()) return null; // 沒有持久化功能可用時，直接視為「本次無法保存」，不報錯
   for(let attempt = 0; attempt <= maxRetries; attempt++){
     try{
       return await window.storage.set(key, value, true);
@@ -2409,7 +2435,8 @@ async function storageSetWithRetry(key, value, maxRetries = 3){
         console.warn('Storage rate limit - giving up after retries');
         return null;
       }
-      throw err;
+      console.warn('storageSetWithRetry failed:', err);
+      return null;
     }
   }
   return null;
@@ -2556,15 +2583,25 @@ function renderShiftPills(){
 
 const _memCache = {}; // in-memory fallback if storage fails
 
+// 判斷 window.storage 這個功能是否存在——只有在 Claude.ai 裡面才有，
+// 如果是下載後另外部署（例如 GitHub Pages），這個功能就不存在，
+// 這時候我們讓資料改為「僅本次瀏覽有效」的記憶體暫存，而不是讓整個操作報錯失敗。
+function hasStorage(){
+  return typeof window !== 'undefined' && !!window.storage &&
+    typeof window.storage.get === 'function' && typeof window.storage.set === 'function';
+}
+
 function siteMonthKey(site, ym){ return `temp-log-v2:${site}:${ym}`; }
 
 async function getSiteMonthData(site, ym){
   const key = siteMonthKey(site, ym);
   if(_memCache[key]) return _memCache[key];
-  try{
-    const r = await window.storage.get(key, true);
-    if(r && r.value){ const d = JSON.parse(r.value); _memCache[key]=d; return d; }
-  }catch(e){}
+  if(hasStorage()){
+    try{
+      const r = await window.storage.get(key, true);
+      if(r && r.value){ const d = JSON.parse(r.value); _memCache[key]=d; return d; }
+    }catch(e){}
+  }
   const builtIn = getBuiltInDemoData(site, ym);
   if(builtIn){ _memCache[key] = builtIn; return builtIn; }
   return { shifts:{}, checkers:{}, approval:null };
@@ -2572,7 +2609,8 @@ async function getSiteMonthData(site, ym){
 
 async function saveSiteMonthData(site, ym, blob){
   const key = siteMonthKey(site, ym);
-  _memCache[key] = blob; // always update memory
+  _memCache[key] = blob; // always update memory first, so data survives for this session either way
+  if(!hasStorage()) return; // 沒有持久化功能可用，資料保留在記憶體即可，不視為錯誤
   try{
     await window.storage.set(key, JSON.stringify(blob), true);
   }catch(e){
@@ -2581,7 +2619,7 @@ async function saveSiteMonthData(site, ym, blob){
       // data is safe in memory for this session; silently ignore
       console.warn('Storage rate limit - data kept in memory only');
     } else {
-      throw e;
+      console.warn('Storage save failed, data kept in memory only for this session:', e);
     }
   }
 }
@@ -3366,14 +3404,24 @@ async function renderMonthlyFeed(){
 function getApprovalKey(siteName, ym){
   return `temp-log-approval:${siteName}:${ym}`;
 }
+const _approvalMemCache = {}; // in-memory fallback if storage is unavailable (e.g. hosted outside Claude.ai)
 async function getApproval(siteName, ym){
-  try{
-    const result = await window.storage.get(getApprovalKey(siteName, ym), true);
-    if(result && result.value) return JSON.parse(result.value);
-  }catch(err){ /* not found */ }
+  const key = getApprovalKey(siteName, ym);
+  if(_approvalMemCache[key]) return _approvalMemCache[key];
+  if(hasStorage()){
+    try{
+      const result = await window.storage.get(key, true);
+      if(result && result.value){
+        const data = JSON.parse(result.value);
+        _approvalMemCache[key] = data;
+        return data;
+      }
+    }catch(err){ /* not found */ }
+  }
   return getBuiltInDemoApproval(siteName, ym);
 }
 async function setApproval(siteName, ym, data){
+  _approvalMemCache[getApprovalKey(siteName, ym)] = data; // keep for this session regardless
   await storageSetWithRetry(getApprovalKey(siteName, ym), JSON.stringify(data));
 }
 
@@ -3467,9 +3515,9 @@ function renderApprovalForm(siteName, ym, existing, reapprove){
     <div class="ap-status pending">⏳ 待組長核定</div>
     <div class="ap-form">
       <label style="font-size:12px;font-weight:600;color:var(--navy);display:block;margin-bottom:6px;">上傳組長簽名檔</label>
-      <input type="file" id="approvalSignFile" accept="image/*,.pdf" style="font-size:13px;margin-bottom:8px;">
+      <input type="file" id="approvalSignFile" accept="image/*,.pdf" style="font-size:16px;margin-bottom:8px;">
       <div id="approvalSignPreview" style="margin-bottom:8px;"></div>
-      <textarea id="approvalNoteInput" placeholder="備註（選填）" style="width:100%;font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;resize:vertical;">${escapeHtml((existing && existing.note) || '')}</textarea>
+      <textarea id="approvalNoteInput" placeholder="備註（選填）" style="width:100%;font-family:inherit;font-size:16px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;resize:vertical;">${escapeHtml((existing && existing.note) || '')}</textarea>
       <button id="submitApprovalBtn" style="margin-top:8px;">✓ 確認核定</button>
     </div>
   `;
@@ -4020,6 +4068,7 @@ function applyLogin(user){
   const dss = document.getElementById('dailyStaffSelect');
   if(dss) dss.value = user.name;
   refreshAll();
+  setTimeout(updateTopbarHeight, 50);
 }
 
 document.getElementById('openLoginBtn').addEventListener('click', ()=>{
@@ -4034,6 +4083,7 @@ logoutBtn.addEventListener('click', ()=>{
   siteSelect.disabled = false;
   siteSelect.title = '';
   setSitePickerVisible(true);
+  setTimeout(updateTopbarHeight, 50);
   topbarSubtitle.textContent = '國立臺灣大學醫學院附設醫院雲林分院－藥劑部';
   resetLoginForm();
   loginOverlay.classList.remove('hidden');
