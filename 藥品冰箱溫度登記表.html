@@ -2077,11 +2077,11 @@ function buildBuiltInDemoData(site, ym){
         row.abn = ev.process;
         row.resolved = ev.resolved;
         row.recoverTemp = ev.recoverTemp;
-        row.confirmedBy = SITE_TEAM_LEAD_ID[site] || '';
-        row.confirmedAt = `${ym}-${String(Math.min(d + 2, numDays)).padStart(2,'0')}`;
         row.fridgeAbn = { [ev.fridgeIdx]: {
           abn: ev.process, recoverTemp: ev.recoverTemp, resolved: ev.resolved,
-          confirmed: true, savedAt: `${ym}-${String(d).padStart(2,'0')}`
+          confirmed: true, savedAt: `${ym}-${String(d).padStart(2,'0')}`,
+          confirmedBy: SITE_TEAM_LEAD_ID[site] || '',
+          confirmedAt: `${ym}-${String(Math.min(d + 2, numDays)).padStart(2,'0')}`
         }};
       }
       rows[day] = row;
@@ -2967,14 +2967,30 @@ async function renderDailyView(){
     abnDoneBar.className = 'abn-done-bar';
     abnDoneBar.dataset.fridgeIndex = idx;
     abnDoneBar.style.display = 'none';
-    abnDoneBar.innerHTML = `<span>✅ 異常處理已完成（待組長確認）</span><button class="abn-edit-btn">編輯</button>`;
-    abnDoneBar.querySelector('.abn-edit-btn').addEventListener('click', ()=>{
-      openAbnRecordModal(idx, reasonTextInput.value.trim());
-    });
     reasonSection.appendChild(abnDoneBar);
     reasonSection.appendChild(abnBtn);
 
-    // restore done bar if abn record already saved
+    // restore done bar if abn record already saved, and reflect the ACTUAL confirmation
+    // state (per-fridge) so this matches what's shown in 本月總覽 — once the group
+    // leader has confirmed this specific fridge's record, lock it from further editing.
+    function refreshAbnDoneBar(){
+      const fa = (row && row.fridgeAbn && row.fridgeAbn[idx]) ? row.fridgeAbn[idx] : null;
+      const isConfirmed = fa && fa.confirmedBy;
+      if(isConfirmed){
+        const confirmedName = resolveConfirmedByNameStrict(siteName, fa.confirmedBy) || '組長';
+        abnDoneBar.innerHTML = `<span>✅ 組長已確認（${escapeHtml(confirmedName)}　${escapeHtml(fa.confirmedAt||'')}）</span>`;
+      } else {
+        abnDoneBar.innerHTML = `<span>✅ 異常處理已完成（待組長確認）</span><button class="abn-edit-btn">編輯</button>`;
+        const editBtn = abnDoneBar.querySelector('.abn-edit-btn');
+        if(editBtn){
+          editBtn.addEventListener('click', ()=>{
+            openAbnRecordModal(idx, reasonTextInput.value.trim());
+          });
+        }
+      }
+    }
+    refreshAbnDoneBar();
+
     if(row && row.abn){
       abnDoneBar.style.display = 'flex';
       abnBtn.style.display = 'none';
@@ -3253,8 +3269,6 @@ async function scanMonthAbnormal(siteName, ym){
     if(!data || !data.rows) continue;
     Object.keys(data.rows).sort((a,b)=>Number(a)-Number(b)).forEach(day=>{
       const row = data.rows[day];
-      const confirmedByName = resolveConfirmedByNameStrict(siteName, row.confirmedBy);
-      const confirmedDate = row.confirmedAt || '';
       // per-fridge breakdown
       (row.temps || []).forEach((t, idx)=>{
         const fridgeName = site.fridges[idx];
@@ -3266,34 +3280,36 @@ async function scanMonthAbnormal(siteName, ym){
           }
         });
         if(abnParts.length > 0){
-          // per-fridge abn record stored in row.fridgeAbn[idx]
+          // per-fridge abn record stored in row.fridgeAbn[idx]——
+          // 確認人員/確認日期也存在這個per-fridge物件裡，每台冰箱各自獨立確認，
+          // 不會因為確認其中一台就把同一天/班別的其他冰箱也一起標記成已確認。
           const fa = row.fridgeAbn && row.fridgeAbn[idx] ? row.fridgeAbn[idx] : {};
           items.push({
             day, shiftKey: shift.key, shiftLabel: shift.label.replace('時段',''),
-            fridgeName,
+            fridgeName, fridgeIdx: idx,
             detail: `${fridgeName} ${abnParts.join('、')}`,
             reason: (row.reason || '').split('；')[idx] || row.reason || '',
             process: fa.abn || row.abn || '',
             sign: row.sign || '',
             resolved: fa.resolved || row.resolved || '',
             recoverTemp: fa.recoverTemp || row.recoverTemp || '',
-            confirmedBy: confirmedByName,
-            confirmedDate: confirmedDate
+            confirmedBy: resolveConfirmedByNameStrict(siteName, fa.confirmedBy),
+            confirmedDate: fa.confirmedAt || ''
           });
         }
       });
-      // also include rows with reason/abn but no temp anomaly
+      // also include rows with reason/abn but no temp anomaly (not tied to one specific fridge)
       if((!row.temps || row.temps.every(t=>!t || (!isTempOutOfRange(t.min,'min')&&!isTempOutOfRange(t.now,'now')&&!isTempOutOfRange(t.max,'max')))) && (row.abn || row.reason)){
         items.push({
           day, shiftKey: shift.key, shiftLabel: shift.label.replace('時段',''),
-          fridgeName: '－', detail: '－',
+          fridgeName: '－', fridgeIdx: null, detail: '－',
           reason: row.reason || '',
           process: row.abn || '',
           sign: row.sign || '',
           resolved: row.resolved || '',
           recoverTemp: row.recoverTemp || '',
-          confirmedBy: confirmedByName,
-          confirmedDate: confirmedDate
+          confirmedBy: resolveConfirmedByNameStrict(siteName, row.confirmedBy),
+          confirmedDate: row.confirmedAt || ''
         });
       }
     });
@@ -3661,8 +3677,19 @@ async function renderAbnSectionGrid(siteName, ym){
             data.rows[item.day] = { temps: site.fridges.map(()=>({min:'',now:'',max:''})), reason:'', abn:'', sign:'' };
           }
           const teamLead = getSiteTeamLead(siteName);
-          data.rows[item.day].confirmedBy = teamLead ? teamLead.id : ((currentUser && currentUser.id) || '');
-          data.rows[item.day].confirmedAt = new Date().toISOString().slice(0,10);
+          const confirmerId = teamLead ? teamLead.id : ((currentUser && currentUser.id) || '');
+          const confirmerDate = new Date().toISOString().slice(0,10);
+          if(item.fridgeIdx !== null && item.fridgeIdx !== undefined){
+            // 只確認「這一台冰箱」，存進per-fridge物件，不影響同一列其他冰箱
+            if(!data.rows[item.day].fridgeAbn) data.rows[item.day].fridgeAbn = {};
+            if(!data.rows[item.day].fridgeAbn[item.fridgeIdx]) data.rows[item.day].fridgeAbn[item.fridgeIdx] = {};
+            data.rows[item.day].fridgeAbn[item.fridgeIdx].confirmedBy = confirmerId;
+            data.rows[item.day].fridgeAbn[item.fridgeIdx].confirmedAt = confirmerDate;
+          } else {
+            // 沒有對應特定冰箱的一般性紀錄，維持存在列層級
+            data.rows[item.day].confirmedBy = confirmerId;
+            data.rows[item.day].confirmedAt = confirmerDate;
+          }
           await setShiftData(siteName, item.shiftKey, ym, data);
           setStatus('組長確認已送出');
           await renderAbnSectionGrid(siteName, ym);
@@ -3817,6 +3844,7 @@ modeDailyBtn.addEventListener('click', async ()=>{
   dailyViewEl.style.display = 'flex';
   gridViewEl.style.display = 'none';
   applyModeVisibility('daily');
+  await renderDailyView();
   await renderAbnSection();
 });
 modeGridBtn.addEventListener('click', async ()=>{
@@ -3955,8 +3983,8 @@ async function buildPdfArea(){
             sign: row.sign || '',
             resolved: (fa && fa.resolved) || row.resolved || '',
             recoverTemp: (fa && fa.recoverTemp) || row.recoverTemp || '',
-            confirmedBy: resolveConfirmedByNameStrict(siteName, row.confirmedBy) || '待組長確認',
-            confirmedDate: row.confirmedAt || ''
+            confirmedBy: resolveConfirmedByNameStrict(siteName, (fa && fa.confirmedBy) || row.confirmedBy) || '待組長確認',
+            confirmedDate: (fa && fa.confirmedAt) || row.confirmedAt || ''
           });
         }
       });
