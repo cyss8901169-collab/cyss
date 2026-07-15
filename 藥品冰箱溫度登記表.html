@@ -1635,6 +1635,7 @@
      （個別欄位若有更明確的樣式規則，仍可再自行調整，只是不會小於這個底線太多。） */
   input, select, textarea{ font-size:16px; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -1725,6 +1726,15 @@
             <polyline points="6 9 6 2 18 2 18 9"></polyline>
             <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
             <rect x="6" y="14" width="12" height="8"></rect>
+          </svg>
+        </button>
+        <button id="exportCsvBtn" class="export-pdf-btn export-pdf-btn-icon hidden-in-mode" title="匯出Excel(.xlsx)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="9" y1="13" x2="10.5" y2="17"></line>
+            <line x1="10.5" y1="13" x2="9" y2="17"></line>
+            <line x1="14" y1="13" x2="14" y2="17"></line>
           </svg>
         </button>
       </div>
@@ -2655,6 +2665,14 @@ function populateDailyDateOptions(){
   const isCurrentMonth = ym === today.ym;
   if(!dateSelectEl) return;
   const [y,m] = ym.split('-');
+  // 如果日期選擇器目前的值本來就已經屬於這個月份（例如使用者剛剛透過日曆
+  // 選了「這個月的某一天」），就保留使用者選的那一天，不要強制蓋成該月1號——
+  // 這是之前「選了日期卻卡住/被重設」的真正原因。
+  const currentVal = dateSelectEl.value || '';
+  if(currentVal.slice(0, 7) === ym){
+    monthSelect.value = ym;
+    return;
+  }
   const day = isCurrentMonth ? today.day : '01';
   dateSelectEl.value = `${y}-${m}-${String(day).padStart(2,'0')}`;
   monthSelect.value = ym;
@@ -2759,6 +2777,7 @@ function isTempOutOfRange(v, subKey){
   return n < 2.0 || n > 8.0;
 }
 
+let _dailyLoadedSavedAt = null; // 記錄目前畫面載入時讀到的資料儲存時間，用來偵測是否被他人更新過
 async function renderDailyView(){
   const siteName = siteSelect.value;
   const site = SITES[siteName];
@@ -2789,6 +2808,9 @@ async function renderDailyView(){
   // load stored data for this shift/month
   const data = await getShiftData(siteName, shiftKey, ym);
   const row = data && data.rows ? data.rows[day] : null;
+  // 記錄這次畫面渲染當下讀到的儲存時間，之後按下確認登記時可以比對
+  // 這段期間有沒有被別人更新過，是的話跳出提醒視窗
+  _dailyLoadedSavedAt = row ? (row.savedAt || null) : null;
 
   // build fridge cards
   fridgeCardsEl.innerHTML = '';
@@ -3152,6 +3174,14 @@ document.getElementById('confirmDailyBtn').addEventListener('click', async ()=>{
   const ym = monthSelect.value || todayMonthValue();
   const day = dailyDateSelect.value || '1';
 
+  // 防呆：不可以送出「未來日期」的登記（瀏覽/查看未來日期的資料不受此限制，
+  // 只有實際要儲存登記的當下才檢查）
+  const selectedDateStr = dateSelectEl.value || `${ym}-${String(day).padStart(2,'0')}`;
+  if(selectedDateStr > todayDateValue()){
+    alert('⚠ 無法登記未來日期的資料，請確認日期是否選擇正確。');
+    return;
+  }
+
   // 防呆檢查 1：現在溫度不可大於最高溫度 / 小於最低溫度
   if(dailyHasAnyError()){
     alert('⚠ 登記失敗：「現在溫度」不可大於「最高溫度」或小於「最低溫度」，請檢查標示為橘色的欄位後再試一次。');
@@ -3204,6 +3234,14 @@ document.getElementById('confirmDailyBtn').addEventListener('click', async ()=>{
   const data = (await getShiftData(siteName, shiftKey, ym)) || { manager: '', fridges: site.fridges, rows: {} };
   const existingRow = data.rows[day] || { temps: site.fridges.map(()=>({min:'',now:'',max:''})), reason:'', abn:'', sign:'' };
 
+  // 重複登記防呆：這個時段只要先前已經有登記過（不論是誰、什麼時候），
+  // 再次送出前就先提醒使用者確認，避免不小心重複登記蓋掉原本的資料。
+  if(existingRow.savedAt){
+    const who = existingRow.savedBy ? `（登記人員：${existingRow.savedBy}，${new Date(existingRow.savedAt).toLocaleString('zh-TW')}）` : '';
+    const proceed = confirm(`⚠ 這個時段先前已經登記過${who}。\n\n是否仍要繼續，用目前畫面上的內容覆蓋儲存？`);
+    if(!proceed) return;
+  }
+
   const staffName = (currentUser && currentUser.name) || document.getElementById('dailyStaffSelect').value || '未具名';
 
 
@@ -3214,16 +3252,29 @@ document.getElementById('confirmDailyBtn').addEventListener('click', async ()=>{
     if(temps[idx]) temps[idx][key] = inp.value || '';
   });
 
+  // 這次登記的溫度是否還有任何一台冰箱異常
+  const stillAbnormalNow = temps.some(t=>
+    SUB_FIELDS.some(sf => isTempOutOfRange(t[sf.key], sf.key))
+  );
+  // 先前是否已經有任何一台冰箱的異常紀錄被組長確認過——已確認的視為正式紀錄，不主動清除
+  const anyFridgeConfirmed = existingRow.fridgeAbn &&
+    Object.values(existingRow.fridgeAbn).some(fa => fa && fa.confirmedBy);
+
+  // 如果這次溫度已經全部恢復正常，且先前的異常紀錄還沒有被組長確認過，
+  // 就一併清除舊的異常處理紀錄，避免本月總覽一直顯示早已不存在的異常。
+  const shouldClearOldAbn = !stillAbnormalNow && !anyFridgeConfirmed;
+
   data.rows[day] = {
     temps,
-    reason: combinedReason || (reasonInputEl ? reasonInputEl.value.trim() : ''),
-    abn: existingRow.abn || '',
+    reason: combinedReason || (reasonInputEl ? reasonInputEl.value.trim() : '') || (shouldClearOldAbn ? '' : existingRow.reason || ''),
+    abn: shouldClearOldAbn ? '' : (existingRow.abn || ''),
     sign: staffName,
     // 保留原本已填寫的異常處理紀錄，避免被這次登記整筆覆蓋掉
-    fridgeAbn: existingRow.fridgeAbn || undefined,
-    resolved: existingRow.resolved || '',
-    recoverTemp: existingRow.recoverTemp || '',
-    confirmedBy: existingRow.confirmedBy || '',
+    // （但若這次溫度已恢復正常、且先前紀錄尚未經組長確認，則一併清除）
+    fridgeAbn: shouldClearOldAbn ? undefined : (existingRow.fridgeAbn || undefined),
+    resolved: shouldClearOldAbn ? '' : (existingRow.resolved || ''),
+    recoverTemp: shouldClearOldAbn ? '' : (existingRow.recoverTemp || ''),
+    confirmedBy: shouldClearOldAbn ? '' : (existingRow.confirmedBy || ''),
     savedAt: new Date().toISOString(),
     savedBy: staffName
   };
@@ -3822,6 +3873,7 @@ const dailyViewEl = document.getElementById('dailyView');
 const gridViewEl = document.getElementById('gridView');
 
 const exportPdfBtnEl = document.getElementById('exportPdfBtn');
+const exportCsvBtnEl = document.getElementById('exportCsvBtn');
 const statCardExtras = document.querySelectorAll('.stat-card-extra');
 const topStatsRow = document.getElementById('topStatsRow');
 
@@ -3830,6 +3882,7 @@ let _sitePickerVisibleByLogin = true; // 依登入狀態決定「院區」選單
 function applyModeVisibility(mode){
   const showExtras = (mode === 'grid');
   exportPdfBtnEl.classList.toggle('hidden-in-mode', !showExtras);
+  if(exportCsvBtnEl) exportCsvBtnEl.classList.toggle('hidden-in-mode', !showExtras);
   if(topStatsRow) topStatsRow.style.display = showExtras ? 'flex' : 'none';
   // 「本月總覽」畫面只需要：日期 + 今日/本月 + 匯出，
   // 時段(上午/下午/大夜)與院區選單在這個畫面用不到，先隱藏起來簡化版面。
@@ -4059,6 +4112,128 @@ async function buildPdfArea(){
 
   document.getElementById('pdfAreaContent').innerHTML = html;
 }
+
+// ===================== Excel (.xlsx) 匯出 =====================
+// 使用 SheetJS 產生真正的 .xlsx 檔案：多個分頁、凍結標題列、欄寬設定。
+// 免費版工具無法可靠寫入「儲存格底色」，所以異常數值改用文字標記（在數字前加 ⚠）來標示。
+
+async function buildTempSheetAoa(siteName, ym){
+  const site = SITES[siteName];
+  const numDays = daysInMonth(ym);
+  const shiftDataMap = {};
+  for(const shift of site.shifts){
+    shiftDataMap[shift.key] = (await getShiftData(siteName, shift.key, ym)) || { rows: {} };
+  }
+
+  const header = ['日期', '時段'];
+  site.fridges.forEach(f=>{
+    SUB_FIELDS.forEach(sf=> header.push(`${f}_${sf.label}(℃)`));
+  });
+  header.push('登記人員', '異常原因說明');
+
+  const aoa = [header];
+  for(let d=1; d<=numDays; d++){
+    const day = String(d);
+    site.shifts.forEach(shift=>{
+      const shiftShort = shift.label.replace(/時段|（.*?）|\(.*?\)/g,'').trim();
+      const shiftData = shiftDataMap[shift.key];
+      const row = shiftData.rows ? shiftData.rows[day] : null;
+      const rowOut = [day, shiftShort];
+      site.fridges.forEach((f, fIdx)=>{
+        const t = row && row.temps && row.temps[fIdx] ? row.temps[fIdx] : {min:'',now:'',max:''};
+        SUB_FIELDS.forEach(sf=>{
+          const v = t[sf.key] || '';
+          const out = v !== '' && isTempOutOfRange(v, sf.key);
+          rowOut.push(out ? `⚠${v}` : v);
+        });
+      });
+      rowOut.push(row ? (row.sign || '') : '', row ? (row.reason || '') : '');
+      aoa.push(rowOut);
+    });
+  }
+  return { aoa, fridgeCount: site.fridges.length };
+}
+
+async function buildAbnSheetAoa(siteName, ym){
+  const header = ['日期', '時段', '異常值', '原因說明', '登記人員', '是否解除', '處理方式', '回復溫度', '確認人員', '確認日期'];
+  const aoa = [header];
+  const abnormalItems = await scanMonthAbnormal(siteName, ym);
+  if(abnormalItems.length === 0){
+    aoa.push(['本月無異常紀錄']);
+  } else {
+    abnormalItems.forEach(item=>{
+      const shiftShort = item.shiftLabel.replace(/（.*?）|\(.*?\)/g,'').trim();
+      aoa.push([
+        formatMonthDay(ym, item.day), shiftShort, item.detail || '', item.reason || '',
+        item.sign || '', item.resolved || '', item.process || '', item.recoverTemp || '',
+        item.confirmedBy || '待組長確認', item.confirmedDate || ''
+      ]);
+    });
+  }
+  return aoa;
+}
+
+async function buildApprovalSheetAoa(siteName, ym){
+  const approval = await getApproval(siteName, ym);
+  const aoa = [['項目', '內容']];
+  aoa.push(['院區', siteName]);
+  aoa.push(['月份', ym]);
+  if(approval && approval.approved){
+    aoa.push(['核定狀態', '已核定']);
+    aoa.push(['核定人員', `${approval.approverName || ''}${approval.approverId ? `（${approval.approverId}）` : ''}`]);
+    aoa.push(['核定日期', approval.approvedAt || '']);
+    if(approval.note) aoa.push(['備註', approval.note]);
+  } else {
+    aoa.push(['核定狀態', '尚未核定']);
+  }
+  return aoa;
+}
+
+function setSheetColumnWidths(ws, widths){
+  ws['!cols'] = widths.map(w => ({ wch: w }));
+}
+function setSheetFreezeHeader(ws){
+  // 凍結標題列，往下捲動時第一列保持固定
+  ws['!freeze'] = { xSplit: 0, ySplit: 1 };
+}
+
+document.getElementById('exportCsvBtn').addEventListener('click', async ()=>{
+  setStatus('正在準備 Excel 檔案…');
+  try{
+    if(typeof XLSX === 'undefined'){
+      throw new Error('XLSX 函式庫尚未載入（可能是網路問題），請確認網路連線後重新整理頁面再試一次');
+    }
+    const siteName = siteSelect.value;
+    const ym = monthSelect.value || todayMonthValue();
+
+    const wb = XLSX.utils.book_new();
+
+    const { aoa: tempAoa, fridgeCount } = await buildTempSheetAoa(siteName, ym);
+    const tempWs = XLSX.utils.aoa_to_sheet(tempAoa);
+    setSheetFreezeHeader(tempWs);
+    setSheetColumnWidths(tempWs, [6, 8, ...Array(fridgeCount * 3).fill(9), 10, 24]);
+    XLSX.utils.book_append_sheet(wb, tempWs, '溫度紀錄');
+
+    const abnAoa = await buildAbnSheetAoa(siteName, ym);
+    const abnWs = XLSX.utils.aoa_to_sheet(abnAoa);
+    setSheetFreezeHeader(abnWs);
+    setSheetColumnWidths(abnWs, [8, 8, 16, 20, 10, 8, 22, 10, 12, 10]);
+    XLSX.utils.book_append_sheet(wb, abnWs, '異常處理記錄');
+
+    const approvalAoa = await buildApprovalSheetAoa(siteName, ym);
+    const approvalWs = XLSX.utils.aoa_to_sheet(approvalAoa);
+    setSheetColumnWidths(approvalWs, [12, 30]);
+    XLSX.utils.book_append_sheet(wb, approvalWs, '核定資訊');
+
+    XLSX.writeFile(wb, `${siteName}_${ym}_溫度登記資料.xlsx`);
+    setStatus('Excel 已匯出');
+    showSuccessToast('✅ Excel 已下載');
+  }catch(err){
+    console.error('Excel 匯出失敗', err);
+    setStatus('Excel 匯出失敗，請稍後再試', true);
+    alert('⚠ Excel 匯出失敗：' + (err && err.message ? err.message : '請稍後再試一次'));
+  }
+});
 
 document.getElementById('exportPdfBtn').addEventListener('click', async ()=>{
   setStatus('正在準備 PDF…');
@@ -4307,6 +4482,7 @@ function setSitePickerVisible(visible){
 
 function applyLogin(user){
   currentUser = user;
+  resetInactivityTimer();
   userBadge.textContent = `${user.name}（${user.id}）`;
   topbarUser.style.display = 'flex';
   topbarLogin.style.display = 'none';
@@ -4332,7 +4508,7 @@ document.getElementById('openLoginBtn').addEventListener('click', ()=>{
   loginOverlay.classList.remove('hidden');
 });
 
-logoutBtn.addEventListener('click', ()=>{
+function performLogout(){
   currentUser = null;
   topbarUser.style.display = 'none';
   topbarLogin.style.display = 'flex';
@@ -4343,6 +4519,28 @@ logoutBtn.addEventListener('click', ()=>{
   topbarSubtitle.textContent = '國立臺灣大學醫學院附設醫院雲林分院－藥劑部';
   resetLoginForm();
   loginOverlay.classList.remove('hidden');
+}
+logoutBtn.addEventListener('click', performLogout);
+
+// 閒置自動登出：畫面超過2分鐘沒有任何操作（滑鼠/鍵盤/觸控/捲動），就自動登出，
+// 避免忘記登出、離開座位時被別人看到已登入的畫面。
+const INACTIVITY_LIMIT_MS = 2 * 60 * 1000;
+let inactivityTimer = null;
+function resetInactivityTimer(){
+  clearTimeout(inactivityTimer);
+  if(!currentUser) return; // 沒有人登入就不用計時
+  inactivityTimer = setTimeout(()=>{
+    if(currentUser){
+      performLogout();
+      alert('已閒置超過2分鐘，為了資料安全已自動登出，請重新登入。');
+    }
+  }, INACTIVITY_LIMIT_MS);
+}
+['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(evtName=>{
+  window.addEventListener(evtName, resetInactivityTimer, { passive: true });
+});
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible') resetInactivityTimer();
 });
 
 siteSelect.addEventListener('change', async ()=>{
@@ -4363,15 +4561,11 @@ function todayDateValue(){
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 dateSelectEl.value = todayDateValue();
+// 未來日期在日曆選單中直接隱藏/反灰無法點選（只限制「之後」的日期，不影響選擇過去的日期）
 dateSelectEl.max = todayDateValue();
 
 // sync date input → daily view
 dateSelectEl.addEventListener('change', async ()=>{
-  // 防呆：若使用者手動輸入超過今天的日期，強制拉回今天
-  if(dateSelectEl.value > todayDateValue()){
-    dateSelectEl.value = todayDateValue();
-    alert('無法登記未來日期，已自動設回今天日期。');
-  }
   const parts = dateSelectEl.value.split('-');
   if(parts.length === 3){
     monthSelect.value = `${parts[0]}-${parts[1]}`;
