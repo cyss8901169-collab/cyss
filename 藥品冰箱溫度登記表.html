@@ -88,7 +88,7 @@
   .wrap{
     max-width:1180px;
     margin:0 auto;
-    padding:2px 16px 60px;
+    padding:2px 16px 100px;
   }
   .sticky-zone{
     position:sticky;
@@ -536,10 +536,10 @@
   }
   #dateSelect{
     flex:0 0 auto;
-    width:150px;
-    font-size:15px;
+    width:210px;
+    font-size:18px;
     font-weight:700;
-    padding:6px 8px;
+    padding:8px 10px;
     border:1.5px solid var(--blue);
     border-radius:8px;
     color:var(--navy);
@@ -601,6 +601,15 @@
   }
   .export-pdf-btn:hover{ filter:brightness(0.95); }
   .export-pdf-btn.hidden-in-mode{ display:none; }
+  .export-pdf-btn.export-pdf-btn-icon{
+    width:52px;
+    height:52px;
+    padding:0;
+    border-radius:12px;
+    font-size:22px;
+    justify-content:center;
+    flex-shrink:0;
+  }
   .stat-card-extra.hidden-in-mode{ display:none; }
 
   /* ===== Stat cards row ===== */
@@ -647,11 +656,12 @@
     justify-content:space-between;
     flex-wrap:wrap;
     gap:8px;
-    margin-bottom:10px;
+    margin-bottom:0;
     font-size:14px;
     font-weight:700;
     color:var(--navy);
   }
+  .feed-header-bar:empty{ display:none; }
   .feed-card{
     background:#fff;
     border:1px solid var(--line);
@@ -717,6 +727,20 @@
     border-radius:6px;
     width:160px;
   }
+  .checker-confirm-btn{
+    font-family:inherit;
+    font-size:12px;
+    font-weight:700;
+    padding:5px 12px;
+    border-radius:8px;
+    border:1px solid var(--ok);
+    background:#fff;
+    color:var(--ok);
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .checker-confirm-btn:hover:not(:disabled){ background:var(--ok); color:#fff; }
+  .checker-confirm-btn:disabled{ opacity:0.5; cursor:not-allowed; border-color:var(--line); color:var(--muted); }
     border-top:1px dashed var(--line);
     margin-top:10px;
     padding-top:8px;
@@ -812,6 +836,17 @@
     background:var(--navy);
     border-color:var(--navy);
     color:#fff;
+  }
+  .mode-btn-stack{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    flex-shrink:0;
+  }
+  .mode-btn-stack .mode-btn{
+    padding:3px 10px;
+    font-size:11px;
+    text-align:center;
   }
 
   /* ===== Daily check-in view ===== */
@@ -946,6 +981,14 @@
     border-radius:12px;
     padding:4px 10px 6px;
     box-shadow:0 1px 4px rgba(0,0,0,0.05);
+  }
+  @keyframes fridgeConfirmFlash{
+    0%, 100% { box-shadow:0 1px 4px rgba(0,0,0,0.05); background:#fff; }
+    50% { box-shadow:0 0 0 8px rgba(46,139,110,0.9); background:#e3f7ec; }
+  }
+  .fridge-card.confirm-flash{
+    outline:2px solid transparent;
+    animation:fridgeConfirmFlash 0.5s ease-in-out 3;
   }
   .fridge-card-title{
     display:flex;
@@ -1118,7 +1161,13 @@
   }
   .last-saved.empty{ color:var(--muted); }
   .confirm-btn{
-    width:100%;
+    position:fixed;
+    left:16px;
+    right:16px;
+    bottom:14px;
+    max-width:1148px;
+    margin:0 auto;
+    width:auto;
     padding:13px;
     border-radius:9px;
     border:none;
@@ -1127,6 +1176,8 @@
     font-size:15px;
     font-weight:700;
     cursor:pointer;
+    z-index:30;
+    box-shadow:0 -4px 18px rgba(15,48,87,0.25);
   }
   .confirm-btn:hover{ filter:brightness(0.95); }
   .staff-select-row{
@@ -1191,6 +1242,20 @@
   }
   table.abn-table th{ background:var(--pale); color:var(--navy); }
   table.abn-table td.left{ text-align:left; }
+  .abn-confirm-btn{
+    font-family:inherit;
+    font-size:12px;
+    font-weight:700;
+    padding:6px 12px;
+    border-radius:8px;
+    border:1px solid var(--ok);
+    background:#fff;
+    color:var(--ok);
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .abn-confirm-btn:hover{ background:var(--ok); color:#fff; }
+  .abn-confirm-btn:disabled{ opacity:0.6; cursor:not-allowed; }
   table.abn-table input{
     width:100%;
     font-size:12px;
@@ -1509,7 +1574,7 @@
     .top-stats-row{ flex-wrap:wrap; gap:6px; }
     .stat-card{ flex:1; min-width:120px; }
     .fridge-cards{ grid-template-columns:repeat(2,1fr); }
-    .wrap{ padding:4px 10px 60px; }
+    .wrap{ padding:4px 10px 100px; }
     .topbar-wrap{ padding:4px 10px 0; }
     .feed-table-wrap{ overflow-x:auto; }
     .abn-table-wrap{ overflow-x:auto; }
@@ -1522,10 +1587,10 @@
     /* sticky-zone 去除多餘padding */
     .sticky-zone{ padding-top:2px; }
     .topbar-wrap{ padding:4px 10px 0; }
-    .wrap{ padding:2px 8px 40px; }
+    .wrap{ padding:2px 8px 90px; }
 
     /* 控制列手機優化 */
-    #dateSelect{ width:130px; font-size:16px; }
+    #dateSelect{ width:200px; font-size:18px; }
     .shift-pills-top{ gap:3px; }
     .shift-pill{ padding:4px 7px; font-size:10px; }
     .top-actions-right-controls{ gap:3px; }
@@ -1651,6 +1716,17 @@
       <div class="controls-row controls-row-1">
         <input type="date" id="dateSelect">
         <div class="shift-pills-top" id="shiftPillsTop"></div>
+        <div class="mode-btn-stack" id="modeBtnStack">
+          <button class="mode-btn active" id="modeDailyBtn">📅 今日</button>
+          <button class="mode-btn" id="modeGridBtn">📋 本月</button>
+        </div>
+        <button id="exportPdfBtn" class="export-pdf-btn export-pdf-btn-icon hidden-in-mode" title="匯出PDF">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+          </svg>
+        </button>
       </div>
       <div class="controls-row controls-row-2">
         <span class="ctrl-label" id="siteLabel" style="flex-shrink:0;">院區</span>
@@ -1658,11 +1734,6 @@
         <select id="shiftSelect" style="display:none;"></select>
         <input type="text" id="managerInput" style="display:none;">
         <input type="month" id="monthSelect" style="display:none;">
-        <div class="top-actions-right-controls">
-          <button class="mode-btn active" id="modeDailyBtn">📅 今日</button>
-          <button class="mode-btn" id="modeGridBtn">📋 本月</button>
-          <button id="exportPdfBtn" class="export-pdf-btn hidden-in-mode">🖨 匯出</button>
-        </div>
       </div>
     </div>
   </div>
@@ -1889,9 +1960,11 @@ const STAFF = {
   ]
 };
 
-// 各院區「每週檢核者」預設人員（尚未手動填寫時自動帶入）
+// 各院區「每週檢核者」——只有這個指定人員可以執行檢核，不會自動預設帶入
 const SITE_DEFAULT_CHECKER_ID = {
-  "斗六院區": "Y00326"
+  "斗六院區": "Y00326",
+  "藥庫": "Y00955",
+  "虎尾院區": "Y01644"
 };
 function getSiteDefaultCheckerName(siteName){
   const id = SITE_DEFAULT_CHECKER_ID[siteName];
@@ -1903,7 +1976,9 @@ function getSiteDefaultCheckerName(siteName){
 // 各院區「組長」設定：異常處理記錄的確認人員、以及組長月底核定的核定人員，
 // 都固定使用此人員身分（先前 confirmedBy 已寫死為 Y06100，這裡統一集中管理）。
 const SITE_TEAM_LEAD_ID = {
-  "斗六院區": "Y06100"
+  "斗六院區": "Y06100",
+  "藥庫": "Y00287",
+  "虎尾院區": "Y00230"
 };
 function findStaffById(siteName, id){
   return (STAFF[siteName] || []).find(s => s.id === id) || null;
@@ -1928,14 +2003,34 @@ function resolveConfirmedByName(siteName, confirmedByRaw){
   }
   return getSiteTeamLeadName(siteName) || '待組長確認';
 }
+// 嚴格版：只有「真的有存值」才回傳姓名，不會自動預設成組長——
+// 異常處理記錄的「組長確認」是一個隨時可以獨立進行的動作，不應該自動預先帶入。
+function resolveConfirmedByNameStrict(siteName, confirmedByRaw){
+  if(!confirmedByRaw) return '';
+  const found = findStaffById(siteName, confirmedByRaw) ||
+    (STAFF[siteName] || []).find(s => s.name === confirmedByRaw);
+  return found ? found.name : confirmedByRaw;
+}
 
-// ===== 內建示範資料：斗六院區 2026年6月／7月 =====
+// 異常處理記錄的「確認人員」欄位，改為直接反映「組長月底核定」的實際狀態：
+// 本月尚未核定 → 顯示「待組長確認」，不會提早顯示組長姓名；
+// 本月已核定 → 所有異常紀錄都顯示核定人員姓名與核定日期，跟核定卡片一致。
+async function getConfirmedByDisplay(siteName, ym){
+  const approval = await getApproval(siteName, ym);
+  if(approval && approval.approved){
+    return { name: approval.approverName || getSiteTeamLeadName(siteName) || '', date: approval.approvedAt || '' };
+  }
+  return { name: '待組長確認', date: '' };
+}
+
+// ===== 內建示範資料：斗六院區／虎尾院區／藥庫 2026年6月／7月 =====
 // 這兩個月不需要手動「匯入」，只要切換到這兩個月份就會自動顯示，
 // 方便直接檢視「本月總覽」與「PDF匯出」填滿後的樣子（不依賴 window.storage 是否可用）。
-const BUILT_IN_DEMO_SITE = '斗六院區';
+const BUILT_IN_DEMO_SITES = ['斗六院區', '虎尾院區', '藥庫'];
 const BUILT_IN_DEMO_MONTHS = ['2026-06', '2026-07'];
 
 // 每月固定安插幾筆「異常」示範紀錄，方便檢視異常處理紀錄與PDF呈現
+// （若某院區的班別代號或冰箱數量對不上，會在套用時自動略過，不會出錯）
 const DEMO_ABNORMAL_EVENTS = [
   { day: 5,  shiftKey: 'pm',    fridgeIdx: 1, field:'max', value:'8.6',
     reason:'冷氣故障導致室溫升高', process:'已通報總務及冷氣維修人員到場處理', resolved:'是', recoverTemp:'7.2' },
@@ -1971,7 +2066,11 @@ function buildBuiltInDemoData(site, ym){
         savedBy: signer
       };
 
-      const ev = DEMO_ABNORMAL_EVENTS.find(e => e.day === d && e.shiftKey === shift.key && d <= numDays);
+      // 只有這個院區「真的有」對應的班別代號、而且冰箱數量夠多時，才套用示範異常事件，
+      // 避免像虎尾（只有2台冰箱）或藥庫（班別代號不同）套用到不存在的索引而出錯。
+      const ev = DEMO_ABNORMAL_EVENTS.find(e =>
+        e.day === d && e.shiftKey === shift.key && d <= numDays && e.fridgeIdx < siteConf.fridges.length
+      );
       if(ev){
         temps[ev.fridgeIdx][ev.field] = ev.value;
         row.reason = ev.reason;
@@ -1979,6 +2078,7 @@ function buildBuiltInDemoData(site, ym){
         row.resolved = ev.resolved;
         row.recoverTemp = ev.recoverTemp;
         row.confirmedBy = SITE_TEAM_LEAD_ID[site] || '';
+        row.confirmedAt = `${ym}-${String(Math.min(d + 2, numDays)).padStart(2,'0')}`;
         row.fridgeAbn = { [ev.fridgeIdx]: {
           abn: ev.process, recoverTemp: ev.recoverTemp, resolved: ev.resolved,
           confirmed: true, savedAt: `${ym}-${String(d).padStart(2,'0')}`
@@ -1996,7 +2096,7 @@ function buildBuiltInDemoData(site, ym){
 }
 
 function getBuiltInDemoData(site, ym){
-  if(site === BUILT_IN_DEMO_SITE && BUILT_IN_DEMO_MONTHS.includes(ym)){
+  if(BUILT_IN_DEMO_SITES.includes(site) && BUILT_IN_DEMO_MONTHS.includes(ym)){
     return buildBuiltInDemoData(site, ym);
   }
   return null;
@@ -2018,7 +2118,7 @@ function buildDemoSignatureDataUri(name){
 }
 
 function getBuiltInDemoApproval(site, ym){
-  if(site === BUILT_IN_DEMO_SITE && BUILT_IN_DEMO_MONTHS.includes(ym)){
+  if(BUILT_IN_DEMO_SITES.includes(site) && BUILT_IN_DEMO_MONTHS.includes(ym)){
     const numDays = daysInMonth(ym);
     const teamLead = getSiteTeamLead(site);
     return {
@@ -3066,10 +3166,23 @@ document.getElementById('confirmDailyBtn').addEventListener('click', async ()=>{
   });
   const combinedReason = fridgeReasons.filter(Boolean).join('；');
 
-  // 防呆檢查 2：有溫度異常時提示需填寫原因（不強制阻擋）
-  if(dailyHasAbnormal() && !combinedReason){
-    const go = confirm('⚠ 偵測到溫度超出 2℃～8℃ 範圍。\n\n建議先填寫異常原因，確定要直接儲存嗎？');
-    if(!go) return;
+  // 防呆檢查 2：有溫度異常時，強制要求先填寫「異常原因」並完成「異常處理記錄」，
+  // 兩者都齊全才能儲存——不再只是建議、可以直接略過。
+  if(dailyHasAbnormal()){
+    let missingReason = false;
+    let missingHandling = false;
+    fridgeCardsEl.querySelectorAll('.fridge-reason-section').forEach(section=>{
+      if(section.style.display !== 'none'){
+        const reasonInp = section.querySelector('.reason-text-input');
+        if(!reasonInp || !reasonInp.value.trim()) missingReason = true;
+        const doneBar = section.querySelector('.abn-done-bar');
+        if(!doneBar || doneBar.style.display !== 'flex') missingHandling = true;
+      }
+    });
+    if(missingReason || missingHandling){
+      alert('⚠ 偵測到溫度超出 2℃～8℃ 範圍。\n\n請先填寫「異常原因」，並完成「異常處理記錄」（是否解除／處理方式／回復溫度），填寫完成後才能儲存本次登記。');
+      return;
+    }
   }
 
   const data = (await getShiftData(siteName, shiftKey, ym)) || { manager: '', fridges: site.fridges, rows: {} };
@@ -3094,7 +3207,7 @@ document.getElementById('confirmDailyBtn').addEventListener('click', async ()=>{
     fridgeAbn: existingRow.fridgeAbn || undefined,
     resolved: existingRow.resolved || '',
     recoverTemp: existingRow.recoverTemp || '',
-    confirmedBy: existingRow.confirmedBy || (SITE_TEAM_LEAD_ID[siteName] || ''),
+    confirmedBy: existingRow.confirmedBy || '',
     savedAt: new Date().toISOString(),
     savedBy: staffName
   };
@@ -3102,8 +3215,18 @@ document.getElementById('confirmDailyBtn').addEventListener('click', async ()=>{
 
   try{
     await setShiftData(siteName, shiftKey, ym, data);
+    const shiftObjNow = site.shifts.find(s=>s.key===shiftKey);
+    const shiftShortNow = shiftObjNow ? shiftObjNow.label.replace(/時段|（.*?）|\(.*?\)/g,'').trim() : '';
     setStatus('已確認本次登記');
-    showSuccessToast('✅ 已確認本次登記');
+    showSuccessToast(`登記確認完成${shiftShortNow ? `（${shiftShortNow}）` : ''}`);
+    // 各台冰箱卡片外框閃爍，作為額外的成功提示
+    fridgeCardsEl.querySelectorAll('.fridge-card').forEach(card=>{
+      card.classList.remove('confirm-flash');
+      // 強制重新觸發動畫（若快速連續點擊）
+      void card.offsetWidth;
+      card.classList.add('confirm-flash');
+      setTimeout(()=>{ card.classList.remove('confirm-flash'); }, 1500);
+    });
     // lightweight updates only - avoid expensive full re-renders
     await renderAbnSection();
     await renderStatCards();
@@ -3130,6 +3253,8 @@ async function scanMonthAbnormal(siteName, ym){
     if(!data || !data.rows) continue;
     Object.keys(data.rows).sort((a,b)=>Number(a)-Number(b)).forEach(day=>{
       const row = data.rows[day];
+      const confirmedByName = resolveConfirmedByNameStrict(siteName, row.confirmedBy);
+      const confirmedDate = row.confirmedAt || '';
       // per-fridge breakdown
       (row.temps || []).forEach((t, idx)=>{
         const fridgeName = site.fridges[idx];
@@ -3152,8 +3277,8 @@ async function scanMonthAbnormal(siteName, ym){
             sign: row.sign || '',
             resolved: fa.resolved || row.resolved || '',
             recoverTemp: fa.recoverTemp || row.recoverTemp || '',
-            confirmedBy: resolveConfirmedByName(siteName, row.confirmedBy),
-            confirmedDate: fa.savedAt || `${ym}-${String(day).padStart(2,'0')}`
+            confirmedBy: confirmedByName,
+            confirmedDate: confirmedDate
           });
         }
       });
@@ -3167,8 +3292,8 @@ async function scanMonthAbnormal(siteName, ym){
           sign: row.sign || '',
           resolved: row.resolved || '',
           recoverTemp: row.recoverTemp || '',
-          confirmedBy: resolveConfirmedByName(siteName, row.confirmedBy),
-          confirmedDate: `${ym}-${String(day).padStart(2,'0')}`
+          confirmedBy: confirmedByName,
+          confirmedDate: confirmedDate
         });
       }
     });
@@ -3181,7 +3306,11 @@ async function renderAbnSection(){
   const ym = monthSelect.value || todayMonthValue();
   const items = await scanMonthAbnormal(siteName, ym);
 
-  if(items.length > 0){
+  // 「本月總覽」畫面上方的統計卡片已經有「溫度異常次數」了，
+  // 這裡的紅色提示列只在「今日登記」畫面顯示，避免重複提醒。
+  const inGridMode = gridViewEl && gridViewEl.style.display !== 'none';
+
+  if(items.length > 0 && !inGridMode){
     abnBannerEl.textContent = `⚠ 本月有 ${items.length} 次溫度／登記異常`;
     abnBannerEl.classList.add('show');
   } else {
@@ -3231,6 +3360,37 @@ async function renderStatCards(){
 /* ===================== Monthly feed (本月總覽) ===================== */
 
 
+// 檢查某一週(startDay~endDay)的資料是否「完全登記完成」——
+// 每天每個班別都要：溫度三個欄位都有填、有登記人員簽名；
+// 如果那筆有溫度異常，還必須「異常原因」與「異常處理記錄」(處理方式/是否解除/回復溫度)都填寫完整，
+// 全部滿足才算這一週「已完整」，檢核者才能夠核可。
+function isWeekComplete(site, shiftDatas, startDay, endDay){
+  for(let d = startDay; d <= endDay; d++){
+    const day = String(d);
+    for(const shift of site.shifts){
+      const shiftData = shiftDatas[shift.key];
+      const row = shiftData && shiftData.rows ? shiftData.rows[day] : null;
+      if(!row) return false;
+      if(!row.sign) return false;
+      if(!row.temps || row.temps.length !== site.fridges.length) return false;
+
+      let rowAbnormal = false;
+      for(const t of row.temps){
+        if(!t || t.min === '' || t.now === '' || t.max === '' || t.min == null || t.now == null || t.max == null){
+          return false;
+        }
+        SUB_FIELDS.forEach(sf=>{
+          if(isTempOutOfRange(t[sf.key], sf.key)) rowAbnormal = true;
+        });
+      }
+      if(rowAbnormal){
+        if(!row.reason || !row.abn || !row.resolved || !row.recoverTemp) return false;
+      }
+    }
+  }
+  return true;
+}
+
 async function renderMonthlyFeed(){
   const siteName = siteSelect.value;
   const site = SITES[siteName];
@@ -3240,9 +3400,7 @@ async function renderMonthlyFeed(){
   const today = realTodayInfo();
   const isCurrentMonth = ym === today.ym;
 
-  document.getElementById('feedHeaderBar').innerHTML = `
-    <span>【${escapeHtml(siteName)}】　${y}年${m}月　本月總覽</span>
-  `;
+  document.getElementById('feedHeaderBar').innerHTML = '';
 
   const shiftDatas = {};
   for(const shift of site.shifts){
@@ -3339,21 +3497,17 @@ async function renderMonthlyFeed(){
       body.appendChild(tr);
     });
 
-    // insert weekly checker row after every 7 days
-    if(d % 7 === 0){
+    // insert weekly checker row after every 7 days, and also for the final partial week
+    if(d % 7 === 0 || d === numDays){
       const blockIndex = Math.floor((d - 1) / 7);
       const startDay = blockIndex * 7 + 1;
       const endDay = d;
+      const weekComplete = isWeekComplete(site, shiftDatas, startDay, endDay);
       const checkers = await getSiteCheckers(siteName, ym);
-      let saved = checkers[blockIndex];
-      if(!saved || !saved.name){
-        const defaultName = getSiteDefaultCheckerName(siteName);
-        if(defaultName){
-          saved = { name: defaultName, date: new Date().toISOString().slice(0,10) };
-          checkers[blockIndex] = saved;
-          await setSiteCheckers(siteName, ym, checkers);
-        }
-      }
+      const saved = checkers[blockIndex];
+      const designatedId = SITE_DEFAULT_CHECKER_ID[siteName];
+      const designatedName = getSiteDefaultCheckerName(siteName);
+      const isDesignatedUser = designatedId && currentUser && currentUser.id === designatedId;
       const colCount = 2 + site.fridges.length * 3 + 2;
 
       const checkerTr = document.createElement('tr');
@@ -3366,29 +3520,60 @@ async function renderMonthlyFeed(){
       label.textContent = `📋 第 ${blockIndex+1} 週檢核（${startDay}日–${endDay}日）　檢核者：`;
       checkerTd.appendChild(label);
 
-      const inp = document.createElement('input');
-      inp.type = 'text';
-      inp.placeholder = '請輸入檢核者姓名';
-      inp.className = 'checker-inline-input';
-      inp.value = (saved && saved.name) || '';
-      const bi = blockIndex;
-      let wkTimer = null;
-      inp.addEventListener('input', ()=>{
-        clearTimeout(wkTimer);
-        wkTimer = setTimeout(async ()=>{
-          const latest = await getSiteCheckers(siteName, ym);
-          latest[bi] = { name: inp.value, date: inp.value ? new Date().toISOString().slice(0,10) : '' };
-          await setSiteCheckers(siteName, ym, latest);
-          setStatus('週檢核已更新');
-        }, 600);
-      });
-      checkerTd.appendChild(inp);
-
       if(saved && saved.name){
+        // 已經檢核完成，唯讀顯示
         const ok = document.createElement('span');
-        ok.style.cssText = 'margin-left:8px;font-size:11px;color:var(--ok);';
-        ok.textContent = `✅ ${saved.date||''}`;
+        ok.style.cssText = 'font-size:12px;color:var(--ok);font-weight:700;';
+        ok.textContent = `✅ ${saved.name}　${saved.date||''}`;
         checkerTd.appendChild(ok);
+      } else if(!weekComplete){
+        const pendingMsg = document.createElement('span');
+        pendingMsg.style.cssText = 'font-size:12px;color:var(--muted);';
+        pendingMsg.textContent = '本週資料尚未完整登記（含異常處理紀錄），暫時無法檢核';
+        checkerTd.appendChild(pendingMsg);
+      } else if(!designatedId){
+        const noSetup = document.createElement('span');
+        noSetup.style.cssText = 'font-size:12px;color:var(--muted);';
+        noSetup.textContent = '本院區尚未設定指定檢核者';
+        checkerTd.appendChild(noSetup);
+      } else {
+        const nameSpan = document.createElement('span');
+        nameSpan.style.cssText = 'font-size:13px;font-weight:700;color:var(--navy);margin-right:8px;';
+        nameSpan.textContent = designatedName || designatedId;
+        checkerTd.appendChild(nameSpan);
+
+        const btn = document.createElement('button');
+        btn.className = 'checker-confirm-btn';
+        btn.textContent = '✓ 檢核確認';
+        const bi = blockIndex;
+        if(!isDesignatedUser){
+          btn.disabled = true;
+          btn.title = `僅 ${designatedName || designatedId} 本人登入後才能執行本週檢核`;
+        } else {
+          btn.addEventListener('click', async ()=>{
+            btn.disabled = true;
+            btn.textContent = '確認中…';
+            try{
+              const latest = await getSiteCheckers(siteName, ym);
+              latest[bi] = { name: designatedName, date: new Date().toISOString().slice(0,10) };
+              await setSiteCheckers(siteName, ym, latest);
+              setStatus('週檢核已確認');
+              await renderMonthlyFeed();
+            }catch(err){
+              console.error('週檢核確認失敗', err);
+              btn.disabled = false;
+              btn.textContent = '✓ 檢核確認';
+              alert('檢核確認失敗，請稍後再試一次。');
+            }
+          });
+        }
+        checkerTd.appendChild(btn);
+        if(!isDesignatedUser){
+          const hint = document.createElement('span');
+          hint.style.cssText = 'font-size:11px;color:var(--muted);margin-left:8px;';
+          hint.textContent = `僅 ${designatedName || designatedId} 本人可執行`;
+          checkerTd.appendChild(hint);
+        }
       }
       checkerTr.appendChild(checkerTd);
       body.appendChild(checkerTr);
@@ -3456,8 +3641,40 @@ async function renderAbnSectionGrid(siteName, ym){
       <td>${escapeHtml(item.resolved||'－')}</td>
       <td>${escapeHtml(item.process)||'－'}</td>
       <td>${escapeHtml(item.recoverTemp)||'－'}</td>
-      <td>${item.confirmedBy ? `${escapeHtml(item.confirmedBy)}${item.confirmedDate ? '　'+escapeHtml(item.confirmedDate) : ''}` : '待組長確認'}</td>
+      <td class="abn-confirm-cell"></td>
     `;
+    const confirmCell = tr.querySelector('.abn-confirm-cell');
+    if(item.confirmedBy){
+      confirmCell.textContent = `${item.confirmedBy}${item.confirmedDate ? '　'+item.confirmedDate : ''}`;
+    } else {
+      const btn = document.createElement('button');
+      btn.textContent = '✓ 組長確認';
+      btn.className = 'abn-confirm-btn';
+      btn.addEventListener('click', async ()=>{
+        btn.disabled = true;
+        btn.textContent = '確認中…';
+        try{
+          const site = SITES[siteName];
+          const data = (await getShiftData(siteName, item.shiftKey, ym)) || { rows:{} };
+          if(!data.rows) data.rows = {};
+          if(!data.rows[item.day]){
+            data.rows[item.day] = { temps: site.fridges.map(()=>({min:'',now:'',max:''})), reason:'', abn:'', sign:'' };
+          }
+          const teamLead = getSiteTeamLead(siteName);
+          data.rows[item.day].confirmedBy = teamLead ? teamLead.id : ((currentUser && currentUser.id) || '');
+          data.rows[item.day].confirmedAt = new Date().toISOString().slice(0,10);
+          await setShiftData(siteName, item.shiftKey, ym, data);
+          setStatus('組長確認已送出');
+          await renderAbnSectionGrid(siteName, ym);
+        }catch(err){
+          console.error('組長確認失敗', err);
+          btn.disabled = false;
+          btn.textContent = '✓ 組長確認';
+          alert('確認失敗，請稍後再試一次。');
+        }
+      });
+      confirmCell.appendChild(btn);
+    }
     body.appendChild(tr);
   });
 }
@@ -3581,18 +3798,26 @@ const exportPdfBtnEl = document.getElementById('exportPdfBtn');
 const statCardExtras = document.querySelectorAll('.stat-card-extra');
 const topStatsRow = document.getElementById('topStatsRow');
 
+let _sitePickerVisibleByLogin = true; // 依登入狀態決定「院區」選單本來是否該顯示
+
 function applyModeVisibility(mode){
   const showExtras = (mode === 'grid');
   exportPdfBtnEl.classList.toggle('hidden-in-mode', !showExtras);
   if(topStatsRow) topStatsRow.style.display = showExtras ? 'flex' : 'none';
+  // 「本月總覽」畫面只需要：日期 + 今日/本月 + 匯出，
+  // 時段(上午/下午/大夜)與院區選單在這個畫面用不到，先隱藏起來簡化版面。
+  const pillsEl = document.getElementById('shiftPillsTop');
+  if(pillsEl) pillsEl.style.display = showExtras ? 'none' : '';
+  setSitePickerVisible(_sitePickerVisibleByLogin);
 }
 
-modeDailyBtn.addEventListener('click', ()=>{
+modeDailyBtn.addEventListener('click', async ()=>{
   modeDailyBtn.classList.add('active');
   modeGridBtn.classList.remove('active');
   dailyViewEl.style.display = 'flex';
   gridViewEl.style.display = 'none';
   applyModeVisibility('daily');
+  await renderAbnSection();
 });
 modeGridBtn.addEventListener('click', async ()=>{
   modeGridBtn.classList.add('active');
@@ -3600,6 +3825,7 @@ modeGridBtn.addEventListener('click', async ()=>{
   dailyViewEl.style.display = 'none';
   gridViewEl.style.display = 'block';
   applyModeVisibility('grid');
+  await renderAbnSection();
   await renderMonthlyFeed();
 });
 
@@ -3729,8 +3955,8 @@ async function buildPdfArea(){
             sign: row.sign || '',
             resolved: (fa && fa.resolved) || row.resolved || '',
             recoverTemp: (fa && fa.recoverTemp) || row.recoverTemp || '',
-            confirmedBy: resolveConfirmedByName(siteName, row.confirmedBy),
-            confirmedDate: (fa && fa.savedAt) ? formatSavedDateShort(fa.savedAt) : formatMonthDay(ym, day)
+            confirmedBy: resolveConfirmedByNameStrict(siteName, row.confirmedBy) || '待組長確認',
+            confirmedDate: row.confirmedAt || ''
           });
         }
       });
@@ -4043,10 +4269,12 @@ function showSuccessToast(msg, duration=2000){
 }
 
 function setSitePickerVisible(visible){
+  _sitePickerVisibleByLogin = visible;
   const label = document.getElementById('siteLabel');
   const sel = document.getElementById('siteSelect');
-  if(label) label.style.display = visible ? '' : 'none';
-  if(sel) sel.style.display = visible ? '' : 'none';
+  const showNow = visible && (typeof modeGridBtn === 'undefined' || !modeGridBtn.classList.contains('active'));
+  if(label) label.style.display = showNow ? '' : 'none';
+  if(sel) sel.style.display = showNow ? '' : 'none';
 }
 
 function applyLogin(user){
