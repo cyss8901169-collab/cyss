@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>臺大醫院雲林分院神經肌肉阻斷劑查核表</title>
+<title>神經肌肉阻斷劑查核表 ｜ 國立臺灣大學醫學院附設醫院雲林分院－藥劑部</title>
 <style>
 :root{
  --font-sans:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;
@@ -105,6 +105,8 @@ input[type=date]::-webkit-datetime-edit-fields-wrapper{padding:0}
 .section-hdr{display:flex;align-items:center;gap:8px;background:#1F3864;border-radius:var(--radius-md);padding:.6rem 1rem;margin:1rem 0 .5rem}
 .section-hdr span{color:#fff;font-size:13px;font-weight:500}
 .footnote{font-size:11px;color:var(--text2);font-style:italic;margin-top:.75rem;padding-top:.5rem;border-top:.5px solid var(--border2)}
+.quick-note-btn{padding:3px 10px;background:#EBF5FB;color:#1F3864;border:.5px solid #2E75B6;border-radius:12px;font-size:11px;cursor:pointer;font-family:var(--font-sans);white-space:nowrap}
+.quick-note-btn:hover{background:#2E75B6;color:#fff}
 .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .pharmacy-section{margin-bottom:1.25rem}
 .pharmacy-section-title{font-size:13px;font-weight:500;color:#1F3864;margin-bottom:8px;padding-bottom:4px;border-bottom:.5px solid var(--border2)}
@@ -231,25 +233,51 @@ input,select,textarea{max-width:100%}
   .fields-row{grid-template-columns:repeat(3,1fr)}.hist-actions{flex-wrap:wrap}.ov-grid{grid-template-columns:repeat(3,1fr)}
 }
 </style>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='12' fill='%231F3864'/><text y='68' x='50' text-anchor='middle' font-size='56' font-family='Arial' fill='white'>💊</text></svg>">
+<meta name="application-name" content="神經肌肉阻斷劑查核表">
+<meta name="description" content="國立臺灣大學醫學院附設醫院雲林分院 藥劑部 神經肌肉阻斷劑查核系統">
+<meta property="og:title" content="神經肌肉阻斷劑查核表">
+<meta property="og:description" content="國立臺灣大學醫學院附設醫院雲林分院 藥劑部">
 </head>
 <body>
+<div style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#1F3864;padding:6px 16px;box-shadow:0 2px 8px rgba(0,0,0,.3)">
+ <div style="display:flex;align-items:center;gap:6px">
+  <span style="font-size:16px">💊</span>
+  <div style="color:#fff;font-size:14px;font-weight:700">神經肌肉阻斷劑查核表</div>
+ </div>
+ <div style="color:rgba(255,255,255,.7);font-size:11px;margin-top:1px">國立臺灣大學醫學院附設醫院雲林分院 － 藥劑部<span id="top-pharmacy-badge"></span></div>
+ <div id="top-user-info" style="display:none;align-items:center;gap:6px;margin-top:2px">
+  <span style="color:rgba(255,255,255,.9);font-size:11px;font-weight:600" id="top-user-name"></span>
+  <span style="color:rgba(255,255,255,.6);font-size:10px" id="top-user-empid"></span>
+  <span id="top-admin-badge" style="display:none;background:#D97706;color:#fff;font-size:10px;padding:1px 6px;border-radius:8px;font-weight:600">管理者</span>
+  <button onclick="doLogout()" style="padding:2px 8px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;font-size:10px;cursor:pointer;font-family:var(--font-sans)">登出</button>
+ </div>
+</div>
+<div style="height:72px"></div>
 <div class="login-overlay" id="login-overlay">
- <div class="login-box">
- <h2>藥師登入</h2>
- <p>請輸入員編，系統將自動帶入姓名</p>
+ <div class="login-box" style="width:360px;padding:2rem 2rem 1.75rem;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.18)">
+ <div style="text-align:center;margin-bottom:1.5rem">
+  <div style="width:72px;height:72px;background:linear-gradient(135deg,#1F3864,#2E75B6);border-radius:18px;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 4px 16px rgba(31,56,100,.3)">💊</div>
+  <div style="font-size:20px;font-weight:700;color:#1F3864;margin-bottom:6px;letter-spacing:.03em">神經肌肉阻斷劑查核表</div>
+  <div style="font-size:12px;color:var(--text2);line-height:1.6">國立臺灣大學醫學院附設醫院雲林分院 － 藥劑部</div>
+ </div>
  <div class="lf">
- <label>員編 <span style="color:#A32D2D">*</span></label>
- <input type="text" id="login-empid" placeholder="Y09999" maxlength="6" autocomplete="off">
+ <label style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:6px;display:block">員工編號</label>
+ <div style="display:flex;align-items:center;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;background:var(--bg);transition:border-color .2s" onfocus="this.style.borderColor='#2E75B6'" onblur="this.style.borderColor='var(--border)'">
+ <span style="padding:0 12px;background:#EBF5FB;color:#1F3864;font-size:15px;font-weight:700;height:44px;display:flex;align-items:center;border-right:1.5px solid var(--border)">Y</span>
+ <input type="text" id="login-empid" placeholder="00000" maxlength="5" autocomplete="off" style="border:none;border-radius:0;flex:1;height:44px;padding:0 12px;font-size:15px;font-family:var(--font-sans);background:var(--bg);color:var(--text);outline:none;letter-spacing:.05em">
+ </div>
  <div class="lerr" id="login-empid-err" style="display:none"></div>
  </div>
- <div class="lf" id="lf-name-preview" style="display:none">
- <label>姓名</label>
- <div style="height:38px;padding:0 12px;border:.5px solid #A8D5B5;border-radius:6px;background:#F0FBF4;color:#1F3864;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px">
- <span id="login-name-text"></span>
+ <div class="lf">
+ <label style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:6px;display:block">員工姓名（自動帶入）</label>
+ <div id="lf-name-preview" style="height:44px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg2);color:#1F3864;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;color:var(--text2)">
+ <span id="login-name-text" style="color:#1F3864;font-weight:600"></span>
+ <span id="login-name-placeholder" style="color:#adb5bd;font-size:13px">輸入員編後自動顯示</span>
  </div>
+ <div class="lerr" id="login-name-err" style="display:none;margin-top:6px">查無此員編，請確認後重新輸入</div>
  </div>
- <div class="lerr" id="login-name-err" style="display:none">查無此員編，請確認後重新輸入</div>
- <button class="login-btn" id="login-btn" style="margin-top:.75rem">登入</button>
+ <button class="login-btn" id="login-btn" style="margin-top:1rem;height:48px;font-size:15px;border-radius:10px;letter-spacing:.05em;background:linear-gradient(135deg,#1F3864,#2E75B6);box-shadow:0 4px 12px rgba(31,56,100,.25)">登入系統</button>
  </div>
 </div>
 <!-- 簽名放大視窗 -->
@@ -289,13 +317,7 @@ input,select,textarea{max-width:100%}
 <div class="toast" id="toast"></div>
 <div class="page" id="main-wrap" style="display:none">
 <div class="sticky-top">
- <div class="user-bar">
- <span>已登入：<strong id="display-name"></strong></span>
- <span style="color:#ced4da">｜</span>
- <span id="display-empid" style="color:var(--text2)"></span>
- <span id="admin-badge" style="display:none;background:#D97706;color:#fff;font-size:10px;padding:1px 8px;border-radius:10px;font-weight:600">管理者</span>
- <button class="topbtn" style="margin-left:auto" onclick="doLogout()">登出</button>
- </div>
+
  <div class="header">
  <h1>臺大醫院雲林分院<br>神經肌肉阻斷劑查核表</h1>
  </div>
@@ -303,7 +325,7 @@ input,select,textarea{max-width:100%}
  <button class="tab-btn active" onclick="switchTab('checklist')">查核填寫</button>
  <button class="tab-btn" onclick="switchTab('overview')">查核總覽</button>
  <button class="tab-btn" onclick="switchTab('history')">歷史記錄</button>
- <button class="tab-btn" id="tab-btn-sign" onclick="switchTab('sign')">年度簽核</button>
+ <button class="tab-btn hidden" id="tab-btn-sign" onclick="switchTab('sign')">年度簽核</button>
  <button class="tab-btn" id="tab-btn-settings" onclick="switchTab('settings')">藥品設定</button>
  </div>
 </div>
@@ -350,7 +372,10 @@ input,select,textarea{max-width:100%}
  <div class="uh-fields">
  <div class="uh-field">
  <label>員編 <span style="color:#A32D2D">*</span></label>
- <input type="text" id="uh-empid" placeholder="Y09999" maxlength="6" oninput="this.value=this.value.toUpperCase();validateEmpIdStrict(this,'uh-empid-hint');clearInvalid(this)">
+ <div style="display:flex;align-items:center;border:.5px solid var(--border);border-radius:var(--radius-md);overflow:hidden;background:var(--bg)">
+ <span style="padding:0 8px;background:#EBF5FB;color:#1F3864;font-size:13px;font-weight:700;height:32px;display:flex;align-items:center;border-right:.5px solid var(--border);flex-shrink:0">Y</span>
+ <input type="tel" id="uh-empid" placeholder="09999" maxlength="5" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'');validateUhEmpId(this);clearInvalid(this)" style="border:none;border-radius:0;flex:1;height:32px;padding:0 6px;font-size:12px;font-family:var(--font-sans);background:var(--bg);color:var(--text);outline:none;width:100%">
+ </div>
  <div class="eid-hint" id="uh-empid-hint">格式：Y + 5碼數字</div>
  </div>
  <div class="uh-field">
@@ -474,76 +499,152 @@ const STORAGE_KEY='nmba_records_v1';
 const SETTINGS_KEY='nmba_settings_v1';
 let unitDrugMap={};
 let unitCount=0;
-function initDefaults(){
+function initDefaults(cb){
  var saved=localStorage.getItem(SETTINGS_KEY);
  if(saved){try{unitDrugMap=JSON.parse(saved);}catch(e){}}
  ALL_UNITS.douliu.concat(ALL_UNITS.huwey).forEach(function(u){
- if(!unitDrugMap[u])unitDrugMap[u]=DEFAULT_STOCK[u]?DEFAULT_STOCK[u].map(function(q){return q>0;}):[false,false,false];
+  if(!unitDrugMap[u])unitDrugMap[u]=DEFAULT_STOCK[u]?DEFAULT_STOCK[u].map(function(q){return q>0;}):[false,false,false];
  });
+ if(cb)cb();
+}
+function syncSettingsFromFirebase(cb){
+ if(!window.db){setTimeout(function(){syncSettingsFromFirebase(cb);},1000);return;}
+ window.db.collection('settings').doc('unitDrugMap').get()
+  .then(function(doc){
+   if(doc.exists&&doc.data()&&doc.data().map){
+    unitDrugMap=doc.data().map;
+    localStorage.setItem(SETTINGS_KEY,JSON.stringify(unitDrugMap));
+    // 補上預設值（避免新單位沒有設定）
+    ALL_UNITS.douliu.concat(ALL_UNITS.huwey).forEach(function(u){
+     if(!unitDrugMap[u])unitDrugMap[u]=DEFAULT_STOCK[u]?DEFAULT_STOCK[u].map(function(q){return q>0;}):[false,false,false];
+    });
+    console.log('設定已從 Firebase 同步 ✓');
+   }
+   if(cb)cb();
+  }).catch(function(e){console.warn('設定同步失敗：',e);if(cb)cb();});
+}
+function saveSettingsToFirebase(){
+ if(!window.db)return;
+ window.db.collection('settings').doc('unitDrugMap').set({map:unitDrugMap,updatedAt:new Date().toISOString()})
+  .then(function(){console.log('設定已儲存至 Firebase ✓');})
+  .catch(function(e){console.warn('設定儲存失敗：',e);});
 }
 initDefaults();
 function toROC(isoDate){if(!isoDate)return '';var p=isoDate.split('-');if(p.length<1)return isoDate;return (parseInt(p[0],10)-1911)+(p[1]?'/'+p[1]:'')+(p[2]?'/'+p[2]:'');}
 function rocYear(isoDate){if(!isoDate)return '';return parseInt(isoDate.substring(0,4),10)-1911;}
 function rocYearFromAD(adYear){return parseInt(adYear,10)-1911;}
 const PHARMACISTS={
- 'Y00230':'陳宜屏','Y00243':'黃永成','Y00287':'吳秋宜','Y00325':'李玉珍',
- 'Y00326':'沈倩如','Y00329':'莊謹如','Y00516':'蔡佩玲','Y00614':'鄭佩珊',
- 'Y00955':'陳盈君','Y01406':'張正穎','Y01526':'劉士宏','Y01643':'謝姍珊',
- 'Y01644':'林家薐','Y01735':'林淑貞','Y01986':'林姿佑','Y02190':'張文河',
- 'Y02414':'黃憶如','Y03020':'曾彥哲','Y03129':'楊淑珍','Y03223':'李秋玫',
- 'Y04045':'彭虹迪','Y04130':'魏若蘭','Y04330':'魏沛瀅','Y04409':'謝承穎',
- 'Y04423':'吳坦螢','Y04559':'黃昇慧','Y05180':'李佩芷','Y05306':'陳力宇',
- 'Y05379':'李怡萱','Y05474':'黃詩婷','Y05490':'蔡孟夏','Y06100':'陳麗珺',
- 'Y06271':'李凱芸','Y06632':'沈煒勛','Y06993':'王貞予','Y07034':'葉啟楠',
- 'Y07620':'林亭君','Y07690':'吳采芳','Y07691':'李哲安','Y07692':'林友立',
- 'Y07693':'洪紹恩','Y07694':'王俞婷','Y07695':'吳宏明','Y07697':'許嘉容',
- 'Y07833':'廖益樟','Y07944':'李心愉','Y08213':'林語嫻','Y08214':'賴嘉淩',
- 'Y08215':'王玟璇','Y08219':'陳怡伶','Y08220':'張凱珽','Y08733':'王鈺婷',
- 'Y08855':'陳憶萱','Y08868':'呂昆羲','Y08953':'葉宜婷','Y08994':'李昱柔',
- 'Y09139':'林虹孜','Y09223':'張耿誠','Y09383':'李奕萱','Y09625':'陳姸勳',
- 'Y09773':'余映萱','Y09858':'李學怡','Y10040':'黃亦妡','Y10248':'吳岱容'
+ 'Y00243':'黃永成','Y00326':'沈倩如','Y00329':'莊謹如','Y00516':'蔡佩玲',
+ 'Y00614':'鄭佩珊','Y01643':'謝姍珊','Y01735':'林淑貞','Y02190':'張文河',
+ 'Y03129':'楊淑珍','Y04045':'彭虹迪','Y04330':'魏沛瀅','Y04423':'吳坦螢',
+ 'Y05180':'李佩芷','Y05306':'陳力宇','Y05379':'李怡萱','Y05474':'黃詩婷',
+ 'Y05490':'蔡孟夏','Y06100':'陳麗珺','Y06632':'沈煒勛','Y07034':'葉啟楠',
+ 'Y07691':'李哲安','Y07692':'林友立','Y07693':'洪紹恩','Y07833':'廖益樟',
+ 'Y07944':'李心愉','Y08213':'林語嫻','Y08215':'王玟璇','Y08733':'王鈺婷',
+ 'Y08855':'陳憶萱','Y08868':'呂昆羲','Y08994':'李昱柔','Y09223':'張耿誠',
+ 'Y06993':'王貞予','Y09625':'陳妍勳','Y09858':'李學怡','Y10248':'吳岱容',
+ 'Y10318':'施昭瑜','Y01422':'廖瑋儀','Y01434':'陳家君','Y01458':'林秀芳',
+ 'Y01515':'沈梅菊','Y01645':'余孟蓁','Y02331':'張如萱','Y07352':'鍾意',
+ 'Y00230':'陳宜屏','Y01406':'張正穎','Y01526':'劉士宏','Y01644':'林家薐',
+ 'Y01986':'林姿佑','Y02414':'黃憶如','Y03020':'曾彥哲','Y04130':'魏若蘭',
+ 'Y04559':'黃昇慧','Y06271':'李凱芸','Y07620':'林亭君','Y07690':'吳采芳',
+ 'Y07694':'王俞婷','Y07695':'吳宏明','Y07697':'許嘉容','Y08214':'賴嘉淩',
+ 'Y08219':'陳怡伶','Y08220':'張凱珽','Y08953':'葉宜婷','Y09383':'李奕萱',
+ 'Y09773':'余映萱','Y10040':'黃亦妡','Y00244':'吳榮斌','Y00800':'林怡君',
+ 'Y02745':'謝玉秀','Y09139':'林虹孜',
+ 'Y00287':'吳秋宜','Y00325':'李玉珍','Y00955':'陳盈君','Y03223':'李秋玫',
+ 'Y04409':'謝承穎'
+};
+// 院區對應（斗六/虎尾）
+const PHARMACY_MAP={
+ 'Y00243':'douliu','Y00326':'douliu','Y00329':'douliu','Y00516':'douliu',
+ 'Y00614':'douliu','Y01643':'douliu','Y01735':'douliu','Y02190':'douliu',
+ 'Y03129':'douliu','Y04045':'douliu','Y04330':'douliu','Y04423':'douliu',
+ 'Y05180':'douliu','Y05306':'douliu','Y05379':'douliu','Y05474':'douliu',
+ 'Y05490':'douliu','Y06100':'douliu','Y06632':'douliu','Y07034':'douliu',
+ 'Y07691':'douliu','Y07692':'douliu','Y07693':'douliu','Y07833':'douliu',
+ 'Y07944':'douliu','Y08213':'douliu','Y08215':'douliu','Y08733':'douliu',
+ 'Y08855':'douliu','Y08868':'douliu','Y08994':'douliu','Y09223':'douliu',
+ 'Y06993':'douliu','Y09625':'douliu','Y09858':'douliu','Y10248':'douliu',
+ 'Y10318':'douliu','Y01422':'douliu','Y01434':'douliu','Y01458':'douliu',
+ 'Y01515':'douliu','Y01645':'douliu','Y02331':'douliu','Y07352':'douliu',
+ 'Y00230':'huwey','Y01406':'huwey','Y01526':'huwey','Y01644':'huwey',
+ 'Y01986':'huwey','Y02414':'huwey','Y03020':'huwey','Y04130':'huwey',
+ 'Y04559':'huwey','Y06271':'huwey','Y07620':'huwey','Y07690':'huwey',
+ 'Y07694':'huwey','Y07695':'huwey','Y07697':'huwey','Y08214':'huwey',
+ 'Y08219':'huwey','Y08220':'huwey','Y08953':'huwey','Y09383':'huwey',
+ 'Y09773':'huwey','Y10040':'huwey','Y00244':'huwey','Y00800':'huwey',
+ 'Y02745':'huwey','Y09139':'huwey'
 };
 const ADMIN_EMPID='Y01643';
+const SIGN_ALLOWED=['Y01643','Y04409','Y00329'];
 const EMAILJS_SERVICE='service_eef6ywx';
 const EMAILJS_TEMPLATE='template_8575rju';
 const EMAILJS_PUBKEY='H8bHOcbd5L8ycf4VR';
 const ADMIN_EMAIL='Y01643@ms1.ylh.gov.tw';
 function autoFillName(empid){
- empid=String(empid||'').toUpperCase().trim();
- var previewBox=document.getElementById('lf-name-preview');
+ empid=String(empid||'').trim();
  var nameText=document.getElementById('login-name-text');
+ var namePH=document.getElementById('login-name-placeholder');
  var errEl=document.getElementById('login-empid-err');
  var nameErr=document.getElementById('login-name-err');
  var inputEl=document.getElementById('login-empid');
- previewBox.style.display='none';errEl.style.display='none';nameErr.style.display='none';inputEl.style.borderColor='';
- if(empid.length===0)return;if(empid.length<6)return;
- if(!/^Y\d{5}$/.test(empid)){errEl.textContent='格式錯誤，須為 Y 開頭加 5 碼數字';errEl.style.display='block';return;}
- var name=PHARMACISTS[empid];
- if(name){nameText.textContent=name;previewBox.style.display='block';}else{nameErr.style.display='block';}
+ if(nameText)nameText.textContent='';
+ if(namePH)namePH.style.display='inline';
+ errEl.style.display='none';nameErr.style.display='none';inputEl.style.borderColor='';
+ if(empid.length===0)return;if(empid.length<5)return;
+ if(!/^\d{5}$/.test(empid)){errEl.textContent='格式錯誤，須為 5 碼數字';errEl.style.display='block';return;}
+ var fullEmpid='Y'+empid;
+ var name=PHARMACISTS[fullEmpid];
+ if(name){
+  if(nameText)nameText.textContent=name;
+  if(namePH)namePH.style.display='none';
+ }else{nameErr.style.display='block';}
 }
 function doLogin(){
  var inputEl=document.getElementById('login-empid');
- var empid=String(inputEl.value||'').toUpperCase().trim();
+ var raw=String(inputEl.value||'').trim();
  var errEl=document.getElementById('login-empid-err');
  var nameErr=document.getElementById('login-name-err');
  errEl.style.display='none';nameErr.style.display='none';
- if(!/^Y\d{5}$/.test(empid)){errEl.textContent='請輸入正確員編格式（Y + 5碼數字）';errEl.style.display='block';return;}
+ if(!/^\d{5}$/.test(raw)){errEl.textContent='請輸入 5 碼數字員編';errEl.style.display='block';return;}
+ var empid='Y'+raw;
  var name=PHARMACISTS[empid];
  if(!name){nameErr.style.display='block';return;}
  currentUser={empid:empid,name:name};
  document.getElementById('login-overlay').style.display='none';
  document.getElementById('main-wrap').style.display='block';
- document.getElementById('display-name').textContent=name;
- document.getElementById('display-empid').textContent=empid;
- document.getElementById('admin-badge').style.display=empid===ADMIN_EMPID?'inline-block':'none';
+ var signTab=document.getElementById('tab-btn-sign');
+ if(signTab)signTab.classList.toggle('hidden',SIGN_ALLOWED.indexOf(empid)===-1);
  var stab=document.getElementById('tab-btn-settings');
  if(stab)stab.classList.toggle('hidden',empid!==ADMIN_EMPID);
  document.getElementById('pha-avatar').textContent=name.charAt(0);
  document.getElementById('pha-name').textContent=name;
  document.getElementById('pha-id').textContent='員編：'+empid;
  document.getElementById('check-date').value=new Date().toISOString().split('T')[0];
+ var autoPh=PHARMACY_MAP[empid]||'';
+ var phSel=document.getElementById('pharmacy');
+ if(phSel&&autoPh){phSel.value=autoPh;switchPharmacy();phSel.disabled=true;}
+ else if(phSel){phSel.disabled=false;}
+ var badge=document.getElementById('top-pharmacy-badge');
+ if(badge){
+  if(autoPh==='douliu'){badge.textContent=' 斗六院區';}
+  else if(autoPh==='huwey'){badge.textContent=' 虎尾院區';}
+  else{badge.textContent='';}
+ }
+ var topUserInfo=document.getElementById('top-user-info');
+ if(topUserInfo){topUserInfo.style.display='flex';}
+ var topUserName=document.getElementById('top-user-name');
+ if(topUserName)topUserName.textContent=name;
+ var topUserEmpid=document.getElementById('top-user-empid');
+ if(topUserEmpid)topUserEmpid.textContent=empid;
+ var topAdminBadge=document.getElementById('top-admin-badge');
+ if(topAdminBadge)topAdminBadge.style.display=empid===ADMIN_EMPID?'inline-block':'none';
  setTimeout(function(){initSigPad('unithead');},500);
  addUnit();
+ syncSettingsFromFirebase(function(){
+  renderSettings();
+ });
  syncFromFirebase(function(){});
  updateAdminUI();
 }
@@ -552,17 +653,22 @@ function doLogout(){
  document.getElementById('main-wrap').style.display='none';
  document.getElementById('login-overlay').style.display='flex';
  var inputEl=document.getElementById('login-empid');inputEl.value='';
- document.getElementById('lf-name-preview').style.display='none';
+ var nameText2=document.getElementById('login-name-text');if(nameText2)nameText2.textContent='';
+ var namePH2=document.getElementById('login-name-placeholder');if(namePH2)namePH2.style.display='';
  document.getElementById('login-empid-err').style.display='none';
  document.getElementById('login-name-err').style.display='none';
  document.getElementById('units-container').innerHTML='';unitCount=0;
+ var phSel2=document.getElementById('pharmacy');if(phSel2){phSel2.disabled=false;phSel2.value='';}
+ var badge2=document.getElementById('top-pharmacy-badge');if(badge2)badge2.textContent='';
+ var topInfo=document.getElementById('top-user-info');if(topInfo)topInfo.style.display='none';
+ var signTab2=document.getElementById('tab-btn-sign');if(signTab2)signTab2.classList.add('hidden');
  var stab2=document.getElementById('tab-btn-settings');if(stab2)stab2.classList.add('hidden');
 }
 document.addEventListener('DOMContentLoaded',function(){
  var empInput=document.getElementById('login-empid');
  var loginBtn=document.getElementById('login-btn');
  if(empInput){
- empInput.addEventListener('input',function(){this.value=this.value.toUpperCase();autoFillName(this.value);});
+ empInput.addEventListener('input',function(){autoFillName(this.value);});
  empInput.addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
  }
  if(loginBtn){loginBtn.addEventListener('click',doLogin);}
@@ -599,6 +705,12 @@ function validateEmpIdStrict(input,hintId){
  h.className='eid-hint';h.textContent='格式：Y + 5碼數字（已輸入 '+v.length+'/6）';return false;
 }
 function clearInvalid(el){el.classList.remove('invalid');}
+function validateUhEmpId(input){
+ var h=document.getElementById('uh-empid-hint');var v=(input.value||'').trim();input.classList.remove('invalid');
+ if(!v){h.className='eid-hint';h.textContent='格式：Y + 5碼數字';return false;}
+ if(v.length===5&&/^\d{5}$/.test(v)){h.className='eid-hint ok';h.textContent='✓ 格式正確（Y'+v+'）';return true;}
+ h.className='eid-hint';h.textContent='格式：5碼數字（已輸入 '+v.length+'/5）';return false;
+}
 function checkExp(inputEl,hintEl){
  var expVal=inputEl.value,checkVal=document.getElementById('check-date').value;
  inputEl.classList.remove('exp-warn','exp-danger','invalid');hintEl.className='exp-hint';hintEl.textContent='';
@@ -649,6 +761,7 @@ function validateQty(uid,di){
  }
 }
 function switchTab(tab){
+ if(tab==='sign'&&currentUser&&SIGN_ALLOWED.indexOf(currentUser.empid)===-1){return;}
  if(tab==='settings'&&currentUser&&currentUser.empid!==ADMIN_EMPID){return;}
  var tabNames=['checklist','overview','history','sign','settings'];
  document.querySelectorAll('.tab-btn').forEach(function(b,i){b.classList.toggle('active',tabNames[i]===tab);});
@@ -766,6 +879,7 @@ function toggleDrug(unit,drugIdx,cb){
 }
 function saveSettings(){
  localStorage.setItem(SETTINGS_KEY,JSON.stringify(unitDrugMap));
+ saveSettingsToFirebase();
  document.querySelectorAll('[id^="unit-block-"]').forEach(function(b){var uid=b.id.replace('unit-block-','');var sel=document.getElementById('unit-sel-'+uid);var uname=sel?sel.value:'';if(uname){var body=document.getElementById('ubody-'+uid);if(body)body.innerHTML=buildDrugCards(uid,uname);}});
  showToast('藥品設定已儲存 ✓');switchTab('checklist');
 }
@@ -778,17 +892,25 @@ function buildDrugCards(uid,unitName){
   if(!enabled[di])return;seq++;
   var eId='u'+uid+'d'+di+'exp',hId=eId+'-hint',bId='u'+uid+'d'+di+'calcbar';
   var chg="validateQty('"+uid+"',"+di+")";
+ var nextIds=['u'+uid+'d'+di+'total','u'+uid+'d'+di+'used','u'+uid+'d'+di+'lend','u'+uid+'d'+di+'borrow','u'+uid+'d'+di+'curr','u'+uid+'d'+di+'exp'];
+ function jumpNext(curId){var idx=nextIds.indexOf(curId);if(idx>-1&&idx<nextIds.length-1){var n=document.getElementById(nextIds[idx+1]);if(n)n.focus();}}
   html+='<div class="drug-card"><div class="drug-card-header"><span class="drug-seq">'+seq+'</span><span class="ha-badge">高警訊</span><span class="drug-name-text">'+d+'</span></div>'
   +'<div class="drug-card-body"><div class="fields-row">'
-  +'<div class="field-item"><label>常備量 <span style="color:#A32D2D">*</span></label><input type="number" min="0" id="u'+uid+'d'+di+'stock" value="'+sd[di]+'" oninput="clearInvalid(this);'+chg+'" style="'+iBase+';height:30px;font-size:12px;text-align:center;width:100%"></div>'
-  +'<div class="field-item"><label>點班本數量 <span style="color:#A32D2D">*</span></label><input type="number" min="0" placeholder="0" id="u'+uid+'d'+di+'total" oninput="clearInvalid(this);'+chg+'" style="'+iBase+';height:30px;font-size:12px;text-align:center;width:100%"></div>'
-  +'<div class="field-item"><label>耗用量 <span style="color:#A32D2D">*</span></label><input type="number" min="0" placeholder="0" id="u'+uid+'d'+di+'used" oninput="clearInvalid(this);'+chg+'" style="'+iBase+';height:30px;font-size:12px;text-align:center;width:100%"></div>'
-  +'<div class="field-item"><label>借出量</label><input type="number" min="0" placeholder="0" id="u'+uid+'d'+di+'lend" oninput="'+chg+'" style="'+iBase+';height:30px;font-size:12px;text-align:center;width:100%"></div>'
-  +'<div class="field-item"><label>借入量</label><input type="number" min="0" placeholder="0" id="u'+uid+'d'+di+'borrow" oninput="'+chg+'" style="'+iBase+';height:30px;font-size:12px;text-align:center;width:100%"></div>'
-  +'<div class="field-item"><label>現品量 <span style="color:#A32D2D">*</span></label><input type="number" min="0" placeholder="0" id="u'+uid+'d'+di+'curr" oninput="clearInvalid(this);'+chg+'" style="'+iBase+';height:30px;font-size:12px;text-align:center;width:100%"></div>'
+  +'<div class="field-item"><label>常備量 <span style="color:#A32D2D">*</span></label><input type="number" min="0" inputmode="numeric" id="u'+uid+'d'+di+'stock" value="'+sd[di]+'" oninput="clearInvalid(this);'+chg+'" style="'+iBase+';height:30px;font-size:12px;text-align:center;width:100%"></div>'
+  +'<div class="field-item"><label>點班本數量 <span style="color:#A32D2D">*</span></label><input type="number" min="0" inputmode="numeric" placeholder="0" id="u'+uid+'d'+di+'total" oninput="clearInvalid(this);'+chg+'" style="'+iBase+';height:30px;font-size:12px;text-align:center;width:100%"></div>'
+  +'<div class="field-item"><label>耗用量 <span style="color:#A32D2D">*</span></label><input type="number" min="0" inputmode="numeric" placeholder="0" id="u'+uid+'d'+di+'used" oninput="clearInvalid(this);'+chg+'" style="'+iBase+';height:30px;font-size:12px;text-align:center;width:100%"></div>'
+  +'<div class="field-item"><label>借出量</label><input type="number" min="0" inputmode="numeric" placeholder="0" id="u'+uid+'d'+di+'lend" oninput="'+chg+'" style="'+iBase+';height:30px;font-size:12px;text-align:center;width:100%"></div>'
+  +'<div class="field-item"><label>借入量</label><input type="number" min="0" inputmode="numeric" placeholder="0" id="u'+uid+'d'+di+'borrow" oninput="'+chg+'" style="'+iBase+';height:30px;font-size:12px;text-align:center;width:100%"></div>'
+  +'<div class="field-item"><label>現品量 <span style="color:#A32D2D">*</span></label><input type="number" min="0" inputmode="numeric" placeholder="0" id="u'+uid+'d'+di+'curr" oninput="clearInvalid(this);'+chg+'" style="'+iBase+';height:30px;font-size:12px;text-align:center;width:100%"></div>'
   +'<div class="field-item"><label>最短效期 <span style="color:#A32D2D">*</span></label><input type="date" id="'+eId+'" oninput="clearInvalid(this);checkExp(this,document.getElementById(\''+hId+'\'))" style="'+iBase+';height:30px;font-size:11px;width:100%"><div id="'+hId+'" class="exp-hint"></div></div>'
   +'</div><div id="'+bId+'" class="calc-bar"></div>'
-  +'<div class="note-row"><label>說明（借出入數量或單位等）：</label><input type="text" placeholder="請填寫" id="u'+uid+'d'+di+'note" style="'+iBase+';height:28px;font-size:11px"></div>'
+  +'<div class="note-row"><label>說明（借出入數量或單位等）：</label><input type="text" placeholder="請填寫" id="u'+uid+'d'+di+'note" style="'+iBase+';height:28px;font-size:11px" onfocus="showQuickNotes(\'u'+uid+'d'+di+'quick\')" onblur="hideQuickNotes(\'u'+uid+'d'+di+'quick\')" oninput="clearInvalid(this)"></div>'
++'<div id="u'+uid+'d'+di+'quick" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">'
++'<button type="button" class="quick-note-btn" onmousedown="fillNote(event,\'u'+uid+'d'+di+'note\',\'u'+uid+'d'+di+'quick\',\'借出至其他單位\')">借出至其他單位</button>'
++'<button type="button" class="quick-note-btn" onmousedown="fillNote(event,\'u'+uid+'d'+di+'note\',\'u'+uid+'d'+di+'quick\',\'由藥局借入\')">由藥局借入</button>'
++'<button type="button" class="quick-note-btn" onmousedown="fillNote(event,\'u'+uid+'d'+di+'note\',\'u'+uid+'d'+di+'quick\',\'庫存調整\')">庫存調整</button>'
++'<button type="button" class="quick-note-btn" onmousedown="fillNote(event,\'u'+uid+'d'+di+'note\',\'u'+uid+'d'+di+'quick\',\'效期更換\')">效期更換</button>'
++'</div>'
   +'</div></div>';
  });
  return html;
@@ -847,7 +969,8 @@ function validate(){
  var ph=document.getElementById('pharmacy');var cd=document.getElementById('check-date');
  if(!ph.value)mi(ph,'請選擇負責藥局');if(!cd.value)mi(cd,'請填寫查核日期');
  var uhE=document.getElementById('uh-empid');var uhN=document.getElementById('uh-name');
- if(!EMP_RE.test(uhE.value))mi(uhE,'單位負責人員編格式錯誤（Y + 5碼數字，如 Y09999）');
+ var uhFullVal='Y'+(uhE.value||'').trim();
+ if(!EMP_RE.test(uhFullVal))mi(uhE,'單位負責人員編格式錯誤（5碼數字，如 09999）');
  if(!uhN.value.trim())mi(uhN,'請填寫單位負責人姓名');
  var sp=sigPads['unithead'];var wrap=document.getElementById('sig-wrap-unithead');var hint=document.getElementById('sig-hint-unithead');
  if(sp&&sp.isEmpty()){wrap.classList.add('invalid');hint.className='sig-hint invalid-hint';hint.textContent='請完成手寫簽名';items.push({msg:'請完成單位負責人手寫簽章',el:wrap});if(!fi)fi=wrap;}
@@ -884,7 +1007,7 @@ function saveRecord(){
  var phName=ph==='douliu'?'雲林斗六藥局':'雲林虎尾藥局';
  var rows=collectRows();
  var sigImg=sigPads['unithead']&&!sigPads['unithead'].isEmpty()?sigPads['unithead'].canvas.toDataURL('image/png'):'';
- _pendingRecord={id:Date.now(),savedAt:new Date().toISOString(),pharmacy:phName,checkDate:chkDate,pharmacist:{name:currentUser.name,empid:currentUser.empid},unitHead:{name:document.getElementById('uh-name').value,empid:document.getElementById('uh-empid').value},sigImg:sigImg,rows:rows};
+ _pendingRecord={id:Date.now(),savedAt:new Date().toISOString(),pharmacy:phName,checkDate:chkDate,pharmacist:{name:currentUser.name,empid:currentUser.empid},unitHead:{name:document.getElementById('uh-name').value,empid:'Y'+(document.getElementById('uh-empid').value||'').trim()},sigImg:sigImg,rows:rows};
  var unitList=[...new Set(rows.map(function(r){return r.unit;}))].join('、');
  var warnCount=rows.filter(function(r){return r.expStatus;}).length;
  var html='<span class="confirm-label">藥局</span><span class="confirm-value">'+phName+'</span>'+'<span class="confirm-label">查核日期</span><span class="confirm-value">'+toROC(chkDate)+'</span>'+'<span class="confirm-label">藥師</span><span class="confirm-value">'+currentUser.name+'（'+currentUser.empid+'）</span>'+'<span class="confirm-label">單位負責人</span><span class="confirm-value">'+document.getElementById('uh-name').value+'（'+document.getElementById('uh-empid').value+'）</span>'+'<span class="confirm-label">查核單位</span><span class="confirm-value">'+unitList+'</span>'+'<span class="confirm-label">查核筆數</span><span class="confirm-value">'+rows.length+' 筆'+(warnCount?' <span style="color:#D97706">（含 '+warnCount+' 筆效期警示）</span>':'')+'</span>';
@@ -927,7 +1050,8 @@ function sendCheckNotification(record){
 function resetChecklist(){
  var phSel=document.getElementById('pharmacy');if(phSel)phSel.value='';
  var cdEl=document.getElementById('check-date');if(cdEl)cdEl.value=new Date().toISOString().split('T')[0];
- document.getElementById('units-container').innerHTML='';unitCount=0;addUnit();
+ document.getElementById('units-container').innerHTML='';unitCount=0;
+ var phSel2=document.getElementById('pharmacy');if(phSel2){phSel2.disabled=false;phSel2.value='';}addUnit();
  var uhEmpid=document.getElementById('uh-empid');var uhName=document.getElementById('uh-name');
  if(uhEmpid){uhEmpid.value='';uhEmpid.classList.remove('invalid');}if(uhName){uhName.value='';uhName.classList.remove('invalid');}
  var hint=document.getElementById('uh-empid-hint');if(hint){hint.className='eid-hint';hint.textContent='格式：Y + 5碼數字';}
@@ -1024,6 +1148,22 @@ function clearAllHistory(){
  if(!confirm('確定要清除所有查核記錄？此操作無法復原。'))return;
  var records=loadRecords();records.forEach(function(r){deleteFromFirebase(r.id);});
  localStorage.removeItem(STORAGE_KEY);renderHistory();showToast('所有記錄已清除 ✓');
+}
+function nextField(e){
+ if(e.key==='Enter'||e.key==='Tab'){
+  e.preventDefault();
+  var fields=Array.from(document.querySelectorAll('input:not([disabled]):not([type=hidden]),select:not([disabled])'));
+  var idx=fields.indexOf(e.target);
+  if(idx>-1&&idx<fields.length-1){fields[idx+1].focus();}
+ }
+}
+function showQuickNotes(id){var el=document.getElementById(id);if(el)el.style.display='flex';}
+function hideQuickNotes(id){setTimeout(function(){var el=document.getElementById(id);if(el)el.style.display='none';},200);}
+function fillNote(e,inputId,quickId,text){
+ e.preventDefault();
+ var input=document.getElementById(inputId);
+ if(input){input.value=text;input.focus();}
+ var el=document.getElementById(quickId);if(el)el.style.display='none';
 }
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.className='toast';void t.offsetWidth;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
 function exportYearExcel(){
@@ -1309,7 +1449,6 @@ function exportYearPDF(yearParam){
  +'<button onclick="window.print()" style="padding:10px 32px;background:#fff;color:#1F3864;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer">🖨 列印 / 儲存為 PDF</button>'
  +'<span style="color:rgba(255,255,255,.75);font-size:12px;margin-left:16px">共 '+(keys.length+2)+' 頁　｜　'+rocYr+' 年度（'+year+'）　｜　列印請選 <strong style="color:#fff">A4 橫向</strong>、邊距最小</span>'
  +'</div>'
- +'<button onclick="window.scrollTo({top:0,behavior:\'smooth\'})" title="回到頂部" class="no-print" style="position:fixed;bottom:24px;right:24px;width:48px;height:48px;border-radius:50%;background:#1F3864;color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.3);z-index:9999">⬆</button>'
  +summaryDouliu+pagesDouliu.join('')
  +summaryHuwey+pagesHuwey.join('')
  +'<\/body><\/html>';
@@ -1478,7 +1617,13 @@ function exportToPDF(r){
 var _sigModalPad = null;
 function openSigModal() {
   var ph=document.getElementById('pharmacy');var cd=document.getElementById('check-date');var uhE=document.getElementById('uh-empid');var uhN=document.getElementById('uh-name');
-  if(!ph.value||!cd.value||!EMP_RE.test(uhE.value)||!uhN.value.trim()){alert('請先填寫藥局、查核日期及單位負責人資料，再進行簽名。');return;}
+  var uhFull='Y'+(uhE.value||'').trim();
+  var missing=[];
+  if(!ph.value)missing.push('負責藥局');
+  if(!cd.value)missing.push('查核日期');
+  if(!EMP_RE.test(uhFull))missing.push('單位負責人員編');
+  if(!uhN.value.trim())missing.push('單位負責人姓名');
+  if(missing.length>0){alert('請先填寫：'+missing.join('、')+'，再進行簽名。');return;}
   document.getElementById('sig-modal-overlay').classList.add('show');
   setTimeout(function(){
     var c=document.getElementById('sig-modal-canvas');var w=c.parentElement.offsetWidth||500;c.width=w;c.height=200;
@@ -1604,46 +1749,6 @@ function renderSignPanels(year,data){
    +'<td style="padding:6px 10px;border:1px solid #dee2e6;text-align:center;font-size:13px;color:'+rateColor+';font-weight:700">'+rate+'</td>'
    +'</tr>';
   });
-  // 計算整體符合率統計（與年度PDF總表邏輯一致）
-  var totalUnitsCount=activeUnits.length;
-  var sumQRate=0,sumERate=0,countQ=0,countE=0;
-  var qUnitsOk=0,eUnitsOk=0;
-  activeUnits.forEach(function(u2){
-   var mo_total=0,mo_qOk=0,mo_eOk=0;
-   DRUGS.forEach(function(d,di){
-    if(!unitDrugMap[u2]||!unitDrugMap[u2][di])return;
-    for(var mo=1;mo<=12;mo++){
-     var rec=records.find(function(r){
-      return r.checkDate&&r.checkDate.startsWith(year)
-       &&parseInt(r.checkDate.substring(5,7),10)===mo
-       &&r.rows.some(function(row){return row.unit===u2&&row.drug===d;});
-     });
-     if(rec){
-      var row=rec.rows.find(function(row){return row.unit===u2&&row.drug===d;});
-      if(row){
-       mo_total++;
-       mo_qOk++; // 有查核就算數量符合
-       if(!row.expStatus||row.expStatus==='效期不足6個月')mo_eOk++;
-      }
-     }
-    }
-   });
-   if(mo_total>0){
-    var uQRate=100; // 有查核就是100%數量符合
-    var uERate=Math.round(mo_eOk/mo_total*100);
-    sumQRate+=uQRate;sumERate+=uERate;countQ++;countE++;
-    if(uQRate===100)qUnitsOk++;
-    if(uERate===100)eUnitsOk++;
-   }
-  });
-  var qRate=countQ>0?Math.round(sumQRate/countQ):0;
-  var eRate=countE>0?Math.round(sumERate/countE):0;
-  var descHtml='<div style="background:#f8f9fa;border:1px solid #dee2e6;border-top:none;border-radius:0 0 6px 6px;padding:10px 14px;font-size:13px;color:#212529;line-height:2">'
-  +'<div style="font-weight:600;margin-bottom:4px">'+rocYr+'年'+phTitle+'神經肌肉阻斷劑藥品查核結果說明：</div>'
-  +'<div>1. '+rocYr+'年共計查核 <strong>'+totalUnitsCount+'</strong> 個單位，每月查核。</div>'
-  +'<div>2. 藥品效期查核符合共 <strong>'+eUnitsOk+'</strong> 個單位，符合率 <strong style="color:'+(eRate===100?'#217346':'#A32D2D')+'">'+eRate+' %</strong></div>'
-  +'<div>3. 藥品數量查核符合共 <strong>'+qUnitsOk+'</strong> 個單位，符合率 <strong style="color:'+(qRate===100?'#217346':'#A32D2D')+'">'+qRate+' %</strong></div>'
-  +'</div>';
   return '<div style="margin-bottom:16px">'
   +'<div style="background:#1F3864;color:#fff;padding:7px 12px;border-radius:6px 6px 0 0;font-size:14px;font-weight:600">'+phTitle+'</div>'
   +'<table style="width:100%;border-collapse:collapse;border:1px solid #dee2e6">'
@@ -1655,7 +1760,6 @@ function renderSignPanels(year,data){
   +'</tr></thead>'
   +'<tbody>'+rows+'</tbody>'
   +'</table>'
-  +descHtml
   +'</div>';
  }
  var summaryHtml='<div style="border:.5px solid var(--border2);border-radius:var(--radius-md);padding:1rem;margin-bottom:1rem">'
@@ -1752,10 +1856,8 @@ function renderSignPanels(year,data){
 
  // 如果全部完成，顯示下載按鈕
  if(chiefDone){
-  window._currentSignData=data;
-  window._currentSignYear=year;
   html+='<div style="text-align:center;margin-top:8px">'
-  +'<button onclick="exportSignedPDF(window._currentSignYear,window._currentSignData)" style="padding:10px 28px;background:#C0392B;color:#fff;border:none;border-radius:var(--radius-md);font-size:14px;font-weight:600;cursor:pointer">下載含簽名年度 PDF</button>'
+  +'<button onclick="exportSignedPDF(\''+year+'\','+JSON.stringify(data)+')" style="padding:10px 28px;background:#C0392B;color:#fff;border:none;border-radius:var(--radius-md);font-size:14px;font-weight:600;cursor:pointer">下載含簽名年度 PDF</button>'
   +'</div>';
  }
 
@@ -1823,8 +1925,8 @@ function sendSignNotification(roleKey,year,roleLabel){
   unit_head_id:nextRole.empid,
   units:roleLabel,
   message:isComplete
-   ?rocYr+'年度神經肌肉阻斷劑查核表三方簽核已全部完成，請至系統下載含簽名 PDF。系統網址：https://ntuh-yunlin-nmba.netlify.app'
-   :rocYr+'年度神經肌肉阻斷劑查核表已由【'+roleLabel+'】完成簽核，請登入系統進行下一步簽核。系統網址：https://ntuh-yunlin-nmba.netlify.app'
+   ?rocYr+'年度神經肌肉阻斷劑查核表三方簽核已全部完成，請至系統下載含簽名 PDF。'
+   :rocYr+'年度神經肌肉阻斷劑查核表已由【'+roleLabel+'】完成簽核，請登入系統進行下一步簽核。'
  };
  emailjs.send(EMAILJS_SERVICE,EMAILJS_TEMPLATE,params)
   .then(function(){console.log('簽核通知已寄出 ✓');})
