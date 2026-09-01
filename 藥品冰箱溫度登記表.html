@@ -1971,32 +1971,41 @@ const STAFF = {
 };
 
 // ===================== 與「班表系統」的唯讀串接 =====================
-// 只讀取員工編號→姓名的對照表（entries），不寫入任何資料、不觸碰密碼等敏感欄位。
-// 如果連線失敗（例如離線、規則未開放），會自動退回使用上面寫死的本地員工名單，
-// 不會讓整個系統掛掉。
+// 只讀取：① 員工編號→姓名對照表（entries）② 乾淨版班別摘要（scheduleSummary，
+// 只有日期/班別代碼/員工編號，不含密碼等敏感欄位）。完全不寫入任何資料。
+// 如果連線失敗、或 scheduleSummary 這份文件還沒建立好，會自動優雅退回，
+// 不會讓系統掛掉，只是不會自動預選登記人員而已。
 let rosterSyncStatus = 'pending'; // 'pending' | 'ok' | 'failed'
+let _rosterFirebase = null; // 共用同一個Firebase連線，避免重複初始化衝突
+
+const ROSTER_CONFIG = {
+  apiKey: "AIzaSyApEBgpAFaytqPBtPTEXE-fr8o4LdzKzPA",
+  authDomain: "pharmacy-scheduling-e20ad.firebaseapp.com",
+  projectId: "pharmacy-scheduling-e20ad",
+  storageBucket: "pharmacy-scheduling-e20ad.firebasestorage.app",
+  messagingSenderId: "779276168089",
+  appId: "1:779276168089:web:c57dfd4db57beef3804108"
+};
+
+async function getRosterFirebase(){
+  if(_rosterFirebase) return _rosterFirebase;
+  const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js');
+  const { getAuth, signInAnonymously } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js');
+  const { getFirestore, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
+  // 用獨立名稱初始化，避免跟本系統自己未來如果也用 Firebase 互相衝突
+  const app = initializeApp(ROSTER_CONFIG, 'rosterApp');
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  await signInAnonymously(auth);
+  _rosterFirebase = { doc, getDoc, db };
+  return _rosterFirebase;
+}
+
 async function syncRosterDirectory(){
   try{
-    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js');
-    const { getAuth, signInAnonymously } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js');
-    const { getFirestore, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
+    const { doc, getDoc, db } = await getRosterFirebase();
 
-    const rosterConfig = {
-      apiKey: "AIzaSyApEBgpAFaytqPBtPTEXE-fr8o4LdzKzPA",
-      authDomain: "pharmacy-scheduling-e20ad.firebaseapp.com",
-      projectId: "pharmacy-scheduling-e20ad",
-      storageBucket: "pharmacy-scheduling-e20ad.firebasestorage.app",
-      messagingSenderId: "779276168089",
-      appId: "1:779276168089:web:c57dfd4db57beef3804108"
-    };
-
-    // 用獨立名稱初始化，避免跟本系統自己未來如果也用 Firebase 互相衝突
-    const rosterApp = initializeApp(rosterConfig, 'rosterApp');
-    const rosterAuth = getAuth(rosterApp);
-    const rosterDb = getFirestore(rosterApp);
-    await signInAnonymously(rosterAuth);
-
-    const ref = doc(rosterDb, 'artifacts', 'pharmacy-system-v1-8', 'public', 'data', 'roster', 'directory');
+    const ref = doc(db, 'artifacts', 'pharmacy-system-v1-8', 'public', 'data', 'roster', 'directory');
     const snap = await getDoc(ref);
     const entries = snap.exists() ? (snap.data().entries || {}) : {};
 
@@ -2024,6 +2033,59 @@ async function syncRosterDirectory(){
 }
 // 頁面載入時就開始同步（不擋住其他初始化流程，失敗也不影響本系統正常使用）
 syncRosterDirectory();
+
+// ----- 班別代碼對照：班表系統的代碼 → 我們自己的班別(am/pm/night) -----
+// 假設班表系統維護者已依先前討論，建立好一份「乾淨版」班別摘要文件：
+//   /artifacts/pharmacy-system-v1-8/public/data/roster/scheduleSummary/{YYYY-MM}
+//   格式：{ "01": { "B8": ["Y00329"], "A2": [...], "P": [...] }, "02": {...}, ... }
+// 如果這份文件還不存在或格式不同，下面的查詢會安全地找不到資料、優雅地略過，
+// 不會影響系統其他功能正常運作。
+const SHIFT_CODE_MAP = {
+  am:    ['B8', 'SD', 'HD'],
+  pm:    ['A2', 'SA2', 'HA2'],
+  night: ['P', 'SP', 'HP']
+};
+function mapShiftCodeToOurKey(code){
+  for(const [ourKey, codes] of Object.entries(SHIFT_CODE_MAP)){
+    if(codes.includes(code)) return ourKey;
+  }
+  return null;
+}
+
+const _scheduleSummaryCache = {}; // 依 ym 快取，避免同一個月重複讀取
+async function getScheduleSummaryForMonth(ym){
+  if(_scheduleSummaryCache[ym] !== undefined) return _scheduleSummaryCache[ym];
+  try{
+    const { doc, getDoc, db } = await getRosterFirebase();
+    const ref = doc(db, 'artifacts', 'pharmacy-system-v1-8', 'public', 'data', 'roster', 'scheduleSummary', ym);
+    const snap = await getDoc(ref);
+    const data = snap.exists() ? snap.data() : null;
+    _scheduleSummaryCache[ym] = data;
+    return data;
+  }catch(err){
+    console.warn('⚠ 讀取班表摘要失敗（可能尚未建立這份文件）：', err);
+    _scheduleSummaryCache[ym] = null;
+    return null;
+  }
+}
+
+/**
+ * 查詢某天、某個我們自己的班別(am/pm/night)，班表系統排的是哪一位員工編號。
+ * 找不到就回傳 null（畫面上會維持原本手動選擇登記人員的行為，不受影響）。
+ */
+async function getScheduledStaffId(ym, day, ourShiftKey){
+  const summary = await getScheduleSummaryForMonth(ym);
+  if(!summary) return null;
+  const dayKey = String(day).padStart(2, '0');
+  const dayData = summary[dayKey] || summary[String(Number(day))];
+  if(!dayData) return null;
+  for(const [code, ids] of Object.entries(dayData)){
+    if(mapShiftCodeToOurKey(code) === ourShiftKey && Array.isArray(ids) && ids.length > 0){
+      return ids[0]; // 同一班別若有多人，先取第一位
+    }
+  }
+  return null;
+}
 
 // 各院區「每週檢核者」——只有這個指定人員可以執行檢核，不會自動預設帶入
 const SITE_DEFAULT_CHECKER_ID = {
@@ -3094,6 +3156,18 @@ async function renderDailyView(){
     if(row && row.savedBy === s.name) opt.selected = true;
     staffSel.appendChild(opt);
   });
+
+  // 如果這個時段還沒有人實際登記過，嘗試從班表系統的排班摘要自動預選登記人員
+  // （只是預先選好方便使用者確認，登記時仍可自行更改）
+  if(!row || !row.savedBy){
+    try{
+      const scheduledId = await getScheduledStaffId(ym, day, shiftKey);
+      if(scheduledId){
+        const matched = (STAFF[siteName] || []).find(s => s.id === scheduledId);
+        if(matched) staffSel.value = matched.name;
+      }
+    }catch(e){ /* 排班資料查詢失敗時，維持手動選擇，不影響其他功能 */ }
+  }
 
   // reason field
   if(reasonInputEl) reasonInputEl.value = (row && row.reason) || '';
