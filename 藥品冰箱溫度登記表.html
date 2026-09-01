@@ -1970,6 +1970,61 @@ const STAFF = {
   ]
 };
 
+// ===================== 與「班表系統」的唯讀串接 =====================
+// 只讀取員工編號→姓名的對照表（entries），不寫入任何資料、不觸碰密碼等敏感欄位。
+// 如果連線失敗（例如離線、規則未開放），會自動退回使用上面寫死的本地員工名單，
+// 不會讓整個系統掛掉。
+let rosterSyncStatus = 'pending'; // 'pending' | 'ok' | 'failed'
+async function syncRosterDirectory(){
+  try{
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js');
+    const { getAuth, signInAnonymously } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js');
+    const { getFirestore, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js');
+
+    const rosterConfig = {
+      apiKey: "AIzaSyApEBgpAFaytqPBtPTEXE-fr8o4LdzKzPA",
+      authDomain: "pharmacy-scheduling-e20ad.firebaseapp.com",
+      projectId: "pharmacy-scheduling-e20ad",
+      storageBucket: "pharmacy-scheduling-e20ad.firebasestorage.app",
+      messagingSenderId: "779276168089",
+      appId: "1:779276168089:web:c57dfd4db57beef3804108"
+    };
+
+    // 用獨立名稱初始化，避免跟本系統自己未來如果也用 Firebase 互相衝突
+    const rosterApp = initializeApp(rosterConfig, 'rosterApp');
+    const rosterAuth = getAuth(rosterApp);
+    const rosterDb = getFirestore(rosterApp);
+    await signInAnonymously(rosterAuth);
+
+    const ref = doc(rosterDb, 'artifacts', 'pharmacy-system-v1-8', 'public', 'data', 'roster', 'directory');
+    const snap = await getDoc(ref);
+    const entries = snap.exists() ? (snap.data().entries || {}) : {};
+
+    // 只更新姓名欄位，員工所屬院區（本系統自己的分類）維持不變
+    let updatedCount = 0;
+    Object.keys(STAFF).forEach(site=>{
+      STAFF[site].forEach(person=>{
+        if(entries[person.id] && entries[person.id] !== person.name){
+          person.name = entries[person.id];
+          updatedCount++;
+        }
+      });
+    });
+    rosterSyncStatus = 'ok';
+    console.log(`✅ 已與班表系統同步員工姓名（共 ${Object.keys(entries).length} 筆，更新 ${updatedCount} 筆）`);
+
+    // 如果頁面在同步完成前就已經渲染過一次，這裡補做一次刷新，讓姓名更新反映到畫面上
+    if(typeof refreshAll === 'function'){
+      try{ await refreshAll(); }catch(e){}
+    }
+  }catch(err){
+    rosterSyncStatus = 'failed';
+    console.warn('⚠ 班表系統串接失敗，改用本地員工名單：', err);
+  }
+}
+// 頁面載入時就開始同步（不擋住其他初始化流程，失敗也不影響本系統正常使用）
+syncRosterDirectory();
+
 // 各院區「每週檢核者」——只有這個指定人員可以執行檢核，不會自動預設帶入
 const SITE_DEFAULT_CHECKER_ID = {
   "斗六院區": "Y00326",
