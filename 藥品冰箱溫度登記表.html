@@ -2057,11 +2057,14 @@ async function getScheduleSummaryForMonth(ym){
   if(_scheduleSummaryCache[ym] !== undefined) return _scheduleSummaryCache[ym];
   try{
     const { doc, getDoc, db } = await getRosterFirebase();
-    const ref = doc(db, 'artifacts', 'pharmacy-system-v1-8', 'public', 'data', 'roster', 'scheduleSummary', ym);
+    // 注意：Firestore的文件路徑一定要是「偶數」層（collection/doc/collection/doc...），
+    // 所以整份 scheduleSummary 設計成「單一文件」，裡面用月份(ym)當作欄位名稱分開存放，
+    // 而不是把月份也當作路徑的一部分（那樣會變成奇數層，讀取時會直接報錯）。
+    const ref = doc(db, 'artifacts', 'pharmacy-system-v1-8', 'public', 'data', 'roster', 'scheduleSummary');
     const snap = await getDoc(ref);
-    const data = snap.exists() ? snap.data() : null;
-    _scheduleSummaryCache[ym] = data;
-    return data;
+    const monthData = snap.exists() ? (snap.data()[ym] || null) : null;
+    _scheduleSummaryCache[ym] = monthData;
+    return monthData;
   }catch(err){
     console.warn('⚠ 讀取班表摘要失敗（可能尚未建立這份文件）：', err);
     _scheduleSummaryCache[ym] = null;
