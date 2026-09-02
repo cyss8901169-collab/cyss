@@ -968,6 +968,16 @@
     border-radius:7px;
     margin-bottom:12px;
   }
+  .schedule-hint-bar{
+    background:#eef5ff;
+    border:1px solid #bcd8f5;
+    color:#1c4d8f;
+    font-size:12px;
+    font-weight:600;
+    padding:8px 12px;
+    border-radius:7px;
+    margin-bottom:12px;
+  }
   .fridge-cards{
     display:flex;
     flex-direction:column;
@@ -1773,6 +1783,7 @@
     <div class="daily-card">
 
       <div class="past-window-note" id="pastWindowNote" style="display:none;"></div>
+      <div class="schedule-hint-bar" id="scheduleHintBar" style="display:none;"></div>
 
       <div class="fridge-cards" id="fridgeCards"></div>
 
@@ -1949,7 +1960,8 @@ const STAFF = {
     {name:"王鈺婷",id:"Y08733"},{name:"陳憶萱",id:"Y08855"},{name:"呂昆羲",id:"Y08868"},
     {name:"李昱柔",id:"Y08994"},{name:"張耿誠",id:"Y09223"},
     {name:"陳妍勳",id:"Y09625"},{name:"李學怡",id:"Y09858"},{name:"吳岱容",id:"Y10248"},
-    {name:"施昭瑜",id:"Y10318"}
+    {name:"施昭瑜",id:"Y10318"},{name:"張如萱",id:"Y02331"},{name:"鍾意",id:"Y07352"},
+    {name:"張育禎",id:"Y10399"}
   ],
   "虎尾院區": [
     {name:"陳宜屏",id:"Y00230"},{name:"張正穎",id:"Y01406"},{name:"劉士宏",id:"Y01526"},
@@ -2057,16 +2069,28 @@ async function getScheduleSummaryForMonth(ym){
   if(_scheduleSummaryCache[ym] !== undefined) return _scheduleSummaryCache[ym];
   try{
     const { doc, getDoc, db } = await getRosterFirebase();
-    // 注意：Firestore的文件路徑一定要是「偶數」層（collection/doc/collection/doc...），
-    // 所以整份 scheduleSummary 設計成「單一文件」，裡面用月份(ym)當作欄位名稱分開存放，
-    // 而不是把月份也當作路徑的一部分（那樣會變成奇數層，讀取時會直接報錯）。
-    const ref = doc(db, 'artifacts', 'pharmacy-system-v1-8', 'public', 'data', 'roster', 'scheduleSummary');
+    // 讀取路徑：roster/main/scheduleDirectory/{年-月}，這份文件裡的 entries 欄位
+    // 是「員工編號 → 當月每日班別代碼」的乾淨對照（例如 {"01":"B8","02":"A2",...}）。
+    // 注意：這份文件裡可能還有 employees 這個包含密碼的欄位，我們完全不讀取、不使用它，
+    // 只取用 entries 這個欄位。
+    const ref = doc(db, 'artifacts', 'pharmacy-system-v1-8', 'public', 'data', 'roster', 'main', 'scheduleDirectory', ym);
     const snap = await getDoc(ref);
-    const monthData = snap.exists() ? (snap.data()[ym] || null) : null;
-    _scheduleSummaryCache[ym] = monthData;
-    return monthData;
+    if(!snap.exists()){
+      console.warn(`⚠ 班表摘要診斷：找不到 ${ym} 這份月份文件（roster/main/scheduleDirectory/${ym}）`);
+      _scheduleSummaryCache[ym] = null;
+      return null;
+    }
+    const data = snap.data();
+    const entries = data.entries || null; // { "Y00329": {"01":"B8","02":"A2",...}, ... }
+    if(!entries){
+      console.warn(`⚠ 班表摘要診斷：${ym} 文件已存在，但沒有 entries 欄位。文件實際欄位：`, Object.keys(data));
+    } else {
+      console.log(`✅ 班表摘要診斷：已讀到 ${ym} 的排班資料，共 ${Object.keys(entries).length} 位員工`);
+    }
+    _scheduleSummaryCache[ym] = entries;
+    return entries;
   }catch(err){
-    console.warn('⚠ 讀取班表摘要失敗（可能尚未建立這份文件）：', err);
+    console.warn('⚠ 讀取班表摘要失敗（可能是Firestore規則未開放匿名讀取這份文件）：', err);
     _scheduleSummaryCache[ym] = null;
     return null;
   }
@@ -2074,17 +2098,19 @@ async function getScheduleSummaryForMonth(ym){
 
 /**
  * 查詢某天、某個我們自己的班別(am/pm/night)，班表系統排的是哪一位員工編號。
- * 找不到就回傳 null（畫面上會維持原本手動選擇登記人員的行為，不受影響）。
+ * 資料結構：entries = { "員工編號": { "01": "B8", "02": "A2", ... }, ... }
+ * 找不到就回傳 null（畫面上只是不顯示提醒，不影響其他功能）。
  */
 async function getScheduledStaffId(ym, day, ourShiftKey){
-  const summary = await getScheduleSummaryForMonth(ym);
-  if(!summary) return null;
+  const entries = await getScheduleSummaryForMonth(ym);
+  if(!entries) return null;
   const dayKey = String(day).padStart(2, '0');
-  const dayData = summary[dayKey] || summary[String(Number(day))];
-  if(!dayData) return null;
-  for(const [code, ids] of Object.entries(dayData)){
-    if(mapShiftCodeToOurKey(code) === ourShiftKey && Array.isArray(ids) && ids.length > 0){
-      return ids[0]; // 同一班別若有多人，先取第一位
+  const dayKeyAlt = String(Number(day));
+  for(const [empId, daysMap] of Object.entries(entries)){
+    if(!daysMap) continue;
+    const code = daysMap[dayKey] !== undefined ? daysMap[dayKey] : daysMap[dayKeyAlt];
+    if(code && mapShiftCodeToOurKey(code) === ourShiftKey){
+      return empId; // 找到第一位符合這個班別的員工
     }
   }
   return null;
@@ -3160,16 +3186,20 @@ async function renderDailyView(){
     staffSel.appendChild(opt);
   });
 
-  // 如果這個時段還沒有人實際登記過，嘗試從班表系統的排班摘要自動預選登記人員
-  // （只是預先選好方便使用者確認，登記時仍可自行更改）
-  if(!row || !row.savedBy){
+  // 查詢班表系統的排班摘要，顯示成「僅供參考」的提醒訊息——
+  // 實際登記人員一律以登入者本人為準，這裡不會改變真正的登記人員。
+  const scheduleHintEl = document.getElementById('scheduleHintBar');
+  if(scheduleHintEl){
+    scheduleHintEl.style.display = 'none';
     try{
       const scheduledId = await getScheduledStaffId(ym, day, shiftKey);
       if(scheduledId){
         const matched = (STAFF[siteName] || []).find(s => s.id === scheduledId);
-        if(matched) staffSel.value = matched.name;
+        const scheduledName = matched ? matched.name : scheduledId;
+        scheduleHintEl.textContent = `📋 根據班表系統排班，本班別應為：${scheduledName}`;
+        scheduleHintEl.style.display = 'block';
       }
-    }catch(e){ /* 排班資料查詢失敗時，維持手動選擇，不影響其他功能 */ }
+    }catch(e){ /* 排班資料查詢失敗時，不顯示提醒，不影響其他功能 */ }
   }
 
   // reason field
