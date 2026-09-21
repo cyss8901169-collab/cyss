@@ -738,6 +738,58 @@
     return entries[employeeId]?.[dayKey] ?? null;
   };
 </script>
+<script type="module">
+  // ══════════ 溫溼度登記系統自己的雲端資料庫（讀寫，取代瀏覽器本機儲存）══════════
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  const templogFirebaseConfig = {
+    apiKey: "AIzaSyBB29TGm1BbcMah0GbDqvfBAXY3XJXGXIw",
+    authDomain: "ntuh-yunlin-temperature.firebaseapp.com",
+    projectId: "ntuh-yunlin-temperature",
+    storageBucket: "ntuh-yunlin-temperature.firebasestorage.app",
+    messagingSenderId: "390972117816",
+    appId: "1:390972117816:web:18147227b7110f3629e7cd"
+  };
+
+  // 用獨立命名的 app，避免跟上面班表系統那個 Firebase app 互相衝突
+  const templogApp = initializeApp(templogFirebaseConfig, "templogCloudApp");
+  const templogAuth = getAuth(templogApp);
+  const templogDb = getFirestore(templogApp);
+  const TEMPLOG_COLLECTION = "templog";
+
+  let authReadyResolve;
+  const authReadyPromise = new Promise(resolve => { authReadyResolve = resolve; });
+  onAuthStateChanged(templogAuth, (user) => { if(user) authReadyResolve(); });
+  signInAnonymously(templogAuth).catch(e => console.error('溫溼度系統雲端登入失敗：', e));
+
+  // 讀取單一文件（回傳原始物件，找不到回傳 null）
+  window._templogGet = async function(docId) {
+    await authReadyPromise;
+    const snap = await getDoc(doc(templogDb, TEMPLOG_COLLECTION, docId));
+    return snap.exists() ? snap.data() : null;
+  };
+  // 寫入/覆蓋單一文件
+  window._templogSet = async function(docId, data) {
+    await authReadyPromise;
+    await setDoc(doc(templogDb, TEMPLOG_COLLECTION, docId), data);
+  };
+  // 刪除單一文件
+  window._templogDelete = async function(docId) {
+    await authReadyPromise;
+    await deleteDoc(doc(templogDb, TEMPLOG_COLLECTION, docId));
+  };
+  // 一次抓回整個 collection 底下所有文件（開機時用來重建本機快取）
+  window._templogListAll = async function() {
+    await authReadyPromise;
+    const snap = await getDocs(collection(templogDb, TEMPLOG_COLLECTION));
+    const result = {};
+    snap.forEach(d => { result[d.id] = d.data(); });
+    return result;
+  };
+  window._templogFirestoreLoaded = true;
+</script>
 </head>
 <body>
 
@@ -960,6 +1012,61 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// ══════════ 雲端儲存轉接層（讓下面所有程式碼可以繼續用 localStorage 的寫法，實際上讀寫 Firestore）══════════
+// 除了登入身分（templog_session）留在本機裝置，其餘資料都會同步到雲端資料庫，
+// 讓所有使用這個連結的人打開時看到的是同一份最新資料。
+const LS_CACHE = {};
+function isDeviceLocalKey(key) { return key === 'templog_session' || key === 'templog_hidden_since'; }
+
+const LS = {
+  getItem(key) {
+    if(isDeviceLocalKey(key)) {
+      try { return window.localStorage.getItem(key); } catch(e) { return null; }
+    }
+    return Object.prototype.hasOwnProperty.call(LS_CACHE, key) ? LS_CACHE[key] : null;
+  },
+  setItem(key, value) {
+    if(isDeviceLocalKey(key)) {
+      try { window.localStorage.setItem(key, value); } catch(e) {}
+      return;
+    }
+    LS_CACHE[key] = value;
+    if(window._templogSet) {
+      let payload;
+      try { payload = JSON.parse(value); } catch(e) { payload = { _raw: value }; }
+      window._templogSet(key, payload).catch(err => console.error('雲端寫入失敗（'+key+'）：', err));
+    }
+  },
+  removeItem(key) {
+    if(isDeviceLocalKey(key)) {
+      try { window.localStorage.removeItem(key); } catch(e) {}
+      return;
+    }
+    delete LS_CACHE[key];
+    if(window._templogDelete) {
+      window._templogDelete(key).catch(err => console.error('雲端刪除失敗（'+key+'）：', err));
+    }
+  },
+  get length() { return Object.keys(LS_CACHE).length; },
+  key(i) { return Object.keys(LS_CACHE)[i] || null; }
+};
+
+// 開機時把雲端資料整包抓下來，重建本機快取；設定逾時上限，避免網路不好時系統卡住打不開
+async function initCloudCache() {
+  if(!window._templogListAll) return; // Firebase 模組還沒載入完成，跳過（開機仍可用，只是資料是空的）
+  const timeoutPromise = new Promise(resolve => setTimeout(resolve, 8000));
+  try {
+    const fetchPromise = window._templogListAll().then(all => {
+      for(const [docId, data] of Object.entries(all)) {
+        LS_CACHE[docId] = (data && Object.prototype.hasOwnProperty.call(data, '_raw')) ? data._raw : JSON.stringify(data);
+      }
+    });
+    await Promise.race([fetchPromise, timeoutPromise]);
+  } catch(e) {
+    console.error('雲端資料初始讀取失敗（將以空白資料開機）：', e);
+  }
+}
+
 // ══════════ STAFF DATA ══════════
 const STAFF = [
   // ── 斗六 ──
@@ -1133,18 +1240,18 @@ function onDeptChange(deptKey, campusOverride) {
 function storageKey(ym) { return 'templog_' + currentArea + '_' + ym; }
 function checkerKey(ym) { return 'checker_' + currentArea + '_' + ym; }
 function saveData() {
-  try { localStorage.setItem(storageKey(currentMonth), JSON.stringify(logData[currentMonth] || {})); } catch(e){}
+  try { LS.setItem(storageKey(currentMonth), JSON.stringify(logData[currentMonth] || {})); } catch(e){}
 }
 function saveCheckers() {
-  try { localStorage.setItem(checkerKey(currentMonth), JSON.stringify(checkerData[currentMonth] || {})); } catch(e){}
+  try { LS.setItem(checkerKey(currentMonth), JSON.stringify(checkerData[currentMonth] || {})); } catch(e){}
 }
 function loadData(ym) {
   try {
-    let d = null; try { d = localStorage.getItem(storageKey(ym)); } catch(e) {}
+    let d = null; try { d = LS.getItem(storageKey(ym)); } catch(e) {}
     logData[ym] = d ? JSON.parse(d) : {};
   } catch(e) { logData[ym] = {}; }
   try {
-    let c = null; try { c = localStorage.getItem(checkerKey(ym)); } catch(e) {}
+    let c = null; try { c = LS.getItem(checkerKey(ym)); } catch(e) {}
     checkerData[ym] = c ? JSON.parse(c) : {};
   } catch(e) { checkerData[ym] = {}; }
   loadSupervisor(ym);
@@ -1159,15 +1266,15 @@ function saveSupervisor() {
   try {
     const k = supervisorKey(currentMonth);
     if(supervisorData[currentMonth] && supervisorData[currentMonth][currentArea]) {
-      try { localStorage.setItem(k, JSON.stringify(supervisorData[currentMonth][currentArea])); } catch(e) {}
+      try { LS.setItem(k, JSON.stringify(supervisorData[currentMonth][currentArea])); } catch(e) {}
     } else {
-      try { localStorage.removeItem(k); } catch(e) {}
+      try { LS.removeItem(k); } catch(e) {}
     }
   } catch(e) {}
 }
 function loadSupervisor(ym) {
   try {
-    let d2 = null; try { d2 = localStorage.getItem(supervisorKey(ym)); } catch(e) {}
+    let d2 = null; try { d2 = LS.getItem(supervisorKey(ym)); } catch(e) {}
     const d = d2;
     if(!supervisorData[ym]) supervisorData[ym] = {};
     supervisorData[ym][currentArea] = d ? JSON.parse(d) : null;
@@ -1400,12 +1507,12 @@ window.onload = function() {
   document.addEventListener('visibilitychange', () => {
     if(document.hidden) {
       hiddenAt = Date.now();
-      try { localStorage.setItem('templog_hidden_since', String(hiddenAt)); } catch(e) {}
+      try { LS.setItem('templog_hidden_since', String(hiddenAt)); } catch(e) {}
     } else {
       let since = hiddenAt;
       if(!since) {
         try {
-          const stored = localStorage.getItem('templog_hidden_since');
+          const stored = LS.getItem('templog_hidden_since');
           if(stored) since = parseInt(stored, 10);
         } catch(e) {}
       }
@@ -1413,18 +1520,18 @@ window.onload = function() {
         logout();
       }
       hiddenAt = null;
-      try { localStorage.removeItem('templog_hidden_since'); } catch(e) {}
+      try { LS.removeItem('templog_hidden_since'); } catch(e) {}
     }
   });
   // 使用者實際離開/關閉頁面時，盡量同步清除登入狀態（部分手機瀏覽器不一定會確實觸發）
   window.addEventListener('pagehide', () => {
     if(currentUser) {
-      try { localStorage.removeItem('templog_session'); } catch(e) {}
+      try { LS.removeItem('templog_session'); } catch(e) {}
     }
   });
 
   // 每次打開系統都從登入畫面開始，不會自動沿用上次的登入狀態
-  try { localStorage.removeItem('templog_session'); } catch(e) {}
+  try { LS.removeItem('templog_session'); } catch(e) {}
   document.getElementById('loginIdInput').focus();
 };
 
@@ -1461,21 +1568,30 @@ function resetViewState() {
   supervisorData = {};
 }
 
-function doLogin() {
+async function doLogin() {
   const raw = document.getElementById('loginIdInput').value.trim();
   const id = ('Y' + raw).toUpperCase();
   const err = document.getElementById('loginError');
   const s = STAFF.find(x => x.id === id);
   if(!s) { err.style.display='block'; document.getElementById('loginIdInput').focus(); return; }
   err.style.display='none';
+
+  const loginBtn = document.querySelector('.login-btn');
+  const originalBtnText = loginBtn ? loginBtn.textContent : '';
+  if(loginBtn) { loginBtn.textContent = '同步雲端資料中...'; loginBtn.disabled = true; }
+
+  await initCloudCache();
+
   currentUser = s;
   resetViewState();
-  try { localStorage.setItem('templog_session', JSON.stringify(s)); } catch(e) {}
+  try { LS.setItem('templog_session', JSON.stringify(s)); } catch(e) {}
   showApp();
+
+  if(loginBtn) { loginBtn.textContent = originalBtnText; loginBtn.disabled = false; }
 }
 
 function logout() {
-  try { localStorage.removeItem('templog_session'); } catch(e) {}
+  try { LS.removeItem('templog_session'); } catch(e) {}
   currentUser = null;
   resetViewState();
   document.getElementById('loginWrap').style.display='flex';
@@ -1520,25 +1636,13 @@ function showApp() {
   document.getElementById('headerName').textContent = currentUser.name + ' (' + currentUser.id + ')';
   document.getElementById('headerSub').textContent = '國立臺灣大學醫學院附設醫院雲林分院－藥劑部【斗六 門診藥局】';
 
-  // ── 示範資料版本檢查：只有在版本號變動時才會重新產生示範資料。
-  //    版本相同時完全不會動到資料，確保藥師實際登記/修改過的資料不會被示範資料覆蓋掉 ──
-  const DEMO_DATA_VERSION = 'v6-persist-real-data';
-  let needsDemoRegen = false;
-  try {
-    const storedVersion = localStorage.getItem('templog_demo_version');
-    needsDemoRegen = (storedVersion !== DEMO_DATA_VERSION);
-    if(needsDemoRegen) {
-      const keysToRemove = [];
-      for(let i=0; i<localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if(k && k !== 'templog_session' && (k.startsWith('templog_') || k.startsWith('checker_') || k.startsWith('supervisor_'))) {
-          keysToRemove.push(k);
-        }
-      }
-      keysToRemove.forEach(k => { try { localStorage.removeItem(k); } catch(e){} });
-      localStorage.setItem('templog_demo_version', DEMO_DATA_VERSION);
-    }
-  } catch(e){}
+  // ── 示範資料自動產生機制：正式接上真正的雲端資料庫後，已永久停用 ──
+  // 原本這段會在「版本號變動」時，整批清除 templog_/checker_/supervisor_ 開頭的資料、
+  // 重新產生一批測試用的示範資料。這在本機測試階段很方便，但正式接上真實資料庫後，
+  // 這個機制本身就是風險（未來只要改一次版本號，就會把藥師登記的真實資料整批清除）。
+  // 依你的要求，資料庫從空白開始，之後每一筆都只會是藥師實際登記的資料，
+  // 所以這裡永遠不會觸發，下面 if(needsDemoRegen) 整段都不會執行。
+  const needsDemoRegen = false;
 
   // submit-row 已整合進 todayCard，不需額外控制
 
@@ -1655,10 +1759,10 @@ function showApp() {
     },
   ];
   areas06.forEach(({key, ck, sv, campus, build}) => {
-    try { localStorage.removeItem(key); localStorage.removeItem(ck); localStorage.removeItem(sv); } catch(e){}
-    try { localStorage.setItem(key, JSON.stringify(build())); } catch(e){}
-    try { localStorage.setItem(ck, JSON.stringify({1:chkBy6[campus],2:chkBy6[campus],3:chkBy6[campus],4:chkBy6[campus],5:chkBy6[campus]})); } catch(e){}
-    try { localStorage.setItem(sv, JSON.stringify(svBy6[campus])); } catch(e){}
+    try { LS.removeItem(key); LS.removeItem(ck); LS.removeItem(sv); } catch(e){}
+    try { LS.setItem(key, JSON.stringify(build())); } catch(e){}
+    try { LS.setItem(ck, JSON.stringify({1:chkBy6[campus],2:chkBy6[campus],3:chkBy6[campus],4:chkBy6[campus],5:chkBy6[campus]})); } catch(e){}
+    try { LS.setItem(sv, JSON.stringify(svBy6[campus])); } catch(e){}
   });
 
   // ── 2026-05（民國115年5月）全區域示範資料（依各院區實際組長／週檢核者設定）──
@@ -1759,10 +1863,10 @@ function showApp() {
     },
   ];
   areas05.forEach(({key, ck, sv, campus, build}) => {
-    try { localStorage.removeItem(key); localStorage.removeItem(ck); localStorage.removeItem(sv); } catch(e){}
-    try { localStorage.setItem(key, JSON.stringify(build())); } catch(e){}
-    try { localStorage.setItem(ck, JSON.stringify({1:chkBy5[campus],2:chkBy5[campus],3:chkBy5[campus],4:chkBy5[campus],5:chkBy5[campus]})); } catch(e){}
-    try { localStorage.setItem(sv, JSON.stringify(svBy5[campus])); } catch(e){}
+    try { LS.removeItem(key); LS.removeItem(ck); LS.removeItem(sv); } catch(e){}
+    try { LS.setItem(key, JSON.stringify(build())); } catch(e){}
+    try { LS.setItem(ck, JSON.stringify({1:chkBy5[campus],2:chkBy5[campus],3:chkBy5[campus],4:chkBy5[campus],5:chkBy5[campus]})); } catch(e){}
+    try { LS.setItem(sv, JSON.stringify(svBy5[campus])); } catch(e){}
   });
 
   // ── 2026-07（民國115年7月）全區域示範資料（依各院區實際組長／週檢核者設定）──
@@ -1849,10 +1953,10 @@ function showApp() {
     },
   ];
   areas07.forEach(({key, ck, sv, campus, build}) => {
-    try { localStorage.removeItem(key); localStorage.removeItem(ck); localStorage.removeItem(sv); } catch(e){}
-    try { localStorage.setItem(key, JSON.stringify(build())); } catch(e){}
-    try { localStorage.setItem(ck, JSON.stringify({})); } catch(e){} // 7月刻意不預先簽核，留給實際測試用
-    try { localStorage.setItem(sv, JSON.stringify(svBy7[campus])); } catch(e){}
+    try { LS.removeItem(key); LS.removeItem(ck); LS.removeItem(sv); } catch(e){}
+    try { LS.setItem(key, JSON.stringify(build())); } catch(e){}
+    try { LS.setItem(ck, JSON.stringify({})); } catch(e){} // 7月刻意不預先簽核，留給實際測試用
+    try { LS.setItem(sv, JSON.stringify(svBy7[campus])); } catch(e){}
   });
   } // end if(needsDemoRegen)
 
@@ -2937,7 +3041,7 @@ function renderAbnormal() {
     const areaKey = campus + '_' + dept.key;
     const key = 'templog_' + areaKey + '_' + currentMonth;
     let data = {};
-    try { const raw = localStorage.getItem(key); if(raw) data = JSON.parse(raw); } catch(e){}
+    try { const raw = LS.getItem(key); if(raw) data = JSON.parse(raw); } catch(e){}
 
     Object.keys(data).sort((a,b)=>Number(a)-Number(b)).forEach(day => {
       ['AM','PM'].forEach(s => {
