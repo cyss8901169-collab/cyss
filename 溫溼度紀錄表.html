@@ -1112,6 +1112,7 @@ const STAFF = [
   {id:'Y09858',name:'李學怡',  campus:'douliu'},
   {id:'Y10248',name:'吳岱容',  campus:'douliu'},
   {id:'Y10318',name:'施昭瑜',  campus:'douliu'},
+  {id:'Y10399',name:'張育禎',  campus:'douliu'},
   // ── 藥庫 ──
   {id:'Y01422',name:'廖瑋儀',  campus:'store'},
   {id:'Y01434',name:'陳家君',  campus:'store'},
@@ -1154,13 +1155,23 @@ const CAMPUS_ROLES = {
   huwei:  { supervisorId:'Y00230', supervisorName:'陳宜屏', checkerId:'Y01644', checkerName:'林家薐' },
   store:  { supervisorId:'Y00287', supervisorName:'吳秋宜', checkerId:'Y00955', checkerName:'陳盈君' },
 };
+// 各院區管理人：可跨越週/月鎖定，緊急解鎖該院區的資料（不需要是本人組長/週檢核者）
+const CAMPUS_ADMINS = {
+  douliu: ['Y01643', 'Y06100', 'Y00326'], // 謝姍珊、陳麗珺、沈倩如
+  huwei:  [],
+  store:  [],
+};
 function getCampusRoles(campus) {
   campus = campus || (currentArea ? currentArea.split('_')[0] : 'douliu');
   return CAMPUS_ROLES[campus] || CAMPUS_ROLES.douliu;
 }
 function isSupervisor(id, campus) { return !!id && id === getCampusRoles(campus).supervisorId; }
 function isChecker(id, campus)    { return !!id && id === getCampusRoles(campus).checkerId; }
-function isAdmin(id)      { return ADMIN_IDS.includes(id); }
+function isAdmin(id, campus) {
+  if(!id) return false;
+  campus = campus || (currentArea ? currentArea.split('_')[0] : 'douliu');
+  return (CAMPUS_ADMINS[campus] || []).includes(id);
+}
 
 // ══════════ STATE ══════════
 let currentUser = null;
@@ -1301,7 +1312,7 @@ function renderSupervisor() {
   // 已核定 → 直接顯示
   if(sv) {
     const dateOnly = sv.time ? sv.time.substring(0,10) : '';
-    const canResign = isSupervisor(currentUser?.id);
+    const canResign = isSupervisor(currentUser?.id) || isAdmin(currentUser?.id);
     body.innerHTML = `
       <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-start;">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -1399,16 +1410,16 @@ function signSupervisor() {
   }
 }
 function clearSupervisor() {
-  if(!isSupervisor(currentUser?.id)) {
+  if(!isSupervisor(currentUser?.id) && !isAdmin(currentUser?.id)) {
     const roles = getCampusRoles();
-    showToast(`僅組長（${roles.supervisorName}）可重新核定`, 'error');
+    showToast(`僅組長（${roles.supervisorName}）或管理人可重新核定`, 'error');
     return;
   }
   if(!supervisorData[currentMonth]) return;
   supervisorData[currentMonth][currentArea] = null;
   saveSupervisor();
   renderSupervisor();
-  showToast('核定已清除', 'warn');
+  showToast('核定已清除' + (isAdmin(currentUser?.id) && !isSupervisor(currentUser?.id) ? '（由管理人解鎖）' : ''), 'warn');
 }
 function getChecker(week) {
   return (checkerData[currentMonth] && checkerData[currentMonth][week]) || null;
@@ -1469,9 +1480,9 @@ function clearChecker(week, areaKey) {
   const savedArea = currentArea;
   if(areaKey) currentArea = areaKey;
   loadData(currentMonth); // 確保操作的是正確的院區/部門資料
-  if(!isChecker(currentUser?.id)) {
+  if(!isChecker(currentUser?.id) && !isAdmin(currentUser?.id)) {
     const roles = getCampusRoles();
-    showToast(`僅週檢核者（${roles.checkerName}）可重簽`, 'error');
+    showToast(`僅週檢核者（${roles.checkerName}）或管理人可重簽`, 'error');
     currentArea = savedArea;
     loadData(currentMonth);
     return;
@@ -1482,6 +1493,7 @@ function clearChecker(week, areaKey) {
   currentArea = savedArea;
   loadData(currentMonth);
   renderTable();
+  showToast('週核定已解除' + (isAdmin(currentUser?.id) && !isChecker(currentUser?.id) ? '（由管理人解鎖）' : ''), 'warn');
 }
 
 // ══════════ INIT ══════════
@@ -2498,7 +2510,7 @@ function renderMonthView() {
             ${checker
               ? `<span class="signed-badge" style="font-size:13px">✅ ${checker.name}</span>
                  <span style="font-size:12px;color:var(--gray-500)">${checker.time.slice(0,10)}</span>
-                 ${isChecker(currentUser?.id) ? `<button onclick="clearChecker(${wk},'${rowAreaKey}')"
+                 ${(isChecker(currentUser?.id) || isAdmin(currentUser?.id)) ? `<button onclick="clearChecker(${wk},'${rowAreaKey}')"
                    style="padding:3px 10px;background:var(--gray-100);border:1px solid var(--gray-300);
                           border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit;">重簽</button>` : ''}`
               : isChecker(currentUser?.id)
