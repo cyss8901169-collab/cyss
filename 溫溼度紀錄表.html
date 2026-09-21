@@ -1,0 +1,3684 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>室內溫溼度登記系統</title>
+<style>
+  :root {
+    --teal: #1a7f6e;
+    --teal-light: #e8f5f2;
+    --teal-mid: #2ea896;
+    --amber: #f59e0b;
+    --red: #dc2626;
+    --red-light: #fef2f2;
+    --green: #16a34a;
+    --green-light: #f0fdf4;
+    --blue: #1d4ed8;
+    --blue-light: #eff6ff;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-500: #6b7280;
+    --gray-700: #374151;
+    --gray-900: #111827;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', '微軟正黑體', 'Microsoft JhengHei', sans-serif;
+    background: linear-gradient(135deg, #f0f9f7 0%, #e8f4f8 100%);
+    min-height: 100vh;
+    color: var(--gray-900);
+  }
+
+  .export-btn {
+    padding: 8px 18px; background: #1d4ed8; color: white;
+    border: none; border-radius: 8px; font-size: 13px; font-weight: 700;
+    cursor: pointer; font-family: inherit; transition: background .2s;
+    white-space: nowrap;
+  }
+  .export-btn:hover { background: #1e40af; }
+
+  /* ══════════ PRINT / PDF STYLES ══════════ */
+  @media print {
+    @page {
+      size: A4 landscape;
+      margin: 10mm 8mm;
+    }
+
+    /* Hide everything except print content */
+    body * { visibility: hidden; }
+    #printArea, #printArea * { visibility: visible; }
+    #printArea {
+      position: fixed; top: 0; left: 0; width: 100%;
+    }
+
+    /* Print typography */
+    #printArea { font-family: '標楷體', 'DFKai-SB', serif; font-size: 10pt; color: #000; }
+
+    .print-title {
+      text-align: center; font-size: 16pt; font-weight: bold;
+      margin-bottom: 2mm; letter-spacing: 1px;
+    }
+    .print-subtitle {
+      text-align: center; font-size: 11pt; margin-bottom: 4mm;
+    }
+    .print-meta {
+      display: flex; justify-content: space-between;
+      font-size: 9pt; margin-bottom: 3mm; color: #333;
+    }
+
+    /* Main log table */
+    .print-table {
+      width: 100%; border-collapse: collapse;
+      margin-bottom: 6mm; font-size: 9pt;
+    }
+    .print-table th {
+      background: #d0e8d0 !important; -webkit-print-color-adjust: exact;
+      border: 1px solid #333; padding: 3px 5px;
+      text-align: center; font-weight: bold; font-size: 9pt;
+    }
+    .print-table td {
+      border: 1px solid #555; padding: 3px 5px;
+      text-align: center !important; vertical-align: middle;
+    }
+    .print-table .td-date {
+      font-weight: bold; background: #f0f0f0 !important;
+      -webkit-print-color-adjust: exact;
+    }
+    .print-table .td-am {
+      background: #e8f4fb !important; -webkit-print-color-adjust: exact;
+      font-size: 8pt; font-weight: bold; color: #1a5276; white-space: nowrap;
+    }
+    .print-table .td-pm {
+      background: #fef5e7 !important; -webkit-print-color-adjust: exact;
+      font-size: 8pt; font-weight: bold; color: #784212; white-space: nowrap;
+    }
+    .print-table .warn-val { color: #c0392b !important; font-weight: bold; }
+
+    /* Abnormal table */
+    .print-abnormal-title {
+      font-size: 12pt; font-weight: bold; margin: 4mm 0 2mm;
+      border-bottom: 2px solid #333; padding-bottom: 1mm;
+    }
+    .print-table .th-warn {
+      background: #fdebd0 !important; -webkit-print-color-adjust: exact;
+    }
+
+    /* Footer */
+    .print-footer {
+      margin-top: 4mm; font-size: 8pt; color: #555;
+      display: flex; justify-content: space-between;
+      border-top: 1px solid #aaa; padding-top: 2mm;
+    }
+    .print-note {
+      font-size: 8pt; margin-bottom: 3mm;
+      border: 1px solid #aaa; padding: 2mm 3mm; border-radius: 2mm;
+    }
+  }
+  header {
+    background: var(--teal);
+    color: white;
+    padding: 8px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    box-shadow: var(--shadow-lg);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-title { font-size: 16px; font-weight: 700; white-space: nowrap; }
+  .header-sub { font-size: 11px; opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .header-user {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px;
+  }
+  .header-user .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 15px;
+  }
+  .logout-btn {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white; padding: 5px 12px;
+    border-radius: 6px; cursor: pointer; font-size: 13px;
+    transition: background .2s;
+  }
+  .logout-btn:hover { background: rgba(255,255,255,0.25); }
+
+  /* ─── MAIN LAYOUT ─── */
+  main { max-width: 1200px; margin: 0 auto; padding: 0 16px calc(120px + env(safe-area-inset-bottom)); }
+
+  /* ─── LOGIN SCREEN ─── */
+  .login-wrap {
+    display: flex; align-items: center; justify-content: center;
+    min-height: calc(100vh - 60px);
+    padding: 16px;
+  }
+  .login-card {
+    background: white; border-radius: 20px;
+    padding: 32px 28px 36px;
+    box-shadow: var(--shadow-lg);
+    width: 100%; max-width: 420px;
+    border-top: 4px solid var(--teal);
+  }
+  .login-icon {
+    width: 72px; height: 72px; background: var(--teal-light);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 32px; margin: 0 auto 18px;
+  }
+  .login-card h2 {
+    text-align: center; font-size: 20px; color: var(--teal);
+    margin-bottom: 4px; line-height: 1.3;
+  }
+  .login-card .subtitle {
+    text-align: center; font-size: 12px; color: var(--gray-500);
+    margin-bottom: 26px; line-height: 1.5;
+  }
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block; font-size: 13px; font-weight: 600;
+    color: var(--gray-700); margin-bottom: 6px;
+  }
+  .form-group select, .form-group input {
+    width: 100%; padding: 13px 16px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 10px; font-size: 16px; /* 16px prevents iOS zoom */
+    transition: border-color .2s;
+    background: var(--gray-50);
+    font-family: inherit;
+    -webkit-appearance: none; appearance: none;
+  }
+  .form-group select:focus, .form-group input:focus {
+    outline: none; border-color: var(--teal);
+    background: white;
+  }
+  .login-btn {
+    width: 100%; padding: 15px;
+    background: var(--teal); color: white;
+    border: none; border-radius: 12px;
+    font-size: 17px; font-weight: 700;
+    cursor: pointer; margin-top: 8px;
+    transition: background .2s, transform .1s;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .login-btn:hover { background: var(--teal-mid); }
+  .login-btn:active { transform: scale(.97); background: #155f52; }
+  .login-error {
+    background: var(--red-light); color: var(--red);
+    border-radius: 10px; padding: 12px 16px;
+    font-size: 13px; margin-top: 12px; display: none;
+    text-align: center;
+  }
+
+
+  /* ─── DASHBOARD ─── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .date-nav {
+    padding: 0; margin-bottom: 0;
+  }
+  .date-nav label { font-size: 14px; font-weight: 600; color: var(--gray-700); white-space: nowrap; }
+  .date-nav input[type=month] {
+    padding: 8px 12px; border: 1.5px solid var(--gray-200);
+    border-radius: 8px; font-size: 15px; cursor: pointer;
+  }
+  .date-nav input[type=month]:focus { outline: none; border-color: var(--teal); }
+
+  /* Sticky top bar wrapping date-nav + stats */
+  .sticky-top {
+    position: fixed; left: 0; right: 0; top: 60px; z-index: 90;
+    background: linear-gradient(135deg, #f0f9f7 0%, #e8f4f8 100%);
+    padding: 6px 16px 4px;
+    max-width: 1200px; margin: 0 auto;
+  }
+  .sticky-top-spacer { display: block; }
+
+  /* Cards row */
+  .stats-row {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 6px; margin-bottom: 8px;
+  }
+  .stat-card {
+    background: white; border-radius: 8px; padding: 6px 10px;
+    box-shadow: var(--shadow); border-left: 3px solid var(--teal);
+  }
+  .stat-card .label { font-size: 10px; color: var(--gray-500); font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stat-card .value { font-size: 16px; font-weight: 800; color: var(--teal); }
+  .stat-card .value.warn { color: var(--red); }
+  .stat-card.amber { border-left-color: var(--amber); }
+  .stat-card.amber .value { color: var(--amber); }
+  .stat-card.green { border-left-color: var(--green); }
+  .stat-card.green .value { color: var(--green); }
+
+  /* Table container */
+  .table-card {
+    background: white; border-radius: 12px;
+    box-shadow: var(--shadow); margin-bottom: 24px;
+  }
+  .table-header {
+    padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--gray-100); flex-wrap: wrap; gap: 10px;
+  }
+  .table-header h3 { font-size: 16px; color: var(--gray-900); font-weight: 700; }
+  .session-tabs {
+    display: flex; gap: 6px;
+  }
+  .tab-btn {
+    padding: 6px 16px; border-radius: 20px;
+    border: 1.5px solid var(--gray-200);
+    background: white; cursor: pointer; font-size: 13px; font-weight: 600;
+    transition: all .2s; color: var(--gray-700);
+  }
+  /* ── inline selector bar ── */
+  .selector-bar {
+    display: flex; align-items: center; gap: 10px;
+    background: white; border: 1.5px solid var(--gray-200);
+    border-radius: 10px; padding: 8px 14px;
+    flex-wrap: wrap;
+  }
+  .selector-bar .sb-label {
+    font-size: 12px; font-weight: 700; color: var(--gray-500);
+    white-space: nowrap; letter-spacing: .4px;
+  }
+  .selector-bar select {
+    padding: 6px 10px; border: 1.5px solid var(--gray-200);
+    border-radius: 8px; font-size: 14px; font-weight: 600;
+    background: white; cursor: pointer; font-family: inherit;
+    color: var(--gray-900); transition: border-color .2s;
+  }
+  .selector-bar select:focus { outline: none; border-color: var(--teal); }
+  .sb-divider { width: 1px; height: 20px; background: var(--gray-200); margin: 0 2px; }
+  /* 日期／時段／檢視切換列：手機用直式堆疊省寬度，桌機/平板用橫式排列更寬敞 */
+  .date-time-row { display: flex; align-items: stretch; gap: 6px; margin-bottom: 6px; }
+  .date-input {
+    padding: 7px 8px; border: 1.5px solid var(--gray-200); border-radius: 8px;
+    font-size: 18px; font-weight: 700; background: white; cursor: pointer;
+    font-family: inherit; flex: 1.2; min-width: 0; text-align: center;
+  }
+  .session-toggle-group, .view-toggle-group { display: flex; flex-direction: column; gap: 3px; }
+  .view-toggle-group .view-toggle-btn { white-space: nowrap; padding: 5px 10px; font-size: 12px; }
+
+  .session-pill {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .session-pill button {
+    padding: 5px 12px; border-radius: 16px;
+    border: 1.5px solid var(--gray-200);
+    background: white; cursor: pointer; font-size: 12px; font-weight: 700;
+    transition: all .18s; color: var(--gray-700); white-space: nowrap;
+  }
+  .session-pill button.active { background: var(--teal); color: white; border-color: var(--teal); }
+  .session-pill button:hover:not(.active) { border-color: var(--teal); color: var(--teal); }
+
+  .area-pill {
+    display: flex; gap: 4px;
+  }
+  .area-pill button {
+    padding: 6px 14px; border-radius: 20px;
+    border: 1.5px solid var(--gray-200);
+    background: white; cursor: pointer; font-size: 13px; font-weight: 600;
+    transition: all .18s; color: var(--gray-700); white-space: nowrap;
+  }
+  .area-pill button.active.opd { background: #0d6efd; color: white; border-color: #0d6efd; }
+  .area-pill button.active.ipd { background: #6f42c1; color: white; border-color: #6f42c1; }
+  .area-pill button:hover:not(.active) { border-color: var(--teal); color: var(--teal); }
+
+  .area-badge-opd {
+    display:inline-block;background:#dbeafe;color:#1d4ed8;
+    border-radius:12px;padding:2px 10px;font-size:12px;font-weight:700;margin-left:8px;
+  }
+  .area-badge-ipd {
+    display:inline-block;background:#ede9fe;color:#6d28d9;
+    border-radius:12px;padding:2px 10px;font-size:12px;font-weight:700;margin-left:8px;
+  }
+
+  .view-toggle-btn {    padding: 6px 16px; border-radius: 20px;
+    border: 1.5px solid var(--gray-200);
+    background: white; cursor: pointer; font-size: 13px; font-weight: 600;
+    transition: all .2s; color: var(--gray-700);
+  }
+  .view-toggle-btn.active { background: #334155; color: white; border-color: #334155; }
+  .view-toggle-btn:hover:not(.active) { border-color: var(--teal); color: var(--teal); }
+
+  @media (min-width: 700px) {
+    .date-time-row { align-items: center; gap: 14px; }
+    .date-input { flex: 0 0 auto; width: 210px; font-size: 16px; padding: 10px 14px; }
+    .session-toggle-group, .view-toggle-group { flex-direction: row; gap: 8px; }
+    .date-time-row .session-pill { flex-direction: row; gap: 8px; }
+    .date-time-row .session-pill button { font-size: 14px; padding: 9px 20px; }
+    .date-time-row .view-toggle-group .view-toggle-btn { font-size: 14px; padding: 9px 20px; }
+  }
+
+  /* Today-only card style */
+  .today-card {
+    padding: 0;
+  }
+  .dept-today-card {
+    transition: box-shadow .3s ease, transform .2s ease;
+  }
+  .dept-today-card.save-flash {
+    box-shadow: 0 0 0 3px var(--green), 0 4px 14px rgba(22,163,74,0.25) !important;
+    transform: scale(1.01);
+  }
+  .today-sticky-fields {
+    position: sticky;
+    z-index: 80;
+    background: white;
+    border-bottom: 1.5px solid var(--gray-100);
+    padding: 16px 24px 14px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.07);
+  }
+  .today-body {
+    padding: 12px 16px 16px;
+  }
+  .today-date-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--teal-light); color: var(--teal);
+    border-radius: 24px; padding: 6px 18px;
+    font-size: 15px; font-weight: 700; margin-bottom: 22px;
+  }
+  .today-fields {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 6px; margin-bottom: 8px;
+  }
+  .field-group { display: flex; flex-direction: column; gap: 6px; }
+  .field-group label {
+    font-size: 13px; font-weight: 700; color: var(--gray-500);
+    text-transform: uppercase; letter-spacing: .3px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    text-align: center;
+  }
+  .field-group label span { color: var(--red); font-weight: 800; }
+  .field-group input {
+    padding: 16px 4px; border: 1.5px solid var(--gray-200);
+    border-radius: 12px; font-size: 26px; text-align: center;
+    background: var(--gray-50); font-family: inherit;
+    font-weight: 700;
+    transition: all .2s; width: 100%;
+  }
+  .field-group input:focus { outline: none; border-color: var(--teal); background: white; }
+  .field-group input.warn { border-color: var(--red); background: #fff5f5; color: var(--red); font-weight: 700; }
+  .field-group input[readonly] { background: var(--teal-light); color: var(--teal); font-weight: 700; cursor: default; }
+  .reason-full { margin-bottom: 10px; }
+  .reason-full label { display: block; font-size: 12px; font-weight: 700; color: var(--red); margin-bottom: 6px; letter-spacing: .5px; }
+  .reason-full input {
+    width: 100%; padding: 10px 14px;
+    border: 2px solid var(--amber); border-radius: 8px;
+    font-size: 14px; background: #fffbeb; font-family: inherit;
+    transition: border-color .2s;
+  }
+  .reason-full input:focus { outline: none; border-color: var(--red); }
+  .signed-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; background: var(--green-light);
+    border-radius: 10px; font-size: 14px; color: var(--green); font-weight: 600;
+  }
+
+  .table-wrap { overflow: visible; }
+  /* 本月總覽：表格自己捲動，表頭 sticky top:0 相對容器 */
+  .table-wrap.month-scroll {
+    overflow-y: auto;
+    max-height: calc(100vh - 280px);
+    overflow-x: auto;
+  }
+  .table-wrap.month-scroll { max-height: calc(100vh - 200px); }
+  #mainTableWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  #mainTableWrap table { min-width: 480px; }
+  /* 讓整個 main 區域可以橫向捲動，這樣 thead sticky 才能正常運作 */
+  /* main overflow removed - was breaking position:sticky */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead th {
+    background: #f8fffe; padding: 10px 12px;
+    font-size: 12px; font-weight: 700;
+    color: var(--gray-700); text-align: center;
+    border-bottom: 2px solid var(--teal-light);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 70;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+  }
+  tbody tr { border-bottom: 1px solid var(--gray-100); transition: background .15s; }
+  tbody tr:hover { background: var(--gray-50); }
+  tbody td { padding: 8px 10px; text-align: center; vertical-align: middle; }
+  tbody td.date-col { font-weight: 700; color: var(--gray-700); min-width: 50px; }
+
+  /* Editable cells */
+  .cell-input {
+    width: 70px; padding: 5px 8px;
+    border: 1.5px solid transparent;
+    border-radius: 6px; font-size: 14px; text-align: center;
+    background: transparent; cursor: pointer; font-family: inherit;
+    transition: all .2s;
+  }
+  .cell-input:hover { border-color: var(--gray-300); background: var(--gray-50); }
+  .cell-input:focus { outline: none; border-color: var(--teal); background: white; }
+  .cell-input.warn { background: #fff5f5; border-color: var(--red) !important; color: var(--red); font-weight: 700; }
+
+  .time-input {
+    width: 90px; padding: 5px 8px;
+    border: 1.5px solid transparent; border-radius: 6px;
+    font-size: 13px; text-align: center;
+    background: transparent; cursor: pointer; font-family: inherit;
+    transition: all .2s;
+  }
+  .time-input:hover { border-color: var(--gray-300); background: var(--gray-50); }
+  .time-input:focus { outline: none; border-color: var(--teal); background: white; }
+
+  .sign-col { font-size: 13px; color: var(--teal); font-weight: 600; }
+  .signed-badge {
+    display: inline-block; background: var(--green-light);
+    color: var(--green); padding: 2px 8px; border-radius: 10px;
+    font-size: 12px; font-weight: 600;
+  }
+
+  /* Reason input */
+  .reason-input {
+    width: 180px; padding: 5px 8px;
+    border: 2px solid var(--amber); border-radius: 6px;
+    font-size: 12px; background: #fffbeb; font-family: inherit;
+  }
+  .reason-input:focus { outline: none; border-color: var(--red); }
+  .reason-required { color: var(--red); font-size: 11px; font-weight: 700; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+
+  /* Submit button */
+  .submit-row {
+    padding: 14px 20px; border-top: 1px solid var(--gray-100);
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    position: sticky; bottom: 0; z-index: 80;
+    background: white;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
+  }
+  .submit-row { padding: 10px 14px; }
+  .submit-btn {
+    padding: 10px 28px; background: var(--teal);
+    color: white; border: none; border-radius: 8px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    transition: background .2s, transform .1s;
+  }
+  .submit-btn:hover { background: var(--teal-mid); }
+  .submit-btn:active { transform: scale(.97); }
+  .save-status { font-size: 13px; color: var(--gray-500); }
+  .save-status.saved { color: var(--green); font-weight: 600; }
+
+  /* Abnormal records */
+  .abnormal-section {
+    background: white; border-radius: 12px; box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .abnormal-section .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .abnormal-header {
+    background: linear-gradient(90deg, #fff7ed, #fef9f0);
+    border-bottom: 2px solid var(--amber);
+    padding: 14px 20px; display: flex; align-items: center; gap: 8px;
+  }
+  .abnormal-header h3 { font-size: 15px; font-weight: 700; color: #92400e; }
+
+  /* 異常處理記錄：統一使用表格格式（不再切換為卡片） */
+  .abnormal-cards-mobile { display: none; }
+  .abn-card {
+    background: white; border: 1.5px solid var(--gray-200); border-radius: 12px;
+    padding: 12px 14px; margin-bottom: 10px;
+  }
+  .abn-card-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px; flex-wrap: wrap; gap: 6px;
+  }
+  .abn-card-date { font-weight: 800; font-size: 14px; color: var(--gray-900); }
+  .abn-card-val { color: var(--red); font-weight: 700; font-size: 13px; }
+  .abn-card-row { margin-bottom: 8px; }
+  .abn-card-row label {
+    display: block; font-size: 11px; font-weight: 700; color: var(--gray-500);
+    margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px;
+  }
+  .abn-card-row select, .abn-card-row input {
+    width: 100%; padding: 10px 12px; border-radius: 8px; font-size: 15px;
+    font-family: inherit; box-sizing: border-box;
+  }
+  .abn-card-reason { font-size: 13px; color: var(--gray-700); margin-bottom: 8px; }
+  .abn-card-signed { font-size: 12px; color: var(--gray-500); margin-bottom: 8px; }
+  .warning-chip {
+    background: #fef3c7; color: #92400e;
+    border-radius: 12px; padding: 2px 10px; font-size: 11px; font-weight: 700;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed; top: 50%; left: 50%;
+    background: var(--gray-900); color: white;
+    padding: 16px 24px; border-radius: 12px;
+    font-size: 15px; font-weight: 600;
+    box-shadow: var(--shadow-lg);
+    transform: translate(-50%, -50%) scale(.9); opacity: 0;
+    transition: all .3s cubic-bezier(.34,1.56,.64,1);
+    z-index: 999;
+    max-width: 85vw; text-align: center;
+    pointer-events: none;
+  }
+  .toast.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  .toast.success { border-left: 4px solid var(--green); }
+  .toast.error { border-left: 4px solid var(--red); }
+  .toast.warn { border-left: 4px solid var(--amber); }
+
+  /* Alert banner */
+  .alert-banner {
+    background: #fef2f2; border: 1.5px solid #fecaca;
+    border-radius: 10px; padding: 10px 16px;
+    gap: 10px; align-items: flex-start;
+    margin: 0 0 10px; font-size: 13px; color: var(--red);
+    display: none;
+  }
+  .alert-banner.show { display: flex; }
+
+  .ward-pill {
+    display: flex; gap: 4px; background: var(--gray-100);
+    border-radius: 20px; padding: 3px;
+  }
+  .ward-pill button {
+    padding: 5px 16px; border-radius: 16px; border: none;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    background: transparent; color: var(--gray-700);
+    transition: all .18s; font-family: inherit; white-space: nowrap;
+  }
+  .ward-pill button.active { background: var(--teal); color: white; }
+  .ward-pill button:hover:not(.active) { background: var(--teal-light); color: var(--teal); }
+
+  /* ─── FAB ─── */
+  .fab-btn {
+    position: fixed; bottom: 28px; right: 28px; z-index: 200;
+    background: var(--teal); color: white;
+    border: none; border-radius: 28px;
+    padding: 14px 22px; font-size: 15px; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 6px 20px rgba(26,127,110,0.4);
+    transition: transform .2s, box-shadow .2s;
+    font-family: inherit;
+  }
+  .fab-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(26,127,110,0.45); }
+  .fab-btn:active { transform: scale(.97); }
+
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0.4); backdrop-filter: blur(2px);
+    align-items: flex-end; justify-content: center;
+    padding-bottom: 0;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-card {
+    background: white; width: 100%; max-width: 560px;
+    border-radius: 20px 20px 0 0;
+    padding: 24px 24px 32px;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.15);
+    max-height: 90vh; overflow-y: auto;
+    animation: slideUp .28s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  .modal-title { font-size: 18px; font-weight: 800; color: var(--gray-900); }
+  .modal-sub { font-size: 13px; color: var(--gray-500); margin-top: 2px; }
+  .modal-close {
+    background: var(--gray-100); border: none; border-radius: 50%;
+    width: 32px; height: 32px; font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gray-600); flex-shrink: 0;
+  }
+  .modal-close:hover { background: var(--gray-200); }
+
+  /* ─── 組長核定區塊 ─── */
+  .supervisor-section {
+    background: white; border-radius: 12px;
+    box-shadow: var(--shadow); overflow: hidden;
+    margin-bottom: 24px;
+    border-top: 4px solid #6d28d9;
+  }
+  .supervisor-header {
+    padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--gray-100); flex-wrap: wrap; gap: 10px;
+    background: #f5f3ff;
+  }
+  .supervisor-header h3 { font-size: 16px; color: #5b21b6; font-weight: 700; }
+  .supervisor-body { padding: 20px 24px; }
+  .supervisor-status-signed {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    background: #f0fdf4; border: 1.5px solid #86efac;
+    border-radius: 12px; padding: 14px 20px;
+  }
+  .supervisor-status-unsigned {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    background: #fafaf9; border: 1.5px dashed #d1d5db;
+    border-radius: 12px; padding: 14px 20px;
+  }
+  .supervisor-sign-btn {
+    padding: 10px 24px; background: #6d28d9; color: white;
+    border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
+    cursor: pointer; font-family: inherit; transition: background .2s;
+    white-space: nowrap;
+  }
+  .supervisor-sign-btn:hover { background: #5b21b6; }
+  .supervisor-resign-btn {
+    padding: 7px 16px; background: var(--gray-100);
+    border: 1px solid var(--gray-300); color: var(--gray-700);
+    border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit; transition: background .2s;
+  }
+  .supervisor-resign-btn:hover { background: var(--gray-200); }
+
+  /* ─── TOAST ─── */
+
+</style>
+<script type="module">
+  // ══════════ 班表系統 Firestore 唯讀串接（只讀取，絕不寫入）══════════
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  const scheduleFirebaseConfig = {
+    apiKey: "AIzaSyApEBgpAFaytqPBtPTEXE-fr8o4LdzKzPA",
+    authDomain: "pharmacy-scheduling-e20ad.firebaseapp.com",
+    projectId: "pharmacy-scheduling-e20ad",
+    storageBucket: "pharmacy-scheduling-e20ad.firebasestorage.app",
+    messagingSenderId: "779276168089",
+    appId: "1:779276168089:web:c57dfd4db57beef3804108"
+  };
+
+  // 用獨立命名的 app，避免萬一未來這個系統自己也接 Firebase 時互相衝突
+  const scheduleApp = initializeApp(scheduleFirebaseConfig, "scheduleReadOnlyApp");
+  const scheduleAuth = getAuth(scheduleApp);
+  const scheduleDb = getFirestore(scheduleApp);
+
+  // 視為「應登記人員」的班別代碼
+  window.ON_DUTY_SHIFT_CODES = ['B8', 'SD', 'HD'];
+
+  const scheduleMonthCache = {}; // monthKey ("2026-09") -> entries 物件
+
+  // 抓取某個月份的班表 entries（有快取，同一個月只會真的打一次）
+  window.fetchScheduleMonth = async function(monthKey) {
+    if(scheduleMonthCache[monthKey]) return scheduleMonthCache[monthKey];
+    try {
+      await signInAnonymously(scheduleAuth);
+      const ref = doc(scheduleDb, "artifacts", "pharmacy-system-v1-8", "public", "data", "roster", "main", "scheduleDirectory", monthKey);
+      const snap = await getDoc(ref);
+      const entries = snap.exists() ? (snap.data().entries || {}) : {};
+      scheduleMonthCache[monthKey] = entries;
+      return entries;
+    } catch(e) {
+      console.error('班表資料讀取失敗（唯讀查詢，不影響登記功能本身）：', e);
+      scheduleMonthCache[monthKey] = {};
+      return {};
+    }
+  };
+
+  // 查詢某位員工在某一天（dateStr 格式 "2026-09-15"）的班別代碼；查不到回傳 null
+  window.getShiftCode = async function(employeeId, dateStr) {
+    const [year, month, day] = dateStr.split('-');
+    const monthKey = `${year}-${month}`;
+    const dayKey = String(parseInt(day, 10));
+    const entries = await window.fetchScheduleMonth(monthKey);
+    return entries[employeeId]?.[dayKey] ?? null;
+  };
+</script>
+</head>
+<body>
+
+<header>
+  <div class="header-title">🌡 室內溫溼度登記系統</div>
+  <div class="header-sub" id="headerSub">國立臺灣大學醫學院附設醫院雲林分院－藥劑部</div>
+  <div class="header-user" id="headerUser" style="display:none">
+    <div class="avatar" id="headerAvatar" style="display:none"></div>
+    <span id="headerName"></span>
+    <button class="logout-btn" onclick="logout()">登出</button>
+  </div>
+</header>
+
+<!-- ══════════ LOGIN ══════════ -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <div class="login-icon">🏥</div>
+    <h2>室內溫溼度登記系統</h2>
+    <p class="subtitle">國立臺灣大學醫學院附設醫院雲林分院－藥劑部</p>
+
+    <div class="form-group">
+      <label>員工編號</label>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="padding:12px 14px;border:1.5px solid var(--gray-200);border-radius:10px;background:#f0fdf9;color:var(--teal);font-weight:700;font-size:16px;letter-spacing:1px;">Y</span>
+        <input type="tel" id="loginIdInput" placeholder="00000" maxlength="5"
+          inputmode="numeric" pattern="[0-9]*"
+          autocomplete="off" autocorrect="off" autocapitalize="off"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'');onIdInput('Y'+this.value)"
+          onkeydown="if(event.key==='Enter') doLogin()"
+          style="flex:1;letter-spacing:2px;font-size:18px;text-align:center;">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>員工姓名（自動帶入）</label>
+      <input type="text" id="loginName" readonly placeholder="輸入員編後自動顯示"
+        style="color:var(--teal); font-weight:700; background:#f0fdf9;">
+    </div>
+    <button class="login-btn" onclick="doLogin()">登入系統</button>
+    <div class="login-error" id="loginError">找不到此員編，請確認後重新輸入</div>
+  </div>
+</div>
+
+<!-- ══════════ MAIN APP ══════════ -->
+<div class="page" id="appPage">
+  <main>
+
+    <!-- Sticky top -->
+    <div class="sticky-top">
+      <!-- Date nav + Selector bar 合併同一列 -->
+      <div class="date-nav">
+        <!-- 第一列：日期、時段、切換按鈕 -->
+        <div class="date-time-row">
+          <input type="date" id="monthPicker" onchange="onDatePickerChange(this.value)" class="date-input">
+          <div id="selectorBar" class="session-toggle-group" style="display:none;">
+            <div class="session-pill">
+              <button id="sessAM" class="active" onclick="currentSession='AM';renderTable();renderStats();">上午</button>
+              <button id="sessPM" onclick="currentSession='PM';renderTable();renderStats();">下午</button>
+            </div>
+          </div>
+          <div class="view-toggle-group">
+            <button class="view-toggle-btn active" id="btnToday" onclick="setView('today',this)">📋 今日</button>
+            <button class="view-toggle-btn" id="btnMonth" onclick="setView('month',this)">📅 本月</button>
+          </div>
+          <button id="exportBtn" class="export-btn" onclick="exportPDF()" style="display:none;">🖨</button>
+        </div>
+        <!-- 隱藏的 select 保留給 JS 邏輯使用 -->
+          <select id="campusSel" style="display:none;" onchange="onCampusChange(this.value)">
+            <option value="douliu">斗六</option>
+            <option value="huwei">虎尾</option>
+            <option value="store">藥庫</option>
+          </select>
+          <select id="deptSel" style="display:none;" onchange="onDeptChange(this.value)"></select>
+      </div>
+    </div>
+    <div id="stickyTopSpacer" class="sticky-top-spacer"></div>
+
+      <!-- 統計卡（本月總覽才顯示）-->
+      <div class="stats-row" style="margin-bottom:8px;display:none;" id="statsRow">
+        <div class="stat-card green">
+          <div class="label">今日登記狀態</div>
+          <div class="value" id="statToday" style="font-size:16px">—</div>
+        </div>
+        <div class="stat-card" id="statCardDays">
+          <div class="label">本月登記天數</div>
+          <div class="value" id="statDays" style="font-size:20px">0</div>
+        </div>
+        <div class="stat-card amber" id="statCardTemp">
+          <div class="label">溫度異常次數</div>
+          <div class="value" id="statTempWarn" style="font-size:20px">0</div>
+        </div>
+        <div class="stat-card amber" id="statCardHum">
+          <div class="label">溼度異常次數</div>
+          <div class="value" id="statHumWarn" style="font-size:20px">0</div>
+        </div>
+      </div>
+
+      <!-- Alert banner -->
+      <div class="alert-banner" id="alertBanner">
+        ⚠️ <span id="alertMsg"></span>
+      </div>
+
+      <!-- 依班表顯示今日應登記人員（唯讀查詢班表系統 Firestore） -->
+      <div id="onDutyStaffBox" style="display:none;margin-bottom:8px;padding:8px 12px;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:8px;font-size:12px;color:#1e40af;"></div>
+
+      <div id="stickyFields" style="display:none;padding:6px 0 4px;border-top:1px solid var(--gray-100);margin-top:2px;"></div>
+
+      <!-- 本月總覽假表頭 -->
+      <div id="monthFakeHeader" style="display:none;margin-top:4px;margin-bottom:2px;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;">
+          <colgroup>
+            <col style="width:60px"><col style="width:80px"><col><col><col><col><col>
+          </colgroup>
+          <thead>
+            <tr>
+              <th style="padding:8px 10px;background:#f8fffe;font-weight:700;color:var(--gray-700);text-align:center;border-bottom:2px solid var(--teal-light);">日期</th>
+              <th style="padding:8px 10px;background:#f8fffe;font-weight:700;color:var(--gray-700);text-align:center;border-bottom:2px solid var(--teal-light);">時段</th>
+              <th style="padding:8px 10px;background:#f8fffe;font-weight:700;color:var(--gray-700);text-align:center;border-bottom:2px solid var(--teal-light);">溫度(℃)<br><span style="color:var(--red)">≦25</span></th>
+              <th style="padding:8px 10px;background:#f8fffe;font-weight:700;color:var(--gray-700);text-align:center;border-bottom:2px solid var(--teal-light);">最高溫度(℃)<br><span style="color:var(--red)">≦25</span></th>
+              <th style="padding:8px 10px;background:#f8fffe;font-weight:700;color:var(--gray-700);text-align:center;border-bottom:2px solid var(--teal-light);">溼度(%)<br><span style="color:var(--red)">≦65</span></th>
+              <th style="padding:8px 10px;background:#f8fffe;font-weight:700;color:var(--gray-700);text-align:center;border-bottom:2px solid var(--teal-light);">登記人員</th>
+              <th style="padding:8px 10px;background:#f8fffe;font-weight:700;color:var(--gray-700);text-align:center;border-bottom:2px solid var(--teal-light);">⚠ 異常原因說明<br><small style="font-weight:400;color:var(--gray-500)">溫>25℃ 或 溼≥66% 必填</small></th>
+            </tr>
+          </thead>
+        </table>
+      </div>
+
+    <!-- Main table -->
+    <div class="table-card">
+      <div class="table-wrap" id="mainTableWrap">
+        <table>
+          <thead id="mainThead">
+            <tr>
+              <th>日期</th>
+              <th>時段</th>
+              <th>溫度 (℃)<br><span style="color:var(--red);font-weight:800">≦25</span></th>
+              <th>最高溫度 (℃)<br><span style="color:var(--red);font-weight:800">≦25</span></th>
+              <th>溼度 (%)<br><span style="color:var(--red);font-weight:800">≦65</span></th>
+              <th>登記人員</th>
+              <th>⚠ 異常原因說明<br><small style="font-weight:400;color:var(--gray-500)">溫>25℃ 或 溼≥66% 必填</small></th>
+            </tr>
+          </thead>
+          <tbody id="logTbody"></tbody>
+        </table>
+      </div>
+      <!-- submit-row 已整合進 todayCard，本月總覽不需要 -->
+      <div class="submit-row" id="legacySubmitRow" style="display:none">
+        <div class="save-status" id="saveStatus">資料即時儲存</div>
+      </div>
+    </div>
+
+    <!-- 組長月底核定（僅本月總覽顯示，由 renderSupervisor 控制） -->
+    <div class="supervisor-section" id="supervisorSection" style="display:none;">
+      <div class="supervisor-header">
+        <h3>📝 組長月底核定</h3>
+        <span id="supervisorMonthLabel" style="font-size:13px;color:#7c3aed;font-weight:600"></span>
+      </div>
+      <div class="supervisor-body" id="supervisorBody">
+        <!-- rendered by renderSupervisor() -->
+      </div>
+    </div>
+
+    <!-- Abnormal records -->
+    <div class="abnormal-section">
+      <div class="abnormal-header">
+        <h3>⚠ 異常處理記錄</h3>
+        <span class="warning-chip" id="abnormalCount">0 筆異常</span>
+      </div>
+      <div class="table-wrap abnormal-table-desktop">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width:44px">日期</th>
+              <th style="min-width:44px">時段</th>
+              <th style="min-width:90px">異常溫(溼)度</th>
+              <th style="min-width:100px">原因說明</th>
+              <th style="min-width:60px">登記人員</th>
+              <th style="min-width:60px">是否解除</th>
+              <th style="min-width:100px">處理方式</th>
+              <th style="min-width:80px">回復溫(溼)度</th>
+              <th style="min-width:60px">確認人員</th>
+            </tr>
+          </thead>
+          <tbody id="abnormalTbody"></tbody>
+        </table>
+      </div>
+      <div id="abnormalCardsWrap" class="abnormal-cards-mobile"></div>
+    </div>
+
+  </main>
+
+  <!-- 確認按鈕：固定在底部 -->
+  <div id="fixedSubmitBar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;
+    background:white;padding:10px 16px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -4px 12px rgba(0,0,0,0.1);border-top:1px solid #e5e7eb;">
+    <div class="save-status" id="saveStatus" style="margin-bottom:6px;font-size:11px;text-align:center;">資料即時儲存</div>
+    <button class="submit-btn" onclick="submitAllDepts()"
+      style="width:100%;padding:11px;font-size:14px;border-radius:10px;-webkit-tap-highlight-color:transparent;touch-action:manipulation;">
+      ✔ 確認本次登記
+    </button>
+  </div>
+</div>
+
+<!-- 異常處理彈出視窗 -->
+<div class="modal-overlay" id="abnormalModalOverlay" onclick="closeAbnormalModal(event)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">⚠ 異常處理紀錄</div>
+        <div class="modal-sub" id="abnormalModalSub"></div>
+      </div>
+      <button class="modal-close" onclick="closeAbnormalModal()">✕</button>
+    </div>
+    <div id="abnormalModalBody"></div>
+  </div>
+</div>
+
+<!-- Print Area (hidden, filled by exportPDF) -->
+<div id="printArea" style="display:none"></div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════ STAFF DATA ══════════
+const STAFF = [
+  // ── 斗六 ──
+  {id:'Y00243',name:'黃永成',  campus:'douliu'},
+  {id:'Y00287',name:'吳秋宜',  campus:'store'},
+  {id:'Y00325',name:'李玉珍',  campus:'store'},
+  {id:'Y00326',name:'沈倩如',  campus:'douliu'},
+  {id:'Y00329',name:'莊謹如',  campus:'store'},
+  {id:'Y00516',name:'蔡佩玲',  campus:'douliu'},
+  {id:'Y00614',name:'鄭佩珊',  campus:'douliu'},
+  {id:'Y00955',name:'陳盈君',  campus:'store'},
+  {id:'Y01643',name:'謝姍珊',  campus:'douliu'},
+  {id:'Y01735',name:'林淑貞',  campus:'douliu'},
+  {id:'Y02190',name:'張文河',  campus:'douliu'},
+  {id:'Y03129',name:'楊淑珍',  campus:'douliu'},
+  {id:'Y03223',name:'李秋玫',  campus:'store'},
+  {id:'Y04045',name:'彭虹迪',  campus:'douliu'},
+  {id:'Y04330',name:'魏沛瀅',  campus:'douliu'},
+  {id:'Y04409',name:'謝承穎',  campus:'store'},
+  {id:'Y04423',name:'吳坦螢',  campus:'douliu'},
+  {id:'Y05180',name:'李佩芷',  campus:'douliu'},
+  {id:'Y05306',name:'陳力宇',  campus:'douliu'},
+  {id:'Y05379',name:'李怡萱',  campus:'douliu'},
+  {id:'Y05474',name:'黃詩婷',  campus:'douliu'},
+  {id:'Y05490',name:'蔡孟夏',  campus:'douliu'},
+  {id:'Y06100',name:'陳麗珺',  campus:'douliu'},
+  {id:'Y06632',name:'沈煒勛',  campus:'douliu'},
+  {id:'Y07034',name:'葉啟楠',  campus:'douliu'},
+  {id:'Y07691',name:'李哲安',  campus:'douliu'},
+  {id:'Y07692',name:'林友立',  campus:'douliu'},
+  {id:'Y07693',name:'洪紹恩',  campus:'douliu'},
+  {id:'Y07833',name:'廖益樟',  campus:'douliu'},
+  {id:'Y07944',name:'李心愉',  campus:'douliu'},
+  {id:'Y08213',name:'林語嫻',  campus:'douliu'},
+  {id:'Y08215',name:'王玟璇',  campus:'douliu'},
+  {id:'Y08733',name:'王鈺婷',  campus:'douliu'},
+  {id:'Y08855',name:'陳憶萱',  campus:'douliu'},
+  {id:'Y08868',name:'呂昆羲',  campus:'douliu'},
+  {id:'Y08994',name:'李昱柔',  campus:'douliu'},
+  {id:'Y09223',name:'張耿誠',  campus:'douliu'},
+  {id:'Y06993',name:'王貞予',  campus:'douliu'},
+  {id:'Y09625',name:'陳妍勳',  campus:'douliu'},
+  {id:'Y09858',name:'李學怡',  campus:'douliu'},
+  {id:'Y10248',name:'吳岱容',  campus:'douliu'},
+  {id:'Y10318',name:'施昭瑜',  campus:'douliu'},
+  // ── 藥庫 ──
+  {id:'Y01422',name:'廖瑋儀',  campus:'store'},
+  {id:'Y01434',name:'陳家君',  campus:'store'},
+  {id:'Y01458',name:'林秀芳',  campus:'store'},
+  {id:'Y01515',name:'沈梅菊',  campus:'store'},
+  {id:'Y01645',name:'余孟蓁',  campus:'store'},
+  {id:'Y02331',name:'張如萱',  campus:'douliu'},
+  {id:'Y07352',name:'鍾意',    campus:'douliu'},
+  // ── 虎尾 ──
+  {id:'Y00230',name:'陳宜屏',  campus:'huwei'},
+  {id:'Y01406',name:'張正穎',  campus:'huwei'},
+  {id:'Y01526',name:'劉士宏',  campus:'huwei'},
+  {id:'Y01644',name:'林家薐',  campus:'huwei'},
+  {id:'Y01986',name:'林姿佑',  campus:'huwei'},
+  {id:'Y02414',name:'黃憶如',  campus:'huwei'},
+  {id:'Y03020',name:'曾彥哲',  campus:'huwei'},
+  {id:'Y04130',name:'魏若蘭',  campus:'huwei'},
+  {id:'Y04559',name:'黃昇慧',  campus:'huwei'},
+  {id:'Y06271',name:'李凱芸',  campus:'huwei'},
+  {id:'Y07620',name:'林亭君',  campus:'huwei'},
+  {id:'Y07690',name:'吳采芳',  campus:'huwei'},
+  {id:'Y07694',name:'王俞婷',  campus:'huwei'},
+  {id:'Y07697',name:'許嘉容',  campus:'huwei'},
+  {id:'Y08214',name:'賴嘉淩',  campus:'huwei'},
+  {id:'Y08219',name:'陳怡伶',  campus:'huwei'},
+  {id:'Y08220',name:'張凱珽',  campus:'huwei'},
+  {id:'Y08953',name:'葉宜婷',  campus:'huwei'},
+  {id:'Y09383',name:'李奕萱',  campus:'huwei'},
+  {id:'Y09773',name:'余映萱',  campus:'huwei'},
+  {id:'Y10040',name:'黃亦妡',  campus:'huwei'},
+  {id:'Y00244',name:'吳榮斌',  campus:'huwei'},
+  {id:'Y00800',name:'林怡君',  campus:'huwei'},
+  {id:'Y02745',name:'謝玉秀',  campus:'huwei'},
+  {id:'Y09139',name:'林虹孜',  campus:'huwei'},
+]; // 系統管理者
+
+// 各院區組長 / 週檢核者設定
+const CAMPUS_ROLES = {
+  douliu: { supervisorId:'Y06100', supervisorName:'陳麗珺', checkerId:'Y00326', checkerName:'沈倩如' },
+  huwei:  { supervisorId:'Y00230', supervisorName:'陳宜屏', checkerId:'Y01644', checkerName:'林家薐' },
+  store:  { supervisorId:'Y00287', supervisorName:'吳秋宜', checkerId:'Y00955', checkerName:'陳盈君' },
+};
+function getCampusRoles(campus) {
+  campus = campus || (currentArea ? currentArea.split('_')[0] : 'douliu');
+  return CAMPUS_ROLES[campus] || CAMPUS_ROLES.douliu;
+}
+function isSupervisor(id, campus) { return !!id && id === getCampusRoles(campus).supervisorId; }
+function isChecker(id, campus)    { return !!id && id === getCampusRoles(campus).checkerId; }
+function isAdmin(id)      { return ADMIN_IDS.includes(id); }
+
+// ══════════ STATE ══════════
+let currentUser = null;
+let currentSession = 'AM';
+let currentMonth = '';
+let currentDay = 0;
+let currentArea = 'douliu_OPD'; // campus_dept
+let currentView = 'today'; // 'today' | 'month'
+let logData = {};
+
+// ══════════ CAMPUS / DEPT CONFIG ══════════
+const CAMPUS_DEPTS = {
+  'douliu': [
+    { key:'OPD', label:'門診藥局' },
+    { key:'IPD', label:'住診藥局' },
+  ],
+  'huwei': [
+    { key:'OPD', label:'門診藥局' },
+    { key:'IPD', label:'住診藥局' },
+  ],
+  'store': [
+    { key:'STORAGE', label:'儲藥區' },
+    { key:'TRIAL',   label:'試驗用藥區' },
+  ],
+};
+const CAMPUS_LABEL = { 'douliu':'斗六', 'huwei':'虎尾', 'store':'藥庫' };
+const CAMPUS_LABEL_FULL = { 'douliu':'斗六院區', 'huwei':'虎尾院區', 'store':'藥庫' };
+
+// PDF 匯出專用：標題需清楚顯示所屬院區（斗六院區／虎尾院區／藥庫）
+function getPDFAreaLabel() {
+  const parts = currentArea.split('_');
+  const campus = parts[0];
+  const deptKey = parts.slice(1).join('_');
+  const deptLabel = (CAMPUS_DEPTS[campus]||[]).find(d=>d.key===deptKey)?.label || deptKey;
+  if(campus === 'store') return '藥庫　' + deptLabel; // 藥庫下再分儲藥區／試驗用藥區
+  const campusFull = CAMPUS_LABEL_FULL[campus] || CAMPUS_LABEL[campus] || campus;
+  return campusFull + '　' + deptLabel;
+}
+
+function getAreaLabel() {
+  const parts = currentArea.split('_');
+  const campus = parts[0];
+  const deptKey = parts.slice(1).join('_');
+  const campusLabel = CAMPUS_LABEL[campus] || campus;
+  const deptLabel = (CAMPUS_DEPTS[campus]||[]).find(d=>d.key===deptKey)?.label || deptKey;
+  return campusLabel + ' ' + deptLabel;
+}
+
+function onCampusChange(campus) {
+  const depts = CAMPUS_DEPTS[campus];
+  const sel = document.getElementById('deptSel');
+  sel.innerHTML = depts.map(d=>`<option value="${d.key}">${d.label}</option>`).join('');
+  onDeptChange(depts[0].key, campus);
+}
+
+function onDeptChange(deptKey, campusOverride) {
+  const campus = campusOverride || document.getElementById('campusSel').value;
+  currentArea = campus + '_' + deptKey;
+  const campusLabel = CAMPUS_LABEL[campus];
+  const deptLabel = CAMPUS_DEPTS[campus].find(d=>d.key===deptKey)?.label || deptKey;
+  // 更新顯示文字
+  const cl = document.getElementById('campusLabel');
+  const dl = document.getElementById('deptLabel');
+  if(cl) cl.textContent = campusLabel;
+  if(dl) dl.textContent = deptLabel;
+  if(currentUser && document.getElementById('headerSub')) {
+    const subText = campus === 'store'
+      ? '國立臺灣大學醫學院附設醫院雲林分院－藥劑部　藥庫'
+      : `國立臺灣大學醫學院附設醫院雲林分院－藥劑部　${campusLabel}院區`;
+    document.getElementById('headerSub').textContent = subText;
+  }
+  logData = {};
+  loadMonth();
+}
+
+// ══════════ STORAGE HELPERS ══════════
+function storageKey(ym) { return 'templog_' + currentArea + '_' + ym; }
+function checkerKey(ym) { return 'checker_' + currentArea + '_' + ym; }
+function saveData() {
+  try { localStorage.setItem(storageKey(currentMonth), JSON.stringify(logData[currentMonth] || {})); } catch(e){}
+}
+function saveCheckers() {
+  try { localStorage.setItem(checkerKey(currentMonth), JSON.stringify(checkerData[currentMonth] || {})); } catch(e){}
+}
+function loadData(ym) {
+  try {
+    let d = null; try { d = localStorage.getItem(storageKey(ym)); } catch(e) {}
+    logData[ym] = d ? JSON.parse(d) : {};
+  } catch(e) { logData[ym] = {}; }
+  try {
+    let c = null; try { c = localStorage.getItem(checkerKey(ym)); } catch(e) {}
+    checkerData[ym] = c ? JSON.parse(c) : {};
+  } catch(e) { checkerData[ym] = {}; }
+  loadSupervisor(ym);
+}
+
+// ══════════ CHECKER HELPERS ══════════
+let checkerData = {};
+let supervisorData = {}; // { 'YYYY-MM': { area: { name, id, time, comment } } }
+
+function supervisorKey(ym) { return 'supervisor_' + currentArea + '_' + ym; }
+function saveSupervisor() {
+  try {
+    const k = supervisorKey(currentMonth);
+    if(supervisorData[currentMonth] && supervisorData[currentMonth][currentArea]) {
+      try { localStorage.setItem(k, JSON.stringify(supervisorData[currentMonth][currentArea])); } catch(e) {}
+    } else {
+      try { localStorage.removeItem(k); } catch(e) {}
+    }
+  } catch(e) {}
+}
+function loadSupervisor(ym) {
+  try {
+    let d2 = null; try { d2 = localStorage.getItem(supervisorKey(ym)); } catch(e) {}
+    const d = d2;
+    if(!supervisorData[ym]) supervisorData[ym] = {};
+    supervisorData[ym][currentArea] = d ? JSON.parse(d) : null;
+  } catch(e) {
+    if(!supervisorData[ym]) supervisorData[ym] = {};
+    supervisorData[ym][currentArea] = null;
+  }
+}
+function getSupervisor() {
+  return (supervisorData[currentMonth] && supervisorData[currentMonth][currentArea]) || null;
+}
+function renderSupervisor() {
+  const section = document.getElementById('supervisorSection');
+  const body = document.getElementById('supervisorBody');
+  const label = document.getElementById('supervisorMonthLabel');
+  if(!section || !body) return;
+
+  // 顯示控制已由 setView 統一管理，這裡只處理內容渲染
+  if(currentView !== 'month') return;
+  if(label) label.textContent = currentMonth + '　' + getAreaLabel();
+
+  const sv = getSupervisor();
+
+  // 已核定 → 直接顯示
+  if(sv) {
+    const dateOnly = sv.time ? sv.time.substring(0,10) : '';
+    const canResign = isSupervisor(currentUser?.id);
+    body.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-start;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="font-size:22px">✅</span>
+          <div>
+            <div style="font-size:15px;font-weight:700;color:var(--green);">已核定</div>
+            <div style="font-size:13px;color:var(--gray-700);margin-top:2px;text-align:left;">
+              核定人員：<strong>${sv.name}</strong>（${sv.id}）　核定日期：${dateOnly}
+            </div>
+            ${sv.comment ? `<div style="font-size:13px;color:var(--gray-700);margin-top:4px;text-align:left;">備註：${sv.comment}</div>` : ''}
+          </div>
+        </div>
+        ${sv.photo ? `<div><img src="${sv.photo}" style="max-width:260px;max-height:180px;border-radius:8px;border:1.5px solid var(--gray-200);display:block;"></div>` : ''}
+        ${canResign ? `<button class="supervisor-resign-btn" onclick="clearSupervisor()">重新核定</button>` : ''}
+      </div>`;
+    return;
+  }
+
+  // 檢查全月是否完整登記（只檢查到今天或月底，未來日期不計）
+  const days = daysInMonth(currentMonth);
+  const data = logData[currentMonth] || {};
+  const now = new Date();
+  const nowYM = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  const isCurrentMonth = currentMonth === nowYM;
+  const checkUpTo = isCurrentMonth ? now.getDate() : days;
+  const missing = [];
+  for(let d = 1; d <= checkUpTo; d++) {
+    const am = data[d]?.AM;
+    const pm = data[d]?.PM;
+    if(!am?.signedBy) missing.push(`${String(d).padStart(2,'0')}日上午`);
+    if(!pm?.signedBy) missing.push(`${String(d).padStart(2,'0')}日下午`);
+  }
+
+  if(missing.length > 0) {
+    body.innerHTML = `
+      <div class="supervisor-status-unsigned">
+        <span style="font-size:22px">🔒</span>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:600;color:var(--gray-500)">尚未開放核定</div>
+          <div style="font-size:12px;color:var(--gray-400);margin-top:4px">
+            本月尚有 <strong style="color:var(--red)">${missing.length}</strong> 個時段未完成登記，全部完成後才能核定
+          </div>
+        </div>
+      </div>`;
+  } else {
+    const canSign = isSupervisor(currentUser?.id);
+    const roles = getCampusRoles();
+    body.innerHTML = `
+      <div class="supervisor-status-unsigned">
+        <span style="font-size:22px;color:var(--gray-400)">🔏</span>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:600;color:var(--teal)">全月登記完成，可進行核定</div>
+          <div style="font-size:12px;color:var(--gray-400);margin-top:2px">
+            ${canSign ? '請確認本月所有登記資料無誤後核定' : `僅組長（${roles.supervisorId} ${roles.supervisorName}）可進行核定`}
+          </div>
+        </div>
+        ${canSign ? `
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;width:100%;">
+          <label style="font-size:13px;font-weight:600;color:var(--gray-700);">📷 上傳簽名</label>
+          <input type="file" id="supervisorPhoto" accept="image/*" required
+            style="font-size:13px;font-family:inherit;">
+          <input type="text" id="supervisorComment" placeholder="備註（選填）"
+            style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:8px;
+                   font-size:13px;font-family:inherit;width:100%;max-width:320px;">
+          <button class="supervisor-sign-btn" onclick="signSupervisor()">✍ 組長核定</button>
+        </div>` : ''}
+      </div>`;
+  }
+}
+function signSupervisor() {
+  if(!isSupervisor(currentUser?.id)) {
+    const roles = getCampusRoles();
+    showToast(`僅組長（${roles.supervisorName}）可進行核定`, 'error');
+    return;
+  }
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const comment = (document.getElementById('supervisorComment')?.value || '').trim();
+  const photoInput = document.getElementById('supervisorPhoto');
+  const file = photoInput && photoInput.files && photoInput.files[0];
+  if(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      if(!supervisorData[currentMonth]) supervisorData[currentMonth] = {};
+      supervisorData[currentMonth][currentArea] = {
+        name: currentUser.name, id: currentUser.id, time: dateStr, comment, photo: e.target.result
+      };
+      saveSupervisor();
+      renderSupervisor();
+      showToast(`✅ ${currentUser.name} 已完成 ${currentMonth} ${getAreaLabel()} 月底核定`, 'success');
+    };
+    reader.readAsDataURL(file);
+  } else {
+    showToast('請先上傳簽名照片', 'warn');
+  }
+}
+function clearSupervisor() {
+  if(!isSupervisor(currentUser?.id)) {
+    const roles = getCampusRoles();
+    showToast(`僅組長（${roles.supervisorName}）可重新核定`, 'error');
+    return;
+  }
+  if(!supervisorData[currentMonth]) return;
+  supervisorData[currentMonth][currentArea] = null;
+  saveSupervisor();
+  renderSupervisor();
+  showToast('核定已清除', 'warn');
+}
+function getChecker(week) {
+  return (checkerData[currentMonth] && checkerData[currentMonth][week]) || null;
+}
+function signChecker(week, areaKey) {
+  const savedArea = currentArea;
+  if(areaKey) currentArea = areaKey;
+  loadData(currentMonth); // 確保操作的是正確的院區/部門資料
+  if(!isChecker(currentUser?.id)) {
+    const roles = getCampusRoles();
+    showToast(`僅週檢核者（${roles.checkerName}）可簽名`, 'error');
+    currentArea = savedArea;
+    loadData(currentMonth);
+    return;
+  }
+
+  // 檢查本週是否已完整結束、且資料全部填寫完整才可進行週檢核
+  const weekStart = (week - 1) * 7 + 1;
+  const totalDays = daysInMonth(currentMonth);
+  const weekEnd = Math.min(week * 7, totalDays);
+  const now = new Date();
+  const nowYM = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  const isCurrentMonth = currentMonth === nowYM;
+
+  if(isCurrentMonth && weekEnd > now.getDate()) {
+    showToast('本週尚未結束，暫時無法進行週檢核', 'warn');
+    currentArea = savedArea;
+    loadData(currentMonth);
+    return;
+  }
+
+  const data = logData[currentMonth] || {};
+  const missing = [];
+  for(let d = weekStart; d <= weekEnd; d++) {
+    const am = data[d]?.AM;
+    const pm = data[d]?.PM;
+    if(!am?.signedBy) missing.push(`${String(d).padStart(2,'0')}日上午`);
+    if(!pm?.signedBy) missing.push(`${String(d).padStart(2,'0')}日下午`);
+  }
+  if(missing.length > 0) {
+    showToast(`本週尚有 ${missing.length} 個時段未完成登記，無法進行週檢核`, 'error');
+    currentArea = savedArea;
+    loadData(currentMonth);
+    return;
+  }
+
+  const timeStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  if(!checkerData[currentMonth]) checkerData[currentMonth] = {};
+  checkerData[currentMonth][week] = { name: currentUser.name, id: currentUser.id, time: timeStr };
+  saveCheckers();
+  const signedName = currentUser.name;
+  currentArea = savedArea;
+  loadData(currentMonth);
+  renderTable();
+  showToast(`第 ${week} 週已由 ${signedName} 完成檢核`, 'success');
+}
+function clearChecker(week, areaKey) {
+  const savedArea = currentArea;
+  if(areaKey) currentArea = areaKey;
+  loadData(currentMonth); // 確保操作的是正確的院區/部門資料
+  if(!isChecker(currentUser?.id)) {
+    const roles = getCampusRoles();
+    showToast(`僅週檢核者（${roles.checkerName}）可重簽`, 'error');
+    currentArea = savedArea;
+    loadData(currentMonth);
+    return;
+  }
+  if(!checkerData[currentMonth]) { currentArea = savedArea; loadData(currentMonth); return; }
+  delete checkerData[currentMonth][week];
+  saveCheckers();
+  currentArea = savedArea;
+  loadData(currentMonth);
+  renderTable();
+}
+
+// ══════════ INIT ══════════
+window.onload = function() {
+  window.addEventListener('resize', updateStickyFieldsTop);
+  window.addEventListener('orientationchange', () => setTimeout(updateStickyFieldsTop, 300));
+  window.addEventListener('scroll', updateStickyFieldsTop, { passive: true });
+  requestAnimationFrame(updateStickyFieldsTop);
+  // Set month to today
+  const now = new Date();
+  const ym = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  const todayFull = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+  const mp = document.getElementById('monthPicker');
+  mp.value = ym;
+  mp.max = todayFull; // 未來日期不可選
+  currentMonth = ym;
+
+  // ── 離開頁面一段時間後自動登出（避免共用裝置一直保持登入狀態）──
+  // 手機瀏覽器切到背景時會暫停/凍結 setTimeout，無法可靠地在背景倒數計時，
+  // 所以改成：記錄離開的時間點，等使用者「回到畫面」時再檢查經過多久，超過就立即登出。
+  const AUTO_LOGOUT_MS = 2 * 60 * 1000; // 2 分鐘
+  let hiddenAt = null;
+  document.addEventListener('visibilitychange', () => {
+    if(document.hidden) {
+      hiddenAt = Date.now();
+      try { localStorage.setItem('templog_hidden_since', String(hiddenAt)); } catch(e) {}
+    } else {
+      let since = hiddenAt;
+      if(!since) {
+        try {
+          const stored = localStorage.getItem('templog_hidden_since');
+          if(stored) since = parseInt(stored, 10);
+        } catch(e) {}
+      }
+      if(since && currentUser && (Date.now() - since >= AUTO_LOGOUT_MS)) {
+        logout();
+      }
+      hiddenAt = null;
+      try { localStorage.removeItem('templog_hidden_since'); } catch(e) {}
+    }
+  });
+  // 使用者實際離開/關閉頁面時，盡量同步清除登入狀態（部分手機瀏覽器不一定會確實觸發）
+  window.addEventListener('pagehide', () => {
+    if(currentUser) {
+      try { localStorage.removeItem('templog_session'); } catch(e) {}
+    }
+  });
+
+  // 每次打開系統都從登入畫面開始，不會自動沿用上次的登入狀態
+  try { localStorage.removeItem('templog_session'); } catch(e) {}
+  document.getElementById('loginIdInput').focus();
+};
+
+// Live lookup as user types employee ID
+function onIdInput(val) {
+  const id = val.trim().toUpperCase();
+  const s = STAFF.find(x => x.id === id);
+  const nameEl = document.getElementById('loginName');
+  const errEl = document.getElementById('loginError');
+  if(s) {
+    nameEl.value = s.name;
+    nameEl.style.color = 'var(--teal)';
+    errEl.style.display = 'none';
+  } else {
+    nameEl.value = '';
+    if(id.length >= 6) {
+      errEl.style.display = 'block';
+    } else {
+      errEl.style.display = 'none';
+    }
+  }
+}
+
+// ══════════ LOGIN / LOGOUT ══════════
+function resetViewState() {
+  // 每次登入都是全新開始，不沿用上一位使用者瀏覽到的頁面/日期/月份
+  const now = new Date();
+  currentMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  currentDay = now.getDate();
+  currentSession = 'AM';
+  currentView = 'today';
+  logData = {};
+  checkerData = {};
+  supervisorData = {};
+}
+
+function doLogin() {
+  const raw = document.getElementById('loginIdInput').value.trim();
+  const id = ('Y' + raw).toUpperCase();
+  const err = document.getElementById('loginError');
+  const s = STAFF.find(x => x.id === id);
+  if(!s) { err.style.display='block'; document.getElementById('loginIdInput').focus(); return; }
+  err.style.display='none';
+  currentUser = s;
+  resetViewState();
+  try { localStorage.setItem('templog_session', JSON.stringify(s)); } catch(e) {}
+  showApp();
+}
+
+function logout() {
+  try { localStorage.removeItem('templog_session'); } catch(e) {}
+  currentUser = null;
+  resetViewState();
+  document.getElementById('loginWrap').style.display='flex';
+  document.getElementById('appPage').classList.remove('active');
+  document.getElementById('headerUser').style.display='none';
+  // 完全清除上一位使用者殘留的資訊，避免看得到員編／姓名／登入院區
+  document.getElementById('headerSub').textContent = '國立臺灣大學醫學院附設醫院雲林分院－藥劑部';
+  const idInput = document.getElementById('loginIdInput');
+  if(idInput) idInput.value = '';
+  const nameInput = document.getElementById('loginName');
+  if(nameInput) nameInput.value = '';
+  const loginErr = document.getElementById('loginError');
+  if(loginErr) loginErr.style.display = 'none';
+  showToast('已登出系統', 'success');
+  if(idInput) idInput.focus();
+}
+
+function showApp() {
+  // 每次登入都重新開始：預設回到「今日登記」畫面、上午時段，不沿用前一位使用者留下的畫面狀態
+  currentView = 'today';
+  currentSession = 'AM';
+  document.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.remove('active'));
+  const btnTodayEl = document.getElementById('btnToday');
+  if(btnTodayEl) btnTodayEl.classList.add('active');
+  const sessAMEl = document.getElementById('sessAM');
+  const sessPMEl = document.getElementById('sessPM');
+  if(sessAMEl) sessAMEl.className = 'active';
+  if(sessPMEl) sessPMEl.className = '';
+  const exportBtnEl = document.getElementById('exportBtn');
+  if(exportBtnEl) exportBtnEl.style.display = 'none';
+  const statsRowEl = document.getElementById('statsRow');
+  if(statsRowEl) statsRowEl.style.display = 'none';
+  const supervisorSectionEl = document.getElementById('supervisorSection');
+  if(supervisorSectionEl) supervisorSectionEl.style.display = 'none';
+  const mainWrapEl = document.getElementById('mainTableWrap');
+  if(mainWrapEl) mainWrapEl.style.overflowX = 'visible';
+
+  document.getElementById('loginWrap').style.display='none';
+  document.getElementById('appPage').classList.add('active');
+  document.getElementById('headerUser').style.display='flex';
+  document.getElementById('headerAvatar').textContent = currentUser.name[0];
+  document.getElementById('headerName').textContent = currentUser.name + ' (' + currentUser.id + ')';
+  document.getElementById('headerSub').textContent = '國立臺灣大學醫學院附設醫院雲林分院－藥劑部【斗六 門診藥局】';
+
+  // ── 示範資料版本檢查：只有在版本號變動時才會重新產生示範資料。
+  //    版本相同時完全不會動到資料，確保藥師實際登記/修改過的資料不會被示範資料覆蓋掉 ──
+  const DEMO_DATA_VERSION = 'v6-persist-real-data';
+  let needsDemoRegen = false;
+  try {
+    const storedVersion = localStorage.getItem('templog_demo_version');
+    needsDemoRegen = (storedVersion !== DEMO_DATA_VERSION);
+    if(needsDemoRegen) {
+      const keysToRemove = [];
+      for(let i=0; i<localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if(k && k !== 'templog_session' && (k.startsWith('templog_') || k.startsWith('checker_') || k.startsWith('supervisor_'))) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach(k => { try { localStorage.removeItem(k); } catch(e){} });
+      localStorage.setItem('templog_demo_version', DEMO_DATA_VERSION);
+    }
+  } catch(e){}
+
+  // submit-row 已整合進 todayCard，不需額外控制
+
+  if(needsDemoRegen) {
+  function buildDemo(seed, days, campus) {
+    days = days || 30;
+    const pool = STAFF.filter(s => s.campus === campus).map(s => s.name);
+    const signers = pool.length ? pool : ['謝姍珊','林家薐','林淑貞','陳麗珺','李凱芸','黃詩婷','蔡孟夏','王貞予','林亭君','吳采芳'];
+    const demo = {};
+    for(let d=1; d<=days; d++) {
+      const amTemp  = (22 + ((d*seed)%18)/10).toFixed(1);
+      const amMax   = (parseFloat(amTemp) + 0.3 + (d%3)*0.2).toFixed(1);
+      const amH = String(7+(d%2)).padStart(2,'0'), amM = String((d*3)%60).padStart(2,'0');
+      const pmTemp  = (22.5 + ((d*seed+5)%16)/10).toFixed(1);
+      const pmMax   = (parseFloat(pmTemp) + 0.3 + (d%2)*0.2).toFixed(1);
+      const pmH = String(12+(d%3)).padStart(2,'0'), pmM = String((d*7)%60).padStart(2,'0');
+      const amHumid = 55 + ((d+seed)%9);
+      const pmHumid = 56 + ((d+seed+2)%9);
+      demo[d] = {
+        AM:{temp:amTemp,maxTemp:amMax,humid:String(amHumid),
+            signedBy:signers[(d+seed)%signers.length],signedId:'',time:`${amH}:${amM}`,
+            reason:'',resolved:'',handling:'',recovery:''},
+        PM:{temp:pmTemp,maxTemp:pmMax,humid:String(pmHumid),
+            signedBy:signers[(d+seed+4)%signers.length],signedId:'',time:`${pmH}:${pmM}`,
+            reason:'',resolved:'',handling:'',recovery:''}
+      };
+    }
+    return demo;
+  }
+
+  // 各院區示範資料共用的簽名圖產生器（依姓氏顯示，較有真實感）
+  function makeSignaturePhoto(text) {
+    const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="80" style="background:#fff;border:1px solid #ccc;border-radius:4px"><text x="10" y="55" font-family="serif" font-size="36" fill="#1a3a2e" transform="rotate(-5,100,40)">${text}</text></svg>`;
+    return 'data:image/svg+xml;base64,' + btoa(svgStr);
+  }
+
+  // ── 2026-06 示範資料（強制重建，含週檢核＋組長核定；依各院區實際組長／週檢核者設定）──
+  const cfmBy6 = {
+    douliu: {name:'陳麗珺', id:'Y06100', time:'2026-06-30'},
+    huwei:  {name:'陳宜屏', id:'Y00230', time:'2026-06-30'},
+    store:  {name:'吳秋宜', id:'Y00287', time:'2026-06-30'},
+  };
+  const chkBy6 = {
+    douliu: {name:'沈倩如', id:'Y00326', time:'2026-06-30'},
+    huwei:  {name:'林家薐', id:'Y01644', time:'2026-06-30'},
+    store:  {name:'陳盈君', id:'Y00955', time:'2026-06-30'},
+  };
+  const svBy6 = {
+    douliu: {name:'陳麗珺', id:'Y06100', time:'2026-06-30', comment:'本月溫溼度管控正常，異常均已妥善處理。'},
+    huwei:  {name:'陳宜屏', id:'Y00230', time:'2026-06-30', comment:'本月溫溼度管控正常，異常均已妥善處理。'},
+    store:  {name:'吳秋宜', id:'Y00287', time:'2026-06-30', comment:'本月溫溼度管控正常，異常均已妥善處理。'},
+  };
+
+  const areas06 = [
+    { key:'templog_douliu_OPD_2026-06',   ck:'checker_douliu_OPD_2026-06',   sv:'supervisor_douliu_OPD_2026-06', campus:'douliu',
+      build: () => {
+        const d = buildDemo(1, 30, 'douliu');
+        d[12].AM.temp='26.2'; d[12].AM.maxTemp='26.8';
+        d[12].AM.reason='空調濾網阻塞，冷房效果下降';
+        d[12].AM.resolved='Y'; d[12].AM.handling='清潔空調濾網，補充冷媒';
+        d[12].AM.recovery='24.9'; d[12].AM.confirmedBy=cfmBy6.douliu;
+        return d;
+      }
+    },
+    { key:'templog_douliu_IPD_2026-06',   ck:'checker_douliu_IPD_2026-06',   sv:'supervisor_douliu_IPD_2026-06', campus:'douliu',
+      build: () => {
+        const d = buildDemo(3, 30, 'douliu');
+        d[18].AM.humid='68';
+        d[18].AM.reason='連日梅雨，外部溼度偏高影響室內';
+        d[18].AM.resolved='Y'; d[18].AM.handling='開啟除濕機持續運轉2小時';
+        d[18].AM.recovery='62'; d[18].AM.confirmedBy=cfmBy6.douliu;
+        return d;
+      }
+    },
+    { key:'templog_store_STORAGE_2026-06', ck:'checker_store_STORAGE_2026-06', sv:'supervisor_store_STORAGE_2026-06', campus:'store',
+      build: () => {
+        const d = buildDemo(2, 30, 'store');
+        d[7].PM.temp='26.0'; d[7].PM.maxTemp='26.3';
+        d[7].PM.reason='西曬導致藥庫溫度上升';
+        d[7].PM.resolved='Y'; d[7].PM.handling='加裝遮光簾，開啟備用冷氣';
+        d[7].PM.recovery='24.8'; d[7].PM.confirmedBy=cfmBy6.store;
+        return d;
+      }
+    },
+    { key:'templog_store_TRIAL_2026-06', ck:'checker_store_TRIAL_2026-06', sv:'supervisor_store_TRIAL_2026-06', campus:'store',
+      build: () => {
+        const d = buildDemo(6, 30, 'store');
+        d[16].AM.humid='67';
+        d[16].AM.reason='試驗用藥區除濕設備異常';
+        d[16].AM.resolved='Y'; d[16].AM.handling='更換除濕機備品，加強監控';
+        d[16].AM.recovery='63'; d[16].AM.confirmedBy=cfmBy6.store;
+        return d;
+      }
+    },
+    { key:'templog_huwei_OPD_2026-06',    ck:'checker_huwei_OPD_2026-06',    sv:'supervisor_huwei_OPD_2026-06', campus:'huwei',
+      build: () => {
+        const d = buildDemo(5, 30, 'huwei');
+        d[24].PM.humid='67';
+        d[24].PM.reason='午後雷陣雨，外部溼度急升';
+        d[24].PM.resolved='Y'; d[24].PM.handling='關閉通風口，啟動除濕機';
+        d[24].PM.recovery='63'; d[24].PM.confirmedBy=cfmBy6.huwei;
+        return d;
+      }
+    },
+    { key:'templog_huwei_IPD_2026-06',    ck:'checker_huwei_IPD_2026-06',    sv:'supervisor_huwei_IPD_2026-06', campus:'huwei',
+      build: () => {
+        const d = buildDemo(4, 30, 'huwei');
+        d[15].AM.temp='26.1'; d[15].AM.maxTemp='26.4';
+        d[15].AM.reason='假日空調排程未啟動，室溫偏高';
+        d[15].AM.resolved='Y'; d[15].AM.handling='手動啟動空調，設定22℃';
+        d[15].AM.recovery='24.8'; d[15].AM.confirmedBy=cfmBy6.huwei;
+        return d;
+      }
+    },
+  ];
+  areas06.forEach(({key, ck, sv, campus, build}) => {
+    try { localStorage.removeItem(key); localStorage.removeItem(ck); localStorage.removeItem(sv); } catch(e){}
+    try { localStorage.setItem(key, JSON.stringify(build())); } catch(e){}
+    try { localStorage.setItem(ck, JSON.stringify({1:chkBy6[campus],2:chkBy6[campus],3:chkBy6[campus],4:chkBy6[campus],5:chkBy6[campus]})); } catch(e){}
+    try { localStorage.setItem(sv, JSON.stringify(svBy6[campus])); } catch(e){}
+  });
+
+  // ── 2026-05（民國115年5月）全區域示範資料（依各院區實際組長／週檢核者設定）──
+  const cfmBy5 = {
+    douliu: {name:'陳麗珺', id:'Y06100', time:'2026-05-31'},
+    huwei:  {name:'陳宜屏', id:'Y00230', time:'2026-05-31'},
+    store:  {name:'吳秋宜', id:'Y00287', time:'2026-05-31'},
+  };
+  const chkBy5 = {
+    douliu: {name:'沈倩如', id:'Y00326', time:'2026-05-31'},
+    huwei:  {name:'林家薐', id:'Y01644', time:'2026-05-31'},
+    store:  {name:'陳盈君', id:'Y00955', time:'2026-05-31'},
+  };
+  const svBy5 = {
+    douliu: {name:'陳麗珺', id:'Y06100', time:'2026-05-31', comment:'本月溫溼度管控正常，異常均已妥善處理。'},
+    huwei:  {name:'陳宜屏', id:'Y00230', time:'2026-05-31', comment:'本月溫溼度管控正常，異常均已妥善處理。'},
+    store:  {name:'吳秋宜', id:'Y00287', time:'2026-05-31', comment:'本月溫溼度管控正常，異常均已妥善處理。'},
+  };
+
+  const areas05 = [
+    { key:'templog_douliu_OPD_2026-05', ck:'checker_douliu_OPD_2026-05', sv:'supervisor_douliu_OPD_2026-05', campus:'douliu',
+      build: () => {
+        const d = buildDemo(7, 31, 'douliu');
+        // 溫度異常（4筆，皆已確認）
+        d[7].AM.temp='25.6'; d[7].AM.maxTemp='25.8';
+        d[7].AM.reason='空調壞掉';
+        d[7].AM.resolved='Y'; d[7].AM.handling='請廠商維修空調，清潔濾網';
+        d[7].AM.recovery='24.8'; d[7].AM.confirmedBy=cfmBy5.douliu;
+        d[10].AM.temp='25.6'; d[10].AM.maxTemp='25.8';
+        d[10].AM.reason='外氣溫度偏高，冷房效果不足';
+        d[10].AM.resolved='Y'; d[10].AM.handling='調低空調設定溫度至20℃';
+        d[10].AM.recovery='24.9'; d[10].AM.confirmedBy=cfmBy5.douliu;
+        d[17].AM.temp='25.6'; d[17].AM.maxTemp='25.8';
+        d[17].AM.reason='天氣太熱 空調不冷';
+        d[17].AM.resolved='Y'; d[17].AM.handling='調降空調溫度設定，加強通風';
+        d[17].AM.recovery='24.7'; d[17].AM.confirmedBy=cfmBy5.douliu;
+        d[21].AM.temp='25.6'; d[21].AM.maxTemp='25.8';
+        d[21].AM.reason='午間人員進出頻繁，冷氣流失';
+        d[21].AM.resolved='Y'; d[21].AM.handling='關閉通道門扉，提高冷氣效率';
+        d[21].AM.recovery='24.8'; d[21].AM.confirmedBy=cfmBy5.douliu;
+        return d;
+      }
+    },
+    { key:'templog_douliu_IPD_2026-05', ck:'checker_douliu_IPD_2026-05', sv:'supervisor_douliu_IPD_2026-05', campus:'douliu',
+      build: () => {
+        const d = buildDemo(9, 31, 'douliu');
+        // 溼度異常（已確認）
+        d[14].PM.humid='69';
+        d[14].PM.reason='連日降雨，外部溼度偏高';
+        d[14].PM.resolved='Y'; d[14].PM.handling='開啟除濕機，加強通風2小時';
+        d[14].PM.recovery='63'; d[14].PM.confirmedBy=cfmBy5.douliu;
+        return d;
+      }
+    },
+    { key:'templog_store_STORAGE_2026-05', ck:'checker_store_STORAGE_2026-05', sv:'supervisor_store_STORAGE_2026-05', campus:'store',
+      build: () => {
+        const d = buildDemo(11, 31, 'store');
+        // 溫度異常（已確認）
+        d[9].PM.temp='25.4'; d[9].PM.maxTemp='25.7';
+        d[9].PM.reason='西曬導致藥庫溫度上升';
+        d[9].PM.resolved='Y'; d[9].PM.handling='加裝遮光簾，開啟備用冷氣';
+        d[9].PM.recovery='24.6'; d[9].PM.confirmedBy=cfmBy5.store;
+        return d;
+      }
+    },
+    { key:'templog_store_TRIAL_2026-05', ck:'checker_store_TRIAL_2026-05', sv:'supervisor_store_TRIAL_2026-05', campus:'store',
+      build: () => {
+        const d = buildDemo(17, 31, 'store');
+        // 溼度異常（已確認）
+        d[23].AM.humid='68';
+        d[23].AM.reason='試驗用藥區溼度偏高，影響藥品保存條件';
+        d[23].AM.resolved='Y'; d[23].AM.handling='開啟除濕機，加強巡檢頻率';
+        d[23].AM.recovery='63'; d[23].AM.confirmedBy=cfmBy5.store;
+        return d;
+      }
+    },
+    { key:'templog_huwei_OPD_2026-05', ck:'checker_huwei_OPD_2026-05', sv:'supervisor_huwei_OPD_2026-05', campus:'huwei',
+      build: () => {
+        const d = buildDemo(13, 31, 'huwei');
+        // 溼度異常（已確認）
+        d[20].AM.humid='67';
+        d[20].AM.reason='空調除濕功能異常';
+        d[20].AM.resolved='Y'; d[20].AM.handling='請廠商檢修除濕系統';
+        d[20].AM.recovery='64'; d[20].AM.confirmedBy=cfmBy5.huwei;
+        return d;
+      }
+    },
+    { key:'templog_huwei_IPD_2026-05', ck:'checker_huwei_IPD_2026-05', sv:'supervisor_huwei_IPD_2026-05', campus:'huwei',
+      build: () => {
+        const d = buildDemo(15, 31, 'huwei');
+        // 溫度異常（尚未確認，測試「待組長確認」狀態）
+        d[25].PM.temp='25.5'; d[25].PM.maxTemp='25.9';
+        d[25].PM.reason='空調濾網阻塞';
+        d[25].PM.resolved='Y'; d[25].PM.handling='已排定廠商清潔濾網';
+        d[25].PM.recovery='24.9';
+        return d;
+      }
+    },
+  ];
+  areas05.forEach(({key, ck, sv, campus, build}) => {
+    try { localStorage.removeItem(key); localStorage.removeItem(ck); localStorage.removeItem(sv); } catch(e){}
+    try { localStorage.setItem(key, JSON.stringify(build())); } catch(e){}
+    try { localStorage.setItem(ck, JSON.stringify({1:chkBy5[campus],2:chkBy5[campus],3:chkBy5[campus],4:chkBy5[campus],5:chkBy5[campus]})); } catch(e){}
+    try { localStorage.setItem(sv, JSON.stringify(svBy5[campus])); } catch(e){}
+  });
+
+  // ── 2026-07（民國115年7月）全區域示範資料（依各院區實際組長／週檢核者設定）──
+  const cfmBy7 = {
+    douliu: {name:'陳麗珺', id:'Y06100', time:'2026-07-03'},
+    huwei:  {name:'陳宜屏', id:'Y00230', time:'2026-07-03'},
+    store:  {name:'吳秋宜', id:'Y00287', time:'2026-07-03'},
+  };
+  const chkBy7 = {
+    douliu: {name:'沈倩如', id:'Y00326', time:'2026-07-03'},
+    huwei:  {name:'林家薐', id:'Y01644', time:'2026-07-03'},
+    store:  {name:'陳盈君', id:'Y00955', time:'2026-07-03'},
+  };
+  // 範例簽名圖（依各院區組長姓氏產生，較有真實感）
+  const svBy7 = {
+    douliu: {name:'陳麗珺', id:'Y06100', time:'2026-07-03', comment:'本月溫溼度管控正常，異常均已妥善處理。', photo: makeSignaturePhoto('Chen')},
+    huwei:  {name:'陳宜屏', id:'Y00230', time:'2026-07-03', comment:'本月溫溼度管控正常，異常均已妥善處理。', photo: makeSignaturePhoto('Chen')},
+    store:  {name:'吳秋宜', id:'Y00287', time:'2026-07-03', comment:'本月溫溼度管控正常，異常均已妥善處理。', photo: makeSignaturePhoto('Wu')},
+  };
+
+  const areas07 = [
+    { key:'templog_douliu_OPD_2026-07',   ck:'checker_douliu_OPD_2026-07',   sv:'supervisor_douliu_OPD_2026-07', campus:'douliu',
+      build: () => {
+        const d = buildDemo(2, 31, 'douliu');
+        // 溫度異常（已確認）
+        d[3].AM.temp='25.3'; d[3].AM.maxTemp='25.6';
+        d[3].AM.reason='空調設備故障';
+        d[3].AM.resolved='Y'; d[3].AM.handling='請廠商維修，開啟備援冷氣';
+        d[3].AM.recovery='24.8'; d[3].AM.confirmedBy=cfmBy7.douliu;
+        return d;
+      }
+    },
+    { key:'templog_douliu_IPD_2026-07',   ck:'checker_douliu_IPD_2026-07',   sv:'supervisor_douliu_IPD_2026-07', campus:'douliu',
+      build: () => {
+        const d = buildDemo(4, 31, 'douliu');
+        // 溼度異常（已確認）
+        d[11].PM.humid='67';
+        d[11].PM.reason='午後雷陣雨，外部溼度急升';
+        d[11].PM.resolved='Y'; d[11].PM.handling='關閉通風口，啟動除濕機';
+        d[11].PM.recovery='63'; d[11].PM.confirmedBy=cfmBy7.douliu;
+        return d;
+      }
+    },
+    { key:'templog_store_STORAGE_2026-07',   ck:'checker_store_STORAGE_2026-07',   sv:'supervisor_store_STORAGE_2026-07', campus:'store',
+      build: () => {
+        const d = buildDemo(6, 31, 'store');
+        // 溫度異常（已確認）
+        d[19].AM.temp='25.5'; d[19].AM.maxTemp='25.8';
+        d[19].AM.reason='冷氣壓縮機老化，冷房效率下降';
+        d[19].AM.resolved='Y'; d[19].AM.handling='安排廠商評估更換壓縮機';
+        d[19].AM.recovery='24.7'; d[19].AM.confirmedBy=cfmBy7.store;
+        return d;
+      }
+    },
+    { key:'templog_store_TRIAL_2026-07',   ck:'checker_store_TRIAL_2026-07',   sv:'supervisor_store_TRIAL_2026-07', campus:'store',
+      build: () => {
+        const d = buildDemo(12, 31, 'store');
+        // 溼度異常（已確認）
+        d[28].PM.humid='68';
+        d[28].PM.reason='梅雨季節，試驗用藥區溼度偏高';
+        d[28].PM.resolved='Y'; d[28].PM.handling='加開除濕機，調整通風排程';
+        d[28].PM.recovery='64'; d[28].PM.confirmedBy=cfmBy7.store;
+        return d;
+      }
+    },
+    { key:'templog_huwei_OPD_2026-07',    ck:'checker_huwei_OPD_2026-07',    sv:'supervisor_huwei_OPD_2026-07', campus:'huwei',
+      build: () => {
+        const d = buildDemo(8, 31, 'huwei');
+        // 溼度異常（尚未填寫處理紀錄，測試「⚠ 未填寫」狀態）
+        d[6].PM.humid='67';
+        return d;
+      }
+    },
+    { key:'templog_huwei_IPD_2026-07',    ck:'checker_huwei_IPD_2026-07',    sv:'supervisor_huwei_IPD_2026-07', campus:'huwei',
+      build: () => {
+        const d = buildDemo(10, 31, 'huwei');
+        // 溫度異常（已確認）
+        d[27].AM.temp='25.6'; d[27].AM.maxTemp='25.9';
+        d[27].AM.reason='假日空調排程未啟動，室溫偏高';
+        d[27].AM.resolved='Y'; d[27].AM.handling='手動啟動空調，設定22℃';
+        d[27].AM.recovery='24.8'; d[27].AM.confirmedBy=cfmBy7.huwei;
+        return d;
+      }
+    },
+  ];
+  areas07.forEach(({key, ck, sv, campus, build}) => {
+    try { localStorage.removeItem(key); localStorage.removeItem(ck); localStorage.removeItem(sv); } catch(e){}
+    try { localStorage.setItem(key, JSON.stringify(build())); } catch(e){}
+    try { localStorage.setItem(ck, JSON.stringify({})); } catch(e){} // 7月刻意不預先簽核，留給實際測試用
+    try { localStorage.setItem(sv, JSON.stringify(svBy7[campus])); } catch(e){}
+  });
+  } // end if(needsDemoRegen)
+
+  // 設定 datePicker 預設為今天
+  const fixedBarInit = document.getElementById('fixedSubmitBar');
+  if(fixedBarInit) fixedBarInit.style.display = 'block';
+  const today = new Date();
+  const todayStr = today.getFullYear() + '-' +
+    String(today.getMonth()+1).padStart(2,'0') + '-' +
+    String(today.getDate()).padStart(2,'0');
+  const dp = document.getElementById('monthPicker');
+  if(dp) { dp.value = todayStr; dp.max = todayStr; }
+
+  // 依登入人員院區自動設定，並鎖定不讓更改
+  const userCampus = currentUser.campus || 'douliu';
+  const campusSel = document.getElementById('campusSel');
+  if(campusSel) {
+    campusSel.value = userCampus;
+    campusSel.disabled = true; // 鎖定院區，不允許手動切換
+    onCampusChange(userCampus);
+  } else {
+    loadMonth();
+  }
+
+  // 登入後頁首文字（含院區名稱）可能改變高度，重新計算 sticky-top 的正確位置
+  requestAnimationFrame(() => {
+    updateStickyFieldsTop();
+    setTimeout(updateStickyFieldsTop, 150);
+    setTimeout(updateStickyFieldsTop, 500);
+  });
+
+  renderOnDutyStaff();
+
+} // end showApp()
+
+// ══════════ SESSION ══════════
+function setSession(s, btn) {
+  currentSession = s;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+// ══════════ MONTH / TABLE ══════════
+function onDatePickerChange(val) {
+  if(!val) return;
+  // val 格式是 YYYY-MM-DD
+  const now = new Date();
+  const todayYMD = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+  if(val > todayYMD) {
+    // 防呆：部分手機瀏覽器的原生日期選擇器不一定會確實套用 max 限制，這裡再次擋下未來日期
+    showToast('⛔ 未來日期無法選擇，已為您重設為今天', 'error');
+    const mp = document.getElementById('monthPicker');
+    if(mp) mp.value = todayYMD;
+    val = todayYMD;
+  }
+  const ym = val.slice(0, 7);   // 取 YYYY-MM
+  const day = parseInt(val.slice(8, 10)); // 取 DD
+  currentMonth = ym;
+  currentDay = day;
+  loadData(ym);
+  // 更新日期選擇器 daySel 並同步
+  const daySel = document.getElementById('daySel');
+  if(daySel) daySel.value = day;
+  renderTable();
+  renderStats();
+}
+
+function onMonthChange(ym) {
+  if(!ym) return;
+  currentMonth = ym;
+  loadData(ym);
+  loadMonth();
+}
+
+function loadMonth() {
+  const now = new Date();
+  const nowYM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  // 只有當下是當月才重設 currentDay 為今天，否則預設第1天
+  if(currentMonth === nowYM) {
+    currentDay = now.getDate();
+  } else {
+    currentDay = 1;
+  }
+  loadData(currentMonth);
+  renderTable();
+  renderStats();
+  renderAbnormal();
+
+  // 確保一開始登入時的顯示狀態跟目前 currentView 一致（今日登記時不顯示異常處理記錄／組長核定）
+  const isMonth = (currentView === 'month');
+  const statsRow = document.getElementById('statsRow');
+  if(statsRow) statsRow.style.display = isMonth ? '' : 'none';
+  const fixedBar = document.getElementById('fixedSubmitBar');
+  if(fixedBar) fixedBar.style.display = isMonth ? 'none' : 'block';
+  const supSec = document.getElementById('supervisorSection');
+  const abnSec = document.querySelector('.abnormal-section');
+  if(supSec) supSec.style.display = isMonth ? '' : 'none';
+  if(abnSec) abnSec.style.display = isMonth ? '' : 'none';
+}
+
+function daysInMonth(ym) {
+  const [y,m] = ym.split('-').map(Number);
+  return new Date(y, m, 0).getDate();
+}
+
+function todayYMD() {
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function getEntry(day, session) {
+  const d = logData[currentMonth] || {};
+  return (d[day] && d[day][session]) ? d[day][session] : {time:'',temp:'',maxTemp:'',humid:'',reason:'',signedBy:'',signedId:''};
+}
+
+function setEntry(day, session, field, val) {
+  if(!logData[currentMonth]) logData[currentMonth] = {};
+  if(!logData[currentMonth][day]) logData[currentMonth][day] = {};
+  if(!logData[currentMonth][day][session]) logData[currentMonth][day][session] = {};
+  logData[currentMonth][day][session][field] = val;
+  saveData();
+  renderStats();
+  renderAbnormal();
+  updateRowWarning(day, session);
+}
+
+function setView(v, btn) {
+  currentView = v;
+  document.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const sb = document.getElementById('selectorBar');
+  if(sb) sb.style.display = (v === 'today') ? 'flex' : 'none';
+  // 原 submit-row 已整合進 todayCard，這裡不需要控制
+  // 本月總覽手機版允許橫向捲動
+  const mainWrap = document.getElementById('mainTableWrap');
+  if(mainWrap) mainWrap.style.overflowX = (v === 'month') ? 'auto' : 'visible';
+  // 匯出 PDF 按鈕只在本月總覽顯示
+  const exportBtn = document.getElementById('exportBtn');
+  if(exportBtn) exportBtn.style.display = (v === 'month') ? '' : 'none';
+  // 統計卡：只在本月總覽顯示（今日登記完全隱藏）
+  const isMonth = (v === 'month');
+  const statsRow = document.getElementById('statsRow');
+  if(statsRow) statsRow.style.display = isMonth ? '' : 'none';
+  // 確認按鈕 fixed bar：只在今日登記顯示
+  const fixedBar = document.getElementById('fixedSubmitBar');
+  if(fixedBar) fixedBar.style.display = (v === 'today') ? 'block' : 'none';
+  renderTable();
+  // 今日登記：隱藏組長核定＋異常處理；本月總覽：顯示
+  const supSec = document.getElementById('supervisorSection');
+  const abnSec = document.querySelector('.abnormal-section');
+  if(supSec) supSec.style.display = (v === 'month') ? '' : 'none';
+  if(abnSec) abnSec.style.display = (v === 'month') ? '' : 'none'; // 只在本月總覽顯示異常處理記錄
+  // sticky-top 高度改變後需等 layout 完成才能算正確 top
+  requestAnimationFrame(() => {
+    updateStickyFieldsTop();
+    setTimeout(updateStickyFieldsTop, 150);
+  });
+  renderOnDutyStaff();
+}
+
+function renderTable() {
+  const sessionLabel = currentSession === 'AM' ? '上午 (07:00–10:00)' : '下午 (12:00–15:00)';
+  const areaLabel = '【'+getAreaLabel()+'】';
+
+
+  if(currentView === 'today') {
+    renderTodayView();
+  } else {
+    renderMonthView();
+  }
+}
+
+function renderTodayView() {
+  const now = new Date();
+  const todayRealDay = now.getDate();
+  const nowYM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const isCurrentMonth = currentMonth === nowYM;
+  const totalDays = daysInMonth(currentMonth);
+
+  // If currentDay not set or out of range, default to today or 1
+  if(!currentDay || currentDay < 1 || currentDay > totalDays) {
+    currentDay = isCurrentMonth ? todayRealDay : 1;
+  }
+
+  const d = currentDay;
+  const e = getEntry(d, currentSession);
+
+  // 格式化溫度為小數點一位
+  const fmtT = v => (v !== '' && v !== undefined && v !== null && !isNaN(parseFloat(v))) ? parseFloat(v).toFixed(1) : '';
+  const dispTemp    = fmtT(e.temp);
+  const dispMaxTemp = fmtT(e.maxTemp);
+
+  const tempWarn = e.temp !== '' && parseFloat(e.temp) > 25;
+  const maxTempWarn = e.maxTemp !== '' && parseFloat(e.maxTemp) > 25;
+  const humWarn = e.humid !== '' && parseFloat(e.humid) >= 66;
+  const needReason = tempWarn || maxTempWarn || humWarn;
+
+  // Build day options（未來日期不列入選項）
+  const maxSelectableDay = isCurrentMonth ? todayRealDay : totalDays;
+  let dayOptions = '';
+  for(let i = 1; i <= maxSelectableDay; i++) {
+    const ymd = `${currentMonth}-${String(i).padStart(2,'0')}`;
+    const isToday = isCurrentMonth && i === todayRealDay;
+    dayOptions += `<option value="${i}" ${i === d ? 'selected' : ''}>${String(i).padStart(2,'0')} 日${isToday ? ' （今日）' : ''}</option>`;
+  }
+
+  // 防呆：若選到的日期仍超過今天（例如月份切換到未來月份），一律鎖定不可編輯
+  const nowYMD = nowYM + '-' + String(todayRealDay).padStart(2,'0');
+  const selectedYMD = currentMonth + '-' + String(d).padStart(2,'0');
+  const isFutureDay = selectedYMD > nowYMD;
+
+  // Time-range warning for selected day
+  const nowTotal = now.getHours() * 60 + now.getMinutes();
+  const inAM = nowTotal >= 7*60 && nowTotal <= 10*60;
+  const inPM = nowTotal >= 12*60 && nowTotal <= 15*60;
+  const isSelectedToday = isCurrentMonth && d === todayRealDay;
+  const outOfRange = isSelectedToday && ((currentSession === 'AM' && !inAM) || (currentSession === 'PM' && !inPM));
+  const isMakeup = isCurrentMonth && d < todayRealDay;
+  const rangeMsg = currentSession === 'AM'
+    ? (nowTotal < 7*60 ? '尚未到上午登記時段（07:00–10:00）' : '已超過上午登記時段（07:00–10:00）')
+    : (nowTotal < 12*60 ? '尚未到下午登記時段（12:00–15:00）' : '已超過下午登記時段（12:00–15:00）');
+
+  const dateLabel = `${currentMonth}-${String(d).padStart(2,'0')}${isSelectedToday ? '（今日）' : isMakeup ? '（補登）' : ''}`;
+
+  // Replace table with card UI
+  const tableWrap = document.getElementById('mainTableWrap');
+  tableWrap.style.display = 'none';
+  tableWrap.classList.remove('month-scroll');
+
+  let card = document.getElementById('todayCard');
+  if(!card) {
+    card = document.createElement('div');
+    card.id = 'todayCard';
+    card.className = 'today-card';
+    tableWrap.parentNode.insertBefore(card, tableWrap);
+  }
+  card.style.display = 'block';
+
+  // Populate the static sticky selector bar
+  const sb = document.getElementById('selectorBar');
+  if(sb) {
+    sb.style.display = 'flex';
+    const daySel = document.getElementById('daySel');
+    if(daySel) daySel.innerHTML = dayOptions;
+    document.getElementById('sessAM').className = currentSession==='AM' ? 'active' : '';
+    document.getElementById('sessPM').className = currentSession==='PM' ? 'active' : '';
+  }
+
+  // 注入填寫欄位：同時顯示同院區所有部門
+  const mfh = document.getElementById('monthFakeHeader');
+  if(mfh) mfh.style.display = 'none';
+  const mainThead = document.getElementById('mainThead');
+  if(mainThead) mainThead.style.display = '';
+  const sf = document.getElementById('stickyFields');
+  if(sf) {
+    sf.style.display = 'block';
+    const campus = currentArea.split('_')[0];
+    const depts = CAMPUS_DEPTS[campus] || [];
+
+    // 為每個部門取得資料
+    const weekNum = Math.ceil(d / 7);
+    const deptData = depts.map(dept => {
+      const areaKey = campus + '_' + dept.key;
+      const savedArea = currentArea;
+      currentArea = areaKey;
+      loadData(currentMonth); // 重新載入該部門自己的資料，避免讀到記憶體中殘留的其他部門資料
+      const entry = getEntry(d, currentSession);
+      const checkerRec = getChecker(weekNum); // 該部門本週是否已完成週檢核
+      currentArea = savedArea;
+      loadData(currentMonth); // 還原成目前實際檢視部門的資料
+      const fT = v => (v!==''&&v!==undefined&&v!==null&&!isNaN(parseFloat(v))) ? parseFloat(v).toFixed(1) : '';
+      return {
+        key: dept.key, label: dept.label, areaKey,
+        temp: fT(entry.temp), maxTemp: fT(entry.maxTemp), humid: entry.humid||'',
+        reason: entry.reason||'',
+        tempWarn: entry.temp!==''&&parseFloat(entry.temp)>25,
+        maxWarn: entry.maxTemp!==''&&parseFloat(entry.maxTemp)>25,
+        humWarn: entry.humid!==''&&parseFloat(entry.humid)>=66,
+        signedBy: entry.signedBy||'', time: entry.time||'',
+        resolved: entry.resolved||'', handling: entry.handling||'', recovery: entry.recovery||'',
+        confirmedBy: entry.confirmedBy||null,
+        weekLocked: !!checkerRec, weekCheckerName: checkerRec ? checkerRec.name : ''
+      };
+    });
+
+    const needAnyReason = deptData.some(d=>d.tempWarn||d.maxWarn||d.humWarn);
+
+    sf.innerHTML = `
+      ${outOfRange ? `<div style="background:#fffbeb;border:1.5px solid #fcd34d;border-radius:8px;padding:6px 10px;font-size:11px;color:#92400e;font-weight:600;margin-bottom:6px;">⚠ 現在${rangeMsg}，如為補登請繼續填寫</div>` : ''}
+      ${isMakeup ? `<div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:8px;padding:6px 10px;font-size:11px;color:#1e40af;font-weight:600;margin-bottom:6px;">📝 補登：${currentMonth}-${String(d).padStart(2,'0')}</div>` : ''}
+      ${deptData.map((dept,i) => {
+        const locked = isFutureDay || dept.weekLocked;
+        const lockBanner = isFutureDay
+          ? `<div style="background:#f3f4f6;border:1.5px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:10px;color:var(--gray-500);font-weight:600;margin-bottom:5px;">🔒 未來日期不可登記</div>`
+          : dept.weekLocked
+            ? `<div style="background:#f3f4f6;border:1.5px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:10px;color:var(--gray-500);font-weight:600;margin-bottom:5px;">🔒 本週已由 ${dept.weekCheckerName} 完成核定，資料已鎖定無法修改</div>`
+            : '';
+        return `
+      <div id="deptCard-${dept.key}" class="dept-today-card" style="background:white;border-radius:10px;padding:16px 12px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:4px solid ${i===0?'#1a7f6e':i===1?'#1d4ed8':'#b45309'};${locked?'opacity:.75;':''}">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:7px 10px;border-radius:8px;background:${i===0?'#e8f5f2':i===1?'#eff6ff':'#fef9f0'};">
+          <span style="font-size:14px;">${i===0?'🏥':i===1?'🛏':'📦'}</span>
+          <span style="font-size:13px;font-weight:800;color:${i===0?'#1a7f6e':i===1?'#1d4ed8':'#b45309'};">${dept.label}</span>
+        </div>
+        ${lockBanner}
+        <div class="today-fields" style="margin-bottom:8px;">
+          <div class="field-group">
+            <label>溫度 (℃) <span>≦25</span></label>
+            <input type="tel" id="tf-temp-${dept.key}" inputmode="decimal" pattern="[0-9]*[.]?[0-9]*"
+              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ${locked?'disabled':''}
+              placeholder="—" value="${dept.temp}" class="${dept.tempWarn?'warn':''}"
+              oninput="filterDecimalInput(this);updateWarnClass(this,25);checkMaxTempDept('${dept.key}');refreshReasonWrap('${dept.key}');autoNextField(this,'tf-maxtemp-${dept.key}',4)"
+              onblur="fmtTempInput(this);setEntryByArea('${dept.areaKey}',${d},'${currentSession}','temp',this.value)">
+          </div>
+          <div class="field-group">
+            <label>最高溫度 (℃) <span>≦25</span></label>
+            <input type="tel" id="tf-maxtemp-${dept.key}" inputmode="decimal" pattern="[0-9]*[.]?[0-9]*"
+              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ${locked?'disabled':''}
+              placeholder="—" value="${dept.maxTemp}" class="${dept.maxWarn?'warn':''}"
+              oninput="filterDecimalInput(this);updateWarnClass(this,25);checkMaxTempDept('${dept.key}');refreshReasonWrap('${dept.key}');autoNextField(this,'tf-humid-${dept.key}',4)"
+              onblur="fmtTempInput(this);setEntryByArea('${dept.areaKey}',${d},'${currentSession}','maxTemp',this.value)">
+          </div>
+          <div class="field-group">
+            <label>溼度 (%) <span>≦65</span></label>
+            <input type="tel" id="tf-humid-${dept.key}" inputmode="numeric" pattern="[0-9]*"
+              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ${locked?'disabled':''}
+              placeholder="—" value="${dept.humid}" class="${dept.humWarn?'warn':''}"
+              oninput="filterIntInput(this);updateWarnClass(this,65);refreshReasonWrap('${dept.key}');autoNextField(this,${i<deptData.length-1?`'tf-temp-${deptData[i+1]?.key}'`:'null'},3)"
+              onblur="fmtIntInput(this);setEntryByArea('${dept.areaKey}',${d},'${currentSession}','humid',this.value)">
+          </div>
+        </div>
+        <div id="maxwarn-${dept.key}" style="display:none;background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;padding:6px 10px;font-size:11px;color:var(--red);font-weight:600;margin-bottom:6px;">⛔ 最高溫度不可小於溫度</div>
+        <div id="reason-wrap-${dept.key}" style="display:${(dept.tempWarn||dept.maxWarn||dept.humWarn)?'block':'none'};margin-bottom:4px;">
+          <label style="font-size:11px;color:var(--red);font-weight:700;">⚠ 異常原因（必填）</label>
+          <div id="preset-reasons-${dept.key}" style="display:${(dept.reason||locked)?'none':'flex'};flex-wrap:wrap;gap:3px;margin:3px 0;">
+            ${['空調設備故障','空調排程未啟動','人員進出頻繁，冷氣流失','連日降雨，外部溼度偏高'].map(t=>
+              `<button type="button" ${locked?'disabled':''} onclick="setReasonByArea('${dept.areaKey}',${d},'${currentSession}','${t}')"
+                style="padding:2px 7px;border:1px solid var(--teal);border-radius:20px;background:white;color:var(--teal);font-size:10px;cursor:pointer;font-family:inherit;white-space:nowrap;">${t}</button>`
+            ).join('')}
+          </div>
+          <input type="text" id="tf-reason-${dept.key}" placeholder="請填寫異常原因" ${locked?'disabled':''}
+            value="${dept.reason}"
+            oninput="hidePresetReasons('${dept.key}')"
+            onchange="setEntryByArea('${dept.areaKey}',${d},'${currentSession}','reason',this.value)">
+
+          <div id="abn-status-${dept.key}" style="margin-top:8px;">
+            ${(dept.resolved && dept.handling && dept.recovery)
+              ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--green-light);border-radius:8px;padding:8px 12px;">
+                   <span style="font-size:12px;color:var(--green);font-weight:700;">✅ 異常處理已完成${dept.confirmedBy ? '（已由組長確認）' : '（待組長確認）'}</span>
+                   ${locked ? '' : `<button onclick="openAbnormalModal('${dept.areaKey}',${d},'${currentSession}','${dept.key}')"
+                     style="padding:5px 12px;background:white;border:1.5px solid var(--gray-300);color:var(--gray-700);
+                            border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">
+                     編輯
+                   </button>`}
+                 </div>`
+              : locked
+                ? ''
+                : `<button onclick="openAbnormalModal('${dept.areaKey}',${d},'${currentSession}','${dept.key}')"
+                   style="width:100%;padding:10px;background:var(--amber);color:white;border:none;
+                          border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+                   📋 填寫異常處理紀錄
+                 </button>`
+            }
+          </div>
+        </div>
+      </div>`;
+      }).join('')}
+    `;
+  }
+
+  // Replace table with card UI（次要顯示，無內容則隱藏）
+  // tableWrap already declared above
+  tableWrap.style.display = 'none';
+
+  card = document.getElementById('todayCard');
+  if(card) card.style.display = 'none';
+
+  requestAnimationFrame(updateStickyFieldsTop);
+}
+
+// ══════════ 依班表顯示今日應登記人員（唯讀查詢班表系統，讀取失敗不影響本系統其他功能）══════════
+async function renderOnDutyStaff() {
+  const box = document.getElementById('onDutyStaffBox');
+  if(!box) return;
+  if(currentView !== 'today') { box.style.display = 'none'; return; }
+  if(typeof window.getShiftCode !== 'function') { box.style.display = 'none'; return; }
+
+  const now = new Date();
+  const dateStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+  const campus = currentArea.split('_')[0];
+  const campusStaff = STAFF.filter(s => s.campus === campus);
+
+  box.style.display = 'block';
+  box.textContent = '📋 正在查詢班表，請稍候...';
+
+  try {
+    const results = await Promise.all(campusStaff.map(async s => {
+      const code = await window.getShiftCode(s.id, dateStr);
+      return { name: s.name, code };
+    }));
+    const onDuty = results.filter(r => r.code && window.ON_DUTY_SHIFT_CODES.includes(r.code));
+    if(onDuty.length) {
+      box.innerHTML = `📋 <strong>依班表，今日應登記人員：</strong>${onDuty.map(r => r.name).join('、')}`;
+    } else {
+      box.innerHTML = `📋 依班表查詢，今日暫無符合班別（B8/SD/HD）的應登記人員，或班表尚未發布。`;
+    }
+  } catch(e) {
+    box.textContent = '📋 班表資料暫時無法讀取（不影響溫濕度登記功能）';
+  }
+}
+
+function updateStickyFieldsTop() {
+  // sticky-top 現在改用 position:fixed（避免 position:sticky 在部分情境下失效的問題）
+  // 因此需要：1) 貼齊頁首下方  2) 用一個等高的佔位元素，讓下面的內容不會被蓋住
+  const headerEl = document.querySelector('header');
+  const stickyTopEl = document.querySelector('.sticky-top');
+  const spacerEl = document.getElementById('stickyTopSpacer');
+  if(headerEl && stickyTopEl) {
+    stickyTopEl.style.top = headerEl.offsetHeight + 'px';
+    if(spacerEl) spacerEl.style.height = stickyTopEl.offsetHeight + 'px';
+  }
+  // thead th 用 top:0 相對於 mainTableWrap 容器，不需要 JS 設定
+}
+
+function setReasonPreset(text, day, session) {
+  const input = document.getElementById('tf-reason');
+  if(input) {
+    input.value = text;
+    setEntry(day, session, 'reason', text);
+  }
+}
+
+function refreshTodayWarning() {
+  // Read live values from DOM inputs so warning shows instantly while typing
+  const tempVal  = parseFloat(document.getElementById('tf-temp')?.value);
+  const maxVal   = parseFloat(document.getElementById('tf-maxtemp')?.value);
+  const humidVal = parseFloat(document.getElementById('tf-humid')?.value);
+  const needReason = (!isNaN(tempVal) && tempVal > 25)
+                  || (!isNaN(maxVal)  && maxVal  > 25)
+                  || (!isNaN(humidVal)&& humidVal >= 66);
+  const wrap = document.getElementById('tf-reason-wrap');
+  if(wrap) wrap.style.display = needReason ? 'block' : 'none';
+}
+
+function renderMonthView() {
+  const tableWrap = document.getElementById('mainTableWrap');
+  tableWrap.style.display = '';
+  tableWrap.classList.add('month-scroll');
+  const card = document.getElementById('todayCard');
+  if(card) card.style.display = 'none';
+  const sf = document.getElementById('stickyFields');
+  if(sf) sf.style.display = 'none';
+  const mfh = document.getElementById('monthFakeHeader');
+  if(mfh) mfh.style.display = 'none';
+  const sb = document.getElementById('selectorBar');
+  if(sb) sb.style.display = 'none';
+  const mainThead = document.getElementById('mainThead');
+  if(mainThead) mainThead.style.display = 'none'; // 隱藏原始 thead，改由各部門自己產生
+
+  // 多部門：遍歷同院區所有部門
+  const campus = currentArea.split('_')[0];
+  const depts = CAMPUS_DEPTS[campus] || [];
+  const savedArea = currentArea;
+  const allDeptHtml = depts.map(dept => {
+    currentArea = campus + '_' + dept.key;
+    loadData(currentMonth);
+
+    const days = daysInMonth(currentMonth);
+    const todayStr = todayYMD();
+
+  const ro = (val, warn) => {
+    if(!val) return `<span style="color:var(--gray-300)">—</span>`;
+    return warn
+      ? `<span style="color:var(--red);font-weight:700">${val}</span>`
+      : `<span>${val}</span>`;
+  };
+
+  let html = '';
+  for(let d=1; d<=days; d++) {
+    const ymd = currentMonth+'-'+String(d).padStart(2,'0');
+    const isToday = ymd === todayStr;
+    const am = getEntry(d, 'AM');
+    const pm = getEntry(d, 'PM');
+    const rowBg = isToday ? 'background:#f0fdf4;' : '';
+    const todayMark = isToday ? ' 📍' : '';
+
+    const amTW = am.temp !== '' && parseFloat(am.temp) > 25;
+    const amMW = am.maxTemp !== '' && parseFloat(am.maxTemp) > 25;
+    const amHW = am.humid !== '' && parseFloat(am.humid) >= 66;
+    const pmTW = pm.temp !== '' && parseFloat(pm.temp) > 25;
+    const pmMW = pm.maxTemp !== '' && parseFloat(pm.maxTemp) > 25;
+    const pmHW = pm.humid !== '' && parseFloat(pm.humid) >= 66;
+
+    const amSign = am.signedBy ? `<span class="signed-badge">${am.signedBy}</span>` : `<span style="color:var(--gray-300)">—</span>`;
+    const pmSign = pm.signedBy ? `<span class="signed-badge">${pm.signedBy}</span>` : `<span style="color:var(--gray-300)">—</span>`;
+
+    const amReason = (amTW||amMW||amHW)
+      ? (am.reason ? `<span style="color:var(--gray-700);font-size:12px">${am.reason}</span>`
+                   : `<span style="color:var(--red);font-size:12px">⚠ 未填寫</span>`)
+      : `<span style="color:var(--gray-300)">—</span>`;
+    const pmReason = (pmTW||pmMW||pmHW)
+      ? (pm.reason ? `<span style="color:var(--gray-700);font-size:12px">${pm.reason}</span>`
+                   : `<span style="color:var(--red);font-size:12px">⚠ 未填寫</span>`)
+      : `<span style="color:var(--gray-300)">—</span>`;
+
+    html += `
+    <tr style="${rowBg}border-bottom:none;">
+      <td class="date-col" rowspan="2" style="border-right:2px solid var(--teal-light);vertical-align:middle;">${d}${todayMark}</td>
+      <td style="background:#deeaf122;font-size:11px;font-weight:700;color:#1a6ea8;padding:4px 8px;text-align:center;white-space:nowrap;">上午</td>
+      <td style="text-align:center">${ro(am.temp, amTW)}</td>
+      <td style="text-align:center">${ro(am.maxTemp, amMW)}</td>
+      <td style="text-align:center">${ro(am.humid, amHW)}</td>
+      <td style="text-align:center">${amSign}</td>
+      <td style="text-align:center">${amReason}</td>
+    </tr>
+    <tr style="${rowBg}">
+      <td style="background:#fce4d622;font-size:11px;font-weight:700;color:#b45309;padding:4px 8px;text-align:center;white-space:nowrap;">下午</td>
+      <td style="text-align:center">${ro(pm.temp, pmTW)}</td>
+      <td style="text-align:center">${ro(pm.maxTemp, pmMW)}</td>
+      <td style="text-align:center">${ro(pm.humid, pmHW)}</td>
+      <td style="text-align:center">${pmSign}</td>
+      <td style="text-align:center">${pmReason}</td>
+    </tr>`;
+
+    // Insert weekly checker row after day 7, 14, 21, 28, and last day of month
+    const isWeekEnd = (d % 7 === 0) || (d === days);
+    if(isWeekEnd) {
+      const wk = Math.ceil(d / 7);
+      const checker = getChecker(wk);
+      const rowAreaKey = currentArea; // 記錄此列所屬的院區/部門，避免畫面渲染完 currentArea 還原後點擊簽名按鈕誤存到別的部門
+      html += `
+      <tr style="background:#f0fdf4;">
+        <td colspan="7" style="padding:6px 12px;border-top:2px solid var(--teal-light);">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <span style="font-size:13px;font-weight:700;color:var(--teal);white-space:nowrap;">
+              📋 第 ${wk} 週檢核（${d<=7?1:d<=14?8:d<=21?15:d<=28?22:29}日–${d}日）
+            </span>
+            <span style="font-size:13px;color:var(--gray-600);white-space:nowrap;">檢核者簽名：</span>
+            ${checker
+              ? `<span class="signed-badge" style="font-size:13px">✅ ${checker.name}</span>
+                 <span style="font-size:12px;color:var(--gray-500)">${checker.time.slice(0,10)}</span>
+                 ${isChecker(currentUser?.id) ? `<button onclick="clearChecker(${wk},'${rowAreaKey}')"
+                   style="padding:3px 10px;background:var(--gray-100);border:1px solid var(--gray-300);
+                          border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit;">重簽</button>` : ''}`
+              : isChecker(currentUser?.id)
+                ? `<button onclick="signChecker(${wk},'${rowAreaKey}')"
+                     style="padding:5px 16px;background:var(--teal);color:white;border:none;
+                            border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+                     簽名確認
+                   </button>`
+                : `<span style="font-size:12px;color:var(--gray-400)">僅檢核者可簽名</span>`
+            }
+          </div>
+        </td>
+      </tr>`;
+    }
+  }
+
+  // 回傳這個部門的完整表格 HTML
+  const deptColor = dept.key === 'OPD' ? '#1a7f6e' : dept.key === 'IPD' ? '#1d4ed8' : '#b45309';
+  const deptIcon = dept.key === 'OPD' ? '🏥' : dept.key === 'IPD' ? '🛏' : '📦';
+  return `
+    <div style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:white;border-radius:10px 10px 0 0;border-left:4px solid ${deptColor};border-bottom:2px solid ${deptColor};margin-bottom:0;">
+        <span style="font-size:16px;">${deptIcon}</span>
+        <span style="font-size:15px;font-weight:800;color:${deptColor};">${dept.label}</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse;table-layout:auto;">
+        <thead>
+          <tr>
+            <th>日期</th><th>時段</th>
+            <th>溫度(℃)<br><span style="color:var(--red);font-weight:800">≦25</span></th>
+            <th>最高溫(℃)<br><span style="color:var(--red);font-weight:800">≦25</span></th>
+            <th>溼度(%)<br><span style="color:var(--red);font-weight:800">≦65</span></th>
+            <th>登記人員</th>
+            <th>⚠ 異常原因說明</th>
+          </tr>
+        </thead>
+        <tbody>${html}</tbody>
+      </table>
+    </div>`;
+  }).join('');
+
+  // 把所有部門表格放入 mainTableWrap
+  // 注意：不能再用 document.getElementById('logTbody') 找目標容器 —— 因為每個部門表格自己的
+  // <tbody> 沒有 id="logTbody"，第一次渲染後原本的 logTbody 元素就會被整個取代掉，
+  // 導致第二次以後再渲染時 getElementById('logTbody') 會抓不到東西、畫面就卡住不再更新。
+  const mainWrap = document.getElementById('mainTableWrap');
+  if(mainWrap) mainWrap.innerHTML = allDeptHtml;
+
+  currentArea = savedArea;
+  loadData(currentMonth);
+
+  requestAnimationFrame(() => {
+    updateStickyFieldsTop();
+    setTimeout(updateStickyFieldsTop, 80);
+  });
+  renderSupervisor();
+  renderAbnormal();
+}
+
+// ── 手機數字輸入輔助函數 ──
+// 依指定 area 儲存資料
+function setEntryByArea(areaKey, day, session, field, value) {
+  const savedArea = currentArea;
+  currentArea = areaKey;
+  loadData(currentMonth);
+  setEntry(day, session, field, value);
+  saveData();
+  currentArea = savedArea;
+  loadData(currentMonth);
+}
+
+function refreshReasonWrap(deptKey) {
+  const t = parseFloat(document.getElementById('tf-temp-'+deptKey)?.value);
+  const m = parseFloat(document.getElementById('tf-maxtemp-'+deptKey)?.value);
+  const h = parseFloat(document.getElementById('tf-humid-'+deptKey)?.value);
+  const need = (!isNaN(t)&&t>25)||(!isNaN(m)&&m>25)||(!isNaN(h)&&h>=66);
+  const wrap = document.getElementById('reason-wrap-'+deptKey);
+  if(wrap) wrap.style.display = need ? 'block' : 'none';
+}
+
+function setReasonByArea(areaKey, day, session, text) {
+  const deptKey = areaKey.split('_').slice(1).join('_');
+  const input = document.getElementById('tf-reason-' + deptKey);
+  if(input) input.value = text;
+  hidePresetReasons(deptKey);
+  setEntryByArea(areaKey, day, session, 'reason', text);
+}
+function hidePresetReasons(deptKey) {
+  const wrap = document.getElementById('preset-reasons-' + deptKey);
+  if(wrap) wrap.style.display = 'none';
+}
+
+// ══════════ 異常處理彈出視窗 ══════════
+let abnormalModalCtx = null; // { areaKey, day, session, deptKey }
+
+function openAbnormalModal(areaKey, day, session, deptKey) {
+  abnormalModalCtx = { areaKey, day, session, deptKey };
+  renderAbnormalModalBody();
+  document.getElementById('abnormalModalOverlay').classList.add('open');
+}
+
+function closeAbnormalModal(e) {
+  if(e && e.target !== document.getElementById('abnormalModalOverlay')) return;
+  document.getElementById('abnormalModalOverlay').classList.remove('open');
+  abnormalModalCtx = null;
+  renderTable(); // 更新卡片上的完成狀態
+}
+
+function renderAbnormalModalBody() {
+  if(!abnormalModalCtx) return;
+  const { areaKey, day, session, deptKey } = abnormalModalCtx;
+  const savedArea = currentArea;
+  currentArea = areaKey;
+  loadData(currentMonth); // 重新載入該部門自己的資料，避免讀到記憶體中殘留的其他部門資料
+  const e = getEntry(day, session);
+  currentArea = savedArea;
+  loadData(currentMonth); // 還原成目前實際檢視部門的資料
+
+  const campus = areaKey.split('_')[0];
+  const deptLabel = (CAMPUS_DEPTS[campus]||[]).find(x=>x.key===deptKey)?.label || deptKey;
+  document.getElementById('abnormalModalSub').textContent =
+    `${currentMonth}-${String(day).padStart(2,'0')}　${session==='AM'?'上午':'下午'}　${deptLabel}`;
+
+  const resolved = e.resolved || '';
+  const handling = e.handling || '';
+  const recovery = e.recovery || '';
+  const confirmedBy = e.confirmedBy || null;
+
+  document.getElementById('abnormalModalBody').innerHTML = `
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:12px;font-weight:700;color:var(--gray-700);margin-bottom:6px;">異常原因</label>
+      <input type="text" id="modal-abn-reason" value="${e.reason||''}" placeholder="請填寫異常原因"
+        style="width:100%;padding:11px 12px;border:1.5px solid var(--gray-200);border-radius:8px;
+               font-size:16px;font-family:inherit;box-sizing:border-box;">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div>
+        <label style="display:block;font-size:12px;font-weight:700;color:var(--gray-700);margin-bottom:6px;">是否解除</label>
+        <select id="modal-abn-resolved"
+          style="width:100%;padding:11px 8px;border:1.5px solid var(--gray-200);border-radius:8px;
+                 font-size:16px;font-family:inherit;font-weight:700;box-sizing:border-box;">
+          <option value="" ${resolved===''?'selected':''}>— 請選擇 —</option>
+          <option value="Y" ${resolved==='Y'?'selected':''}>Y（是）</option>
+          <option value="N" ${resolved==='N'?'selected':''}>N（否）</option>
+        </select>
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;font-weight:700;color:var(--gray-700);margin-bottom:6px;">回復溫(溼)度</label>
+        <input type="tel" id="modal-abn-recovery" inputmode="decimal" pattern="[0-9]*[.]?[0-9]*"
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+          value="${recovery}" placeholder="例如 24.5"
+          oninput="filterDecimalInput(this)"
+          style="width:100%;padding:11px 8px;border:1.5px solid var(--gray-200);border-radius:8px;
+                 font-size:16px;font-family:inherit;text-align:center;box-sizing:border-box;">
+      </div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="display:block;font-size:12px;font-weight:700;color:var(--gray-700);margin-bottom:6px;">處理方式</label>
+      <input type="text" id="modal-abn-handling" value="${handling}" placeholder="請填寫實際處理方式"
+        style="width:100%;padding:11px 12px;border:1.5px solid var(--gray-200);border-radius:8px;
+               font-size:16px;font-family:inherit;box-sizing:border-box;">
+    </div>
+    <div style="text-align:center;margin-bottom:14px;">
+      ${confirmedBy
+        ? `<span class="signed-badge">✅ ${confirmedBy.name} 已確認　${confirmedBy.time||''}</span>`
+        : isSupervisor(currentUser?.id)
+          ? `<button onclick="confirmAbnormal('${areaKey}',${day},'${session}');renderAbnormalModalBody();"
+               style="padding:8px 24px;background:var(--teal);color:white;border:none;
+                      border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+               組長確認
+             </button>`
+          : `<span style="font-size:12px;color:var(--gray-400);">待組長確認</span>`
+      }
+    </div>
+    <button onclick="saveAbnormalModal()"
+      style="width:100%;padding:13px;background:var(--teal);color:white;border:none;
+             border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">
+      ✔ 儲存並關閉
+    </button>
+  `;
+}
+
+function saveAbnormalModal() {
+  if(!abnormalModalCtx) return;
+  const { areaKey, day, session } = abnormalModalCtx;
+
+  const savedArea = currentArea;
+  currentArea = areaKey;
+  loadData(currentMonth);
+  const weekNum = Math.ceil(day / 7);
+  const checkerRec = getChecker(weekNum);
+  currentArea = savedArea;
+  loadData(currentMonth);
+  if(checkerRec) {
+    showToast('🔒 本週已完成核定，資料已鎖定無法修改', 'warn');
+    closeAbnormalModal();
+    return;
+  }
+
+  const reason = document.getElementById('modal-abn-reason').value.trim();
+  const resolved = document.getElementById('modal-abn-resolved').value;
+  const recovery = document.getElementById('modal-abn-recovery').value.trim();
+  const handling = document.getElementById('modal-abn-handling').value.trim();
+
+  if(!reason) { showToast('請先填寫異常原因', 'warn'); return; }
+  if(!resolved) { showToast('請選擇是否解除', 'warn'); return; }
+  if(!handling) { showToast('請填寫處理方式', 'warn'); return; }
+  if(!recovery) { showToast('請填寫回復溫(溼)度', 'warn'); return; }
+
+  setEntryByArea(areaKey, day, session, 'reason', reason);
+  setAbnormalField(areaKey, day, session, 'resolved', resolved);
+  setAbnormalField(areaKey, day, session, 'handling', handling);
+  setAbnormalField(areaKey, day, session, 'recovery', recovery);
+
+  showToast('✅ 異常處理紀錄已儲存', 'success');
+  closeAbnormalModal();
+}
+
+
+function checkMaxTempDept(deptKey) {
+  const t = parseFloat(document.getElementById('tf-temp-'+deptKey)?.value);
+  const m = parseFloat(document.getElementById('tf-maxtemp-'+deptKey)?.value);
+  const warn = document.getElementById('maxwarn-'+deptKey);
+  if(warn) warn.style.display = (!isNaN(t)&&!isNaN(m)&&m<t) ? 'block' : 'none';
+}
+
+// 一次確認所有部門登記
+function submitAllDepts() {
+  const now = new Date();
+  const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  const d = currentDay;
+  const session = currentSession;
+  const campus = currentArea.split('_')[0];
+  const depts = CAMPUS_DEPTS[campus] || [];
+  const savedArea = currentArea;
+  let hasError = false;
+  let hasAbnormal = false;
+
+  // 未來日期一律擋下，不可登記
+  const nowYM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const nowYMD = nowYM + '-' + String(now.getDate()).padStart(2,'0');
+  const selectedYMD = currentMonth + '-' + String(d).padStart(2,'0');
+  if(selectedYMD > nowYMD) {
+    showToast('⛔ 未來日期無法登記', 'error');
+    return;
+  }
+
+  const weekNum = Math.ceil(d / 7);
+  let allLocked = true;
+
+  for(const dept of depts) {
+    const areaKey = campus + '_' + dept.key;
+    currentArea = areaKey;
+    loadData(currentMonth);
+    const checkerRec = getChecker(weekNum);
+    if(checkerRec) continue; // 該部門本週已核定鎖定，跳過驗證
+    allLocked = false;
+
+    const e = getEntry(d, session);
+    const tempVal = parseFloat(document.getElementById('tf-temp-'+dept.key)?.value);
+    const maxVal = parseFloat(document.getElementById('tf-maxtemp-'+dept.key)?.value);
+    const humVal = parseFloat(document.getElementById('tf-humid-'+dept.key)?.value);
+
+    if(isNaN(tempVal) && isNaN(humVal)) { hasError = true; showToast(dept.label + '：請填入溫溼度資料', 'warn'); break; }
+    if(!isNaN(tempVal)&&!isNaN(maxVal)&&maxVal<tempVal) { hasError = true; showToast(dept.label + '：最高溫不可小於溫度', 'error'); break; }
+
+    const tw = !isNaN(tempVal)&&tempVal>25;
+    const mw = !isNaN(maxVal)&&maxVal>25;
+    const hw = !isNaN(humVal)&&humVal>=66;
+    if(tw||mw||hw) {
+      const reason = document.getElementById('tf-reason-'+dept.key)?.value?.trim();
+      if(!reason) { hasError = true; showToast(dept.label + '：異常時請填寫原因說明', 'error'); break; }
+      if(!e.resolved || !e.handling || !e.recovery) {
+        hasError = true;
+        showToast(dept.label + '：異常時請先完成「填寫異常處理紀錄」才能確認登記', 'error');
+        break;
+      }
+      hasAbnormal = true;
+    }
+  }
+
+  if(allLocked) {
+    currentArea = savedArea; loadData(currentMonth);
+    showToast('🔒 本週已完成核定，資料已鎖定無法修改', 'warn');
+    return;
+  }
+
+  if(hasError) { currentArea = savedArea; loadData(currentMonth); return; }
+
+  // 全部通過，儲存並簽名（已鎖定的部門跳過，不覆寫）
+  const savedDeptKeys = [];
+  for(const dept of depts) {
+    const areaKey = campus + '_' + dept.key;
+    currentArea = areaKey;
+    loadData(currentMonth); // 確保 logData 是該部門的資料
+    const checkerRec = getChecker(weekNum);
+    if(checkerRec) continue; // 該部門本週已核定鎖定，不可再覆寫
+    const tempV = document.getElementById('tf-temp-'+dept.key)?.value;
+    const maxV  = document.getElementById('tf-maxtemp-'+dept.key)?.value;
+    const humV  = document.getElementById('tf-humid-'+dept.key)?.value;
+    const reaV  = document.getElementById('tf-reason-'+dept.key)?.value||'';
+    if(tempV) setEntry(d, session, 'temp', tempV);
+    if(maxV)  setEntry(d, session, 'maxTemp', maxV);
+    if(humV)  setEntry(d, session, 'humid', humV);
+    if(reaV)  setEntry(d, session, 'reason', reaV);
+    setEntry(d, session, 'signedBy', currentUser.name);
+    setEntry(d, session, 'time', timeStr);
+    saveData();
+    savedDeptKeys.push(dept.key);
+  }
+
+  currentArea = savedArea;
+  loadData(currentMonth);
+  const ss = document.getElementById('saveStatus');
+  if(ss) { ss.textContent = `✔ 已由 ${currentUser.name} 於 ${timeStr} 確認登記`; ss.style.color='#16a34a'; ss.style.fontWeight='600'; }
+  showToast(`登記確認完成<br>（${session==='AM'?'上午':'下午'}）`, 'success');
+  renderStats();
+  renderAbnormal();
+
+  // 短暫綠色高亮已成功登記的卡片，給予明確的「已存好」視覺回饋
+  savedDeptKeys.forEach(key => {
+    const card = document.getElementById('deptCard-' + key);
+    if(card) {
+      card.classList.add('save-flash');
+      setTimeout(() => card.classList.remove('save-flash'), 1200);
+    }
+  });
+}
+
+function autoNextField(el, nextId, maxLen) {
+  if(el.value.length >= maxLen) {
+    if(nextId) {
+      const next = document.getElementById(nextId);
+      if(next) { next.focus(); next.select(); }
+    } else {
+      el.blur(); // 最後一格：收起鍵盤
+    }
+  }
+}
+
+function filterDecimalInput(el) {
+  // 只允許數字與一個小數點
+  let v = el.value.replace(/[^0-9.]/g, '');
+  const parts = v.split('.');
+  if(parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+  el.value = v;
+}
+function filterIntInput(el) {
+  // 只允許整數
+  el.value = el.value.replace(/[^0-9]/g, '');
+}
+function fmtTempInput(el) {
+  // 離開欄位時強制一位小數
+  const v = parseFloat(el.value);
+  if(!isNaN(v)) el.value = v.toFixed(1);
+}
+function fmtIntInput(el) {
+  // 離開欄位時整數化
+  const v = parseInt(el.value);
+  if(!isNaN(v)) el.value = String(v);
+}
+
+function updateWarnClass(el, threshold) {
+  const v = parseFloat(el.value);
+  if(!isNaN(v) && v > threshold) el.classList.add('warn');
+  else el.classList.remove('warn');
+}
+
+function updateRowWarning(day, session) {
+  if(currentView === 'today') return;
+  const e = getEntry(day, session);
+  const tempWarn = e.temp !== '' && parseFloat(e.temp) > 25;
+  const maxTempWarn = e.maxTemp !== '' && parseFloat(e.maxTemp) > 25;
+  const humWarn = e.humid !== '' && parseFloat(e.humid) >= 66;
+  const needReason = tempWarn || maxTempWarn || humWarn;
+  const reasonMissing = needReason && !e.reason;
+  const cell = document.getElementById(`reason-cell-${day}-${session}`);
+  if(!cell) return;
+  if(needReason) {
+    cell.innerHTML = `<input class="reason-input" type="text" placeholder="⚠ 請填原因"
+      value="${e.reason}"
+      onchange="setEntry(${day},'${session}','reason',this.value)"
+      style="${reasonMissing?'border-color:var(--red)':''}">
+      ${reasonMissing?'<br><span class="reason-required">必填！</span>':''}`;
+  } else {
+    cell.innerHTML = `<span style="color:var(--gray-300);font-size:12px">—</span>`;
+  }
+}
+
+// ══════════ SUBMIT (SIGN) ══════════
+function submitSession() {
+  const now = new Date();
+  const todayDay = now.getDate();
+  const nowHour = now.getHours();
+  const nowMin = now.getMinutes();
+  const nowTotal = nowHour * 60 + nowMin; // minutes since midnight
+
+  // Check if current month matches
+  const nowYM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  if(currentMonth !== nowYM) {
+    // 允許補登其他月份，不再限制
+  }
+
+  // ── 時段提醒（不阻擋，允許補登）──
+  const amStart = 7*60, amEnd = 10*60;
+  const pmStart = 12*60, pmEnd = 15*60;
+  const outOfRangeAM = currentSession === 'AM' && (nowTotal < amStart || nowTotal > amEnd);
+  const outOfRangePM = currentSession === 'PM' && (nowTotal < pmStart || nowTotal > pmEnd);
+  if(outOfRangeAM || outOfRangePM) {
+    showToast('提醒：非標準登記時段，已作為補登記錄', 'warn');
+  }
+
+  // Check abnormal without reason — use currentDay (supports makeup entry)
+  const targetDay = (currentView === 'today') ? currentDay : now.getDate();
+  const e = getEntry(targetDay, currentSession);
+
+  // ── 最高溫度不可小於溫度 ──
+  const tempVal = parseFloat(e.temp);
+  const maxVal  = parseFloat(e.maxTemp);
+  if(!isNaN(tempVal) && !isNaN(maxVal) && maxVal < tempVal) {
+    showToast('最高溫度不可小於溫度，請修正後再確認', 'error'); return;
+  }
+
+  const tempWarn = e.temp !== '' && tempVal > 25;
+  const maxTempWarn = e.maxTemp !== '' && maxVal > 25;
+  const humWarn = e.humid !== '' && parseFloat(e.humid) >= 66;
+  if((tempWarn || maxTempWarn || humWarn) && !e.reason) {
+    showToast('溫溼度異常！請先填寫原因說明再確認', 'error'); return;
+  }
+  if(!e.temp && !e.humid) {
+    showToast('請先填入溫溼度資料再確認登記', 'warn'); return;
+  }
+
+  // Sign — overwrite previous entry (最後登入為主)
+  const timeStr = String(nowHour).padStart(2,'0') + ':' + String(nowMin).padStart(2,'0');
+  setEntry(targetDay, currentSession, 'signedBy', currentUser.name);
+  setEntry(targetDay, currentSession, 'signedId', currentUser.id);
+  setEntry(targetDay, currentSession, 'time', timeStr);
+
+  renderTable();
+  renderStats();
+  renderAbnormal();
+
+  const dayLabel = targetDay === now.getDate() ? '今日' : `${currentMonth}-${String(targetDay).padStart(2,'0')} 補登`;
+  const ss = document.getElementById('saveStatus');
+  if(ss) {
+    ss.textContent = `✔ ${dayLabel}已由 ${currentUser.name} 於 ${timeStr} 確認登記`;
+    ss.className = 'save-status saved';
+    setTimeout(()=>{ const s2=document.getElementById('saveStatus'); if(s2){s2.textContent='資料即時儲存';s2.className='save-status';} }, 5000);
+  }
+
+  showToast(`登記確認完成<br>（${currentSession==='AM'?'上午':'下午'}）`, 'success');
+}
+
+function checkMaxTemp() {
+  const tempEl  = document.getElementById('tf-temp');
+  const maxEl   = document.getElementById('tf-maxtemp');
+  const msgEl   = document.getElementById('maxtemp-warn');
+  if(!tempEl || !maxEl) return;
+  const t = parseFloat(tempEl.value);
+  const m = parseFloat(maxEl.value);
+  if(!isNaN(t) && !isNaN(m) && m < t) {
+    maxEl.classList.add('warn');
+    if(msgEl) { msgEl.style.display = 'flex'; }
+  } else {
+    if(!isNaN(m) && m < 26) maxEl.classList.remove('warn');
+    if(msgEl) { msgEl.style.display = 'none'; }
+  }
+}
+
+function showSessionAlert(msg) {
+  // Show inline alert inside today card
+  let alertEl = document.getElementById('sessionAlert');
+  if(!alertEl) {
+    alertEl = document.createElement('div');
+    alertEl.id = 'sessionAlert';
+    alertEl.style.cssText = 'background:#fef2f2;border:1.5px solid #fecaca;border-radius:10px;padding:12px 16px;font-size:13px;color:#dc2626;font-weight:600;margin-bottom:16px;display:flex;gap:8px;align-items:flex-start;';
+    const card = document.getElementById('todayCard');
+    if(card) card.insertBefore(alertEl, card.firstChild);
+  }
+  alertEl.innerHTML = '⛔ ' + msg;
+  alertEl.style.display = 'flex';
+  setTimeout(() => { if(alertEl) alertEl.style.display = 'none'; }, 6000);
+}
+
+// ══════════ STATS ══════════
+function renderStats() {
+  const data = logData[currentMonth] || {};
+  let days = 0, tempWarn = 0, humWarn = 0;
+  const todayStr = todayYMD();
+  const todayDay = new Date().getDate();
+  const nowYM = new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
+
+  Object.keys(data).forEach(day => {
+    ['AM','PM'].forEach(s => {
+      const e = data[day][s];
+      if(!e) return;
+      if(e.temp || e.humid) days++;
+      if((e.temp && parseFloat(e.temp) > 25) || (e.maxTemp && parseFloat(e.maxTemp) > 25)) tempWarn++;
+      if(e.humid && parseFloat(e.humid) >= 66) humWarn++;
+    });
+  });
+
+  document.getElementById('statDays').textContent = Math.ceil(days/2) || 0;
+  document.getElementById('statTempWarn').textContent = tempWarn;
+  document.getElementById('statHumWarn').textContent = humWarn;
+
+  // today
+  let todayStatus = '—';
+  if(currentMonth === nowYM) {
+    const am = getEntry(todayDay, 'AM');
+    const pm = getEntry(todayDay, 'PM');
+    if(am.signedBy && pm.signedBy) todayStatus = '✅ 完成';
+    else if(am.signedBy || pm.signedBy) todayStatus = '⚡ 部分';
+    else todayStatus = '❌ 未登記';
+  }
+  document.getElementById('statToday').textContent = todayStatus;
+
+  // Alert
+  const alerts = [];
+  if(tempWarn > 0) alerts.push('本月有 '+tempWarn+' 次溫度異常（>25℃）');
+  if(humWarn > 0) alerts.push('本月有 '+humWarn+' 次溼度異常（≥66%）');
+  const banner = document.getElementById('alertBanner');
+  if(alerts.length && currentView === 'month') {
+    document.getElementById('alertMsg').textContent = alerts.join('；');
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+}
+
+// ══════════ ABNORMAL TABLE ══════════
+function renderAbnormal() {
+  // 顯示控制已由 setView 統一管理，這裡只處理內容渲染
+  const campus = currentArea.split('_')[0];
+  const depts = CAMPUS_DEPTS[campus] || [];
+  const rows = [];
+
+  depts.forEach(dept => {
+    const areaKey = campus + '_' + dept.key;
+    const key = 'templog_' + areaKey + '_' + currentMonth;
+    let data = {};
+    try { const raw = localStorage.getItem(key); if(raw) data = JSON.parse(raw); } catch(e){}
+
+    Object.keys(data).sort((a,b)=>Number(a)-Number(b)).forEach(day => {
+      ['AM','PM'].forEach(s => {
+        const e = data[day][s];
+        if(!e) return;
+        const tempWarn = e.temp && parseFloat(e.temp) > 25;
+        const maxTempWarn = e.maxTemp && parseFloat(e.maxTemp) > 25;
+        const humWarn = e.humid && parseFloat(e.humid) >= 66;
+        if(tempWarn || maxTempWarn || humWarn) {
+          const parts = [];
+          if(tempWarn) parts.push('溫度 '+e.temp+'℃');
+          if(maxTempWarn) parts.push('最高溫度 '+e.maxTemp+'℃');
+          if(humWarn) parts.push('溼度 '+e.humid+'%');
+          rows.push({
+            day, sessionKey: s, session: s==='AM'?'上午':'下午',
+            deptLabel: dept.label, areaKey,
+            abnormal: parts.join('、'), reason: e.reason||'',
+            signed: e.signedBy||'—',
+            resolved: e.resolved||'', handling: e.handling||'', recovery: e.recovery||'',
+            confirmedBy: e.confirmedBy||null
+          });
+        }
+      });
+    });
+  });
+
+  document.getElementById('abnormalCount').textContent = rows.length + ' 筆異常';
+  const tbody = document.getElementById('abnormalTbody');
+  const cardsWrap = document.getElementById('abnormalCardsWrap');
+  if(!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="padding:20px;color:var(--gray-500);text-align:center">本月無異常記錄 ✅</td></tr>';
+    if(cardsWrap) cardsWrap.innerHTML = '<div style="padding:20px;color:var(--gray-500);text-align:center">本月無異常記錄 ✅</div>';
+    renderSupervisor();
+    return;
+  }
+  tbody.innerHTML = rows.map(r => {
+    const key = `${r.day}_${r.sessionKey}`;
+    const resolved = r.resolved || '';
+    const handling = r.handling || '';
+    const recovery = r.recovery || '';
+    const confirmedBy = r.confirmedBy || '';
+    const resolvedColor = resolved === 'Y' ? 'var(--green)' : resolved === 'N' ? 'var(--red)' : 'var(--gray-400)';
+
+    return `<tr>
+      <td style="font-weight:700">${currentMonth.slice(5)}/${String(r.day).padStart(2,'0')}</td>
+      <td>${r.session}</td>
+      <td style="color:var(--red);font-weight:700">${r.abnormal}</td>
+      <td style="color:${r.reason?'var(--gray-700)':'var(--red)'}">${r.reason||'⚠ 尚未填寫'}</td>
+      <td>${r.signed}</td>
+      <td>
+        <select onchange="setAbnormalField('${r.areaKey||currentArea}',${r.day},'${r.sessionKey}','resolved',this.value)"
+          style="padding:5px 8px;border:1.5px solid ${resolved?'var(--gray-200)':'var(--red)'};border-radius:6px;
+                 font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+                 color:${resolvedColor};background:${resolved?'white':'#fff5f5'};">
+          <option value="" ${resolved===''?'selected':''}>— 必填 —</option>
+          <option value="Y" ${resolved==='Y'?'selected':''} style="color:var(--green)">Y（是）</option>
+          <option value="N" ${resolved==='N'?'selected':''} style="color:var(--red)">N（否）</option>
+        </select>
+      </td>
+      <td>
+        <input type="text" value="${handling}"
+          placeholder="必填"
+          onchange="setAbnormalField('${r.areaKey||currentArea}',${r.day},'${r.sessionKey}','handling',this.value)"
+          style="width:130px;padding:5px 8px;
+                 border:1.5px solid ${handling?'var(--gray-200)':'var(--red)'};
+                 border-radius:6px;font-size:13px;font-family:inherit;text-align:center;
+                 background:${handling?'white':'#fff5f5'};">
+      </td>
+      <td>
+        <input type="text" value="${recovery}"
+          placeholder="必填"
+          onchange="setAbnormalField('${r.areaKey||currentArea}',${r.day},'${r.sessionKey}','recovery',this.value)"
+          style="width:110px;padding:5px 8px;
+                 border:1.5px solid ${recovery?'var(--gray-200)':'var(--red)'};
+                 border-radius:6px;font-size:13px;font-family:inherit;text-align:center;
+                 background:${recovery?'white':'#fff5f5'};">
+      </td>
+      <td style="text-align:center;">
+        ${confirmedBy
+          ? `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+               <span class="signed-badge">✅ ${confirmedBy.name}</span>
+               <span style="font-size:11px;color:var(--gray-500)">${confirmedBy.time||''}</span>
+             </div>`
+          : isSupervisor(currentUser?.id)
+            ? `<button onclick="confirmAbnormal('${r.areaKey||currentArea}',${r.day},'${r.sessionKey}')"
+                 style="padding:5px 12px;background:var(--teal);color:white;border:none;
+                        border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;
+                        font-family:inherit;white-space:nowrap;">
+                 確認
+               </button>`
+            : `<span style="font-size:11px;color:var(--gray-400);">待組長確認</span>`
+        }
+      </td>
+    </tr>`;
+  }).join('');
+
+  if(cardsWrap) {
+    cardsWrap.innerHTML = rows.map(r => {
+      const resolved = r.resolved || '';
+      const handling = r.handling || '';
+      const recovery = r.recovery || '';
+      const confirmedBy = r.confirmedBy || '';
+      const resolvedColor = resolved === 'Y' ? 'var(--green)' : resolved === 'N' ? 'var(--red)' : 'var(--gray-400)';
+      const dateLabel = `${currentMonth.slice(5)}/${String(r.day).padStart(2,'0')} ${r.session}`;
+
+      return `<div class="abn-card">
+        <div class="abn-card-head">
+          <span class="abn-card-date">📅 ${dateLabel}　<span style="font-weight:600;color:var(--gray-500);font-size:12px;">${r.deptLabel||''}</span></span>
+          <span class="abn-card-val">⚠ ${r.abnormal}</span>
+        </div>
+        <div class="abn-card-reason">原因說明：${r.reason ? r.reason : '<span style="color:var(--red)">⚠ 尚未填寫</span>'}</div>
+        <div class="abn-card-signed">登記人員：${r.signed}</div>
+        <div class="abn-card-row">
+          <label>是否解除</label>
+          <select onchange="setAbnormalField('${r.areaKey||currentArea}',${r.day},'${r.sessionKey}','resolved',this.value)"
+            style="border:1.5px solid ${resolved?'var(--gray-200)':'var(--red)'};font-weight:700;color:${resolvedColor};background:${resolved?'white':'#fff5f5'};">
+            <option value="" ${resolved===''?'selected':''}>— 必填 —</option>
+            <option value="Y" ${resolved==='Y'?'selected':''}>Y（是）</option>
+            <option value="N" ${resolved==='N'?'selected':''}>N（否）</option>
+          </select>
+        </div>
+        <div class="abn-card-row">
+          <label>處理方式</label>
+          <input type="text" value="${handling}" placeholder="必填"
+            onchange="setAbnormalField('${r.areaKey||currentArea}',${r.day},'${r.sessionKey}','handling',this.value)"
+            style="border:1.5px solid ${handling?'var(--gray-200)':'var(--red)'};background:${handling?'white':'#fff5f5'};">
+        </div>
+        <div class="abn-card-row">
+          <label>回復溫(溼)度</label>
+          <input type="text" value="${recovery}" placeholder="必填"
+            onchange="setAbnormalField('${r.areaKey||currentArea}',${r.day},'${r.sessionKey}','recovery',this.value)"
+            style="border:1.5px solid ${recovery?'var(--gray-200)':'var(--red)'};background:${recovery?'white':'#fff5f5'};">
+        </div>
+        <div style="text-align:center;margin-top:6px;">
+          ${confirmedBy
+            ? `<span class="signed-badge">✅ ${confirmedBy.name}　${confirmedBy.time||''}</span>`
+            : isSupervisor(currentUser?.id)
+              ? `<button onclick="confirmAbnormal('${r.areaKey||currentArea}',${r.day},'${r.sessionKey}')"
+                   style="padding:8px 20px;background:var(--teal);color:white;border:none;
+                          border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;
+                          font-family:inherit;">
+                   確認
+                 </button>`
+              : `<span style="font-size:12px;color:var(--gray-400);">待組長確認</span>`
+          }
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  renderSupervisor();
+}
+
+// ══════════ ABNORMAL FIELD UPDATE ══════════
+function setAbnormalField(areaKey, day, session, field, val) {
+  const savedArea = currentArea;
+  if(areaKey) currentArea = areaKey;
+  loadData(currentMonth); // 重新載入目標院區/部門的資料，避免用到記憶體中其他部門的殘留資料
+  if(!logData[currentMonth]) logData[currentMonth] = {};
+  if(!logData[currentMonth][day]) logData[currentMonth][day] = {};
+  if(!logData[currentMonth][day][session]) logData[currentMonth][day][session] = {};
+  logData[currentMonth][day][session][field] = val;
+  saveData();
+  currentArea = savedArea;
+  loadData(currentMonth); // 還原成目前畫面實際檢視的院區/部門資料
+  renderAbnormal();
+}
+
+function confirmAbnormal(areaKey, day, session) {
+  const savedArea = currentArea;
+  if(areaKey) currentArea = areaKey;
+  loadData(currentMonth); // 確保讀取的是目標院區/部門的資料，而非記憶體殘留的其他部門資料
+  if(!isSupervisor(currentUser?.id)) {
+    const roles = getCampusRoles();
+    currentArea = savedArea;
+    loadData(currentMonth);
+    showToast(`僅組長（${roles.supervisorName}）可確認異常處理`, 'error');
+    return;
+  }
+  const e = logData[currentMonth]?.[day]?.[session] || {};
+  const missing = [];
+  if(!e.reason) missing.push('原因說明');
+  if(!e.resolved) missing.push('是否解除');
+  if(!e.handling) missing.push('處理方式');
+  if(!e.recovery) missing.push('回復溫(溼)度');
+  if(missing.length > 0) {
+    currentArea = savedArea;
+    loadData(currentMonth);
+    showToast('請先填寫：' + missing.join('、'), 'error');
+    return;
+  }
+  const now = new Date();
+  const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  const confirmedBy = { name: currentUser.name, id: currentUser.id, time: timeStr };
+  currentArea = savedArea;
+  loadData(currentMonth);
+  setAbnormalField(areaKey, day, session, 'confirmedBy', confirmedBy);
+  showToast(`已由 ${currentUser.name} 確認異常處理`, 'success');
+}
+
+// ══════════ ABNORMAL MAIL NOTIFY ══════════
+function sendAbnormalMail(day, session) {
+  const e = logData[currentMonth]?.[day]?.[session] || {};
+  const dateStr = currentMonth + '-' + String(day).padStart(2,'0');
+  const sessionLabel = session === 'AM' ? '上午（07:00–10:00）' : '下午（12:00–15:00）';
+  const areaLabel = getAreaLabel();
+
+  // 整理異常數值
+  const abnParts = [];
+  if(e.temp && parseFloat(e.temp) > 25) abnParts.push('溫度 ' + e.temp + '℃');
+  if(e.maxTemp && parseFloat(e.maxTemp) > 25) abnParts.push('最高溫 ' + e.maxTemp + '℃');
+  if(e.humid && parseFloat(e.humid) >= 66) abnParts.push('溼度 ' + e.humid + '%');
+
+  const to = [
+    'Y06100@ms1.ylh.gov.tw',
+    'Y01643@ms1.ylh.gov.tw',
+    'Y08215@ms1.ylh.gov.tw',
+    'Y00326@ms1.ylh.gov.tw'
+  ].join(',');
+
+  const subject = encodeURIComponent(
+    '【⚠ 溫溼度異常通知】' + areaLabel + ' ' + dateStr + ' ' + sessionLabel
+  );
+
+  const lines = [
+    '各位好，',
+    '',
+    areaLabel + ' 於 ' + dateStr + ' ' + sessionLabel + ' 登記時發現溫溼度異常，請知悉並協助處理。',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━',
+    '院區／部門：' + areaLabel,
+    '日　　　期：' + dateStr,
+    '時　　　段：' + sessionLabel,
+    '異常數值：' + (abnParts.length ? abnParts.join('、') : '—'),
+    '異常原因：' + (e.reason || '（未填）'),
+    '登記人員：' + (e.signedBy || '（未填）'),
+    '━━━━━━━━━━━━━━━━━━━━',
+    '',
+    '請至系統異常處理記錄填寫處理方式並確認。',
+    '',
+    '此信由室內溫溼度登記系統自動產生。'
+  ];
+
+  const body = encodeURIComponent(lines.join('\n'));
+  window.location.href = 'mailto:' + to + '?subject=' + subject + '&body=' + body;
+}
+
+// ══════════ PDF EXPORT ══════════
+function exportPDF() {
+  const campus = currentArea.split('_')[0];
+  const depts = CAMPUS_DEPTS[campus] || [];
+  const savedArea = currentArea;
+  // 依序匯出各部門，再還原
+  let allSections = '';
+  for(const dept of depts) {
+    currentArea = campus + '_' + dept.key;
+    loadData(currentMonth);
+    allSections += buildPDFSection(dept.label);
+  }
+  currentArea = savedArea;
+  loadData(currentMonth);
+  openPDFWindow(allSections);
+}
+
+function buildPDFSection(deptLabel) {
+  const data = logData[currentMonth] || {};
+  const days = daysInMonth(currentMonth);
+  const now = new Date();
+  const exportTime = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  const val = (v, warn) => v
+    ? `<span${warn ? ' class="warn-val"' : ''}>${v}</span>`
+    : '<span style="color:#aaa">—</span>';
+
+  // Build main log table rows
+  let logRows = '';
+  for(let d=1; d<=days; d++) {
+    const am = getEntry(d, 'AM');
+    const pm = getEntry(d, 'PM');
+    const amTW = am.temp && parseFloat(am.temp) > 25;
+    const amMW = am.maxTemp && parseFloat(am.maxTemp) > 25;
+    const amHW = am.humid && parseFloat(am.humid) >= 66;
+    const pmTW = pm.temp && parseFloat(pm.temp) > 25;
+    const pmMW = pm.maxTemp && parseFloat(pm.maxTemp) > 25;
+    const pmHW = pm.humid && parseFloat(pm.humid) >= 66;
+    const amReason = (amTW||amMW||amHW) ? (am.reason || '⚠ 未填寫') : '—';
+    const pmReason = (pmTW||pmMW||pmHW) ? (pm.reason || '⚠ 未填寫') : '—';
+
+    logRows += `
+      <tr>
+        <td class="td-date" rowspan="2" style="text-align:center;">${d}</td>
+        <td class="td-am" style="text-align:center;">上午</td>
+        <td style="text-align:center;">${val(am.temp, amTW)}</td>
+        <td style="text-align:center;">${val(am.maxTemp, amMW)}</td>
+        <td style="text-align:center;">${val(am.humid, amHW)}</td>
+        <td style="text-align:center;">${am.signedBy || '—'}</td>
+        <td style="text-align:left;">${amReason}</td>
+      </tr>
+      <tr>
+        <td class="td-pm" style="text-align:center;">下午</td>
+        <td style="text-align:center;">${val(pm.temp, pmTW)}</td>
+        <td style="text-align:center;">${val(pm.maxTemp, pmMW)}</td>
+        <td style="text-align:center;">${val(pm.humid, pmHW)}</td>
+        <td style="text-align:center;">${pm.signedBy || '—'}</td>
+        <td style="text-align:left;">${pmReason}</td>
+      </tr>`;
+  }
+
+  // Build abnormal table rows
+  const abnormalRows = [];
+  for(let d=1; d<=days; d++) {
+    ['AM','PM'].forEach(s => {
+      const e = getEntry(d, s);
+      if(!e) return;
+      const tw = e.temp && parseFloat(e.temp) > 25;
+      const mw = e.maxTemp && parseFloat(e.maxTemp) > 25;
+      const hw = e.humid && parseFloat(e.humid) >= 66;
+      if(tw || mw || hw) {
+        const parts = [];
+        if(tw) parts.push('溫度 '+e.temp+'℃');
+        if(mw) parts.push('最高溫 '+e.maxTemp+'℃');
+        if(hw) parts.push('溼度 '+e.humid+'%');
+        const confirmed = e.confirmedBy
+          ? `${e.confirmedBy.name}<br>${currentMonth.slice(5)}/${String(d).padStart(2,'0')}`
+          : '—';
+        abnormalRows.push(`<tr>
+          <td>${currentMonth}-${String(d).padStart(2,'0')}</td>
+          <td>${s==='AM'?'上午':'下午'}</td>
+          <td style="color:#c0392b;font-weight:bold">${parts.join('、')}</td>
+          <td style="text-align:left">${e.reason||'⚠ 未填寫'}</td>
+          <td>${e.signedBy||'—'}</td>
+          <td>${e.resolved==='Y'?'Y（是）':e.resolved==='N'?'N（否）':'—'}</td>
+          <td style="text-align:left">${e.handling||'—'}</td>
+          <td>${e.recovery||'—'}</td>
+          <td>${confirmed}</td>
+        </tr>`);
+      }
+    });
+  }
+
+  const printArea = document.getElementById('printArea');
+  printArea.innerHTML = `
+    <div class="print-title">國立臺灣大學醫學院附設醫院雲林分院－藥劑部</div>
+    <div class="print-subtitle">${currentMonth}　${getPDFAreaLabel()}　溫溼度登記表</div>
+    <div class="print-note">
+      標準：溫度 ≦25℃、溼度 ≦65%。超標數值以紅字標示。
+    </div>
+
+    <table class="print-table">
+      <thead>
+        <tr>
+          <th rowspan="2">日期</th>
+          <th rowspan="2">時段</th>
+          <th>溫度<br>(℃)</th>
+          <th>最高溫度<br>(℃)</th>
+          <th>溼度<br>(%)</th>
+          <th>登記人員</th>
+          <th>異常原因說明</th>
+        </tr>
+        <tr>
+          <th>≦25</th><th>≦25</th><th>≦65</th><th></th><th></th>
+        </tr>
+      </thead>
+      <tbody>${logRows}</tbody>
+    </table>
+
+    <div class="print-abnormal-title">⚠ 異常處理記錄</div>
+    <table class="print-table">
+      <thead>
+        <tr>
+          <th>日期</th>
+          <th>時段</th>
+          <th class="th-warn">異常溫(溼)度</th>
+          <th>原因說明</th>
+          <th>登記人員</th>
+          <th>是否解除</th>
+          <th>處理方式</th>
+          <th>回復溫(溼)度</th>
+          <th>確認人員</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${abnormalRows.length
+          ? abnormalRows.join('')
+          : '<tr><td colspan="8" style="text-align:center;color:#666">本月無異常記錄</td></tr>'
+        }
+      </tbody>
+    </table>
+
+    <div class="print-footer">
+      <span>列印人員：${currentUser ? currentUser.name + '（' + currentUser.id + '）' : '—'}</span>
+      <span>列印時間：${exportTime}</span>
+      <span>共 ${days} 天</span>
+    </div>
+    ${(() => {
+      const sv = getSupervisor();
+      return `<div style="margin-top:12px;border:1.5px solid ${sv ? '#86efac' : '#d1d5db'};border-radius:8px;padding:10px 16px;background:${sv ? '#f0fdf4' : '#fafafa'}">
+        <strong style="font-size:13px;color:${sv ? '#15803d' : '#6b7280'}">📝 組長月底核定：</strong>
+        ${sv
+          ? `<span style="font-size:13px;color:#15803d">✅ ${sv.name}（${sv.id}）　核定時間：${sv.time}${sv.comment ? '　備註：' + sv.comment : ''}</span>`
+          : `<span style="font-size:13px;color:#9ca3af">尚未核定</span>
+             <span style="margin-left:32px;font-size:12px;color:#9ca3af">組長簽名：＿＿＿＿＿　日期：＿＿＿＿</span>`
+        }
+      </div>`;
+    })()}
+  `;
+
+  // Build standalone downloadable HTML file
+  const now2 = new Date();
+  const exportTime2 = `${now2.getFullYear()}-${String(now2.getMonth()+1).padStart(2,'0')}-${String(now2.getDate()).padStart(2,'0')} ${String(now2.getHours()).padStart(2,'0')}:${String(now2.getMinutes()).padStart(2,'0')}`;
+  const abnormalRows2 = [];
+  for(let d=1; d<=days; d++) {
+    ['AM','PM'].forEach(s => {
+      const e = getEntry(d, s);
+      if(!e) return;
+      const tw = e.temp && parseFloat(e.temp)>25;
+      const mw = e.maxTemp && parseFloat(e.maxTemp)>25;
+      const hw = e.humid && parseFloat(e.humid)>=66;
+      if(!tw && !mw && !hw) return;
+      const parts=[];
+      if(tw) parts.push('溫度 '+e.temp+'℃');
+      if(mw) parts.push('最高溫 '+e.maxTemp+'℃');
+      if(hw) parts.push('溼度 '+e.humid+'%');
+      const cfmDate = e.confirmedBy ? `${currentMonth.slice(5)}/${String(d).padStart(2,'0')}` : '';
+      const cfm = e.confirmedBy ? `${e.confirmedBy.name}<br>${cfmDate}` : '—';
+      const amTW2 = e.temp && parseFloat(e.temp)>25;
+      const amMW2 = e.maxTemp && parseFloat(e.maxTemp)>25;
+      const amHW2 = e.humid && parseFloat(e.humid)>=66;
+      abnormalRows2.push(`<tr>
+        <td align="center" style="text-align:center;">${String(d).padStart(2,'0')}</td>
+        <td align="center" style="text-align:center;">${s==='AM'?'上午':'下午'}</td>
+        <td align="center" style="text-align:center;color:#c0392b;font-weight:bold">${parts.join('、')}</td>
+        <td align="left" style="text-align:left;">${e.reason||'⚠ 未填寫'}</td>
+        <td align="center" style="text-align:center;">${e.signedBy||'—'}</td>
+        <td align="center" style="text-align:center;">${e.resolved==='Y'?'Y（是）':e.resolved==='N'?'N（否）':'—'}</td>
+        <td align="left" style="text-align:left;">${e.handling||'—'}</td>
+        <td align="center" style="text-align:center;">${e.recovery||'—'}</td>
+        <td align="center" style="text-align:center;">${cfm}</td>
+      </tr>`);
+    });
+  }
+
+  let logRowsFile = '';
+  for(let d=1; d<=days; d++) {
+    const am = getEntry(d, 'AM');
+    const pm = getEntry(d, 'PM');
+    const amTW=am.temp&&parseFloat(am.temp)>25, amMW=am.maxTemp&&parseFloat(am.maxTemp)>25, amHW=am.humid&&parseFloat(am.humid)>=66;
+    const pmTW=pm.temp&&parseFloat(pm.temp)>25, pmMW=pm.maxTemp&&parseFloat(pm.maxTemp)>25, pmHW=pm.humid&&parseFloat(pm.humid)>=66;
+    const cv=(v,w)=>v?`<span style="${w?'color:#c0392b;font-weight:bold':''}">${v}</span>`:'<span style="color:#bbb">—</span>';
+    const rowBg = (amTW||amMW||amHW||pmTW||pmMW||pmHW) ? 'background:#fff8f8;' : '';
+    logRowsFile += `<tr style="${rowBg}">
+      <td class="td-date" align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${String(d).padStart(2,'0')}</td>
+      <td align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${cv(am.temp,amTW)}</td>
+      <td align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${cv(am.maxTemp,amMW)}</td>
+      <td align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${cv(am.humid,amHW)}</td>
+      <td align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${am.signedBy||'—'}</td>
+      <td align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${cv(pm.temp,pmTW)}</td>
+      <td align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${cv(pm.maxTemp,pmMW)}</td>
+      <td align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${cv(pm.humid,pmHW)}</td>
+      <td align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${pm.signedBy||'—'}</td>
+    </tr>`;
+
+    // Weekly checker row in PDF
+    if((d % 7 === 0) || (d === days)) {
+      const wkNum = Math.ceil(d / 7);
+      const wkStart = d<=7?1:d<=14?8:d<=21?15:d<=28?22:29;
+      const ck = getChecker(wkNum);
+      logRowsFile += `<tr style="background:#f0fdf4;">
+        <td colspan="9" align="left" style="padding:0 4px;border-top:1px solid #2ea896;text-align:left !important;font-size:8pt;vertical-align:middle;line-height:1.4;height:3mm;">
+          <span style="font-weight:bold;color:#1a7f6e;">第 ${wkNum} 週檢核（${wkStart}日–${d}日）　檢核者簽名：</span>
+          ${ck ? `<span style="font-weight:bold">${ck.name}</span>${ck.time && ck.time.length > 5 ? `　<span style="color:#555">${ck.time.slice(0,10)}</span>` : ''}` : '<span style="color:#aaa">　　　　　　　　</span>'}
+        </td>
+      </tr>`;
+    }
+  }
+
+  // 回傳單一部門的 HTML 片段
+  const sectionHtml = `<div class="dept-section">
+<div class="title">國立臺灣大學醫學院附設醫院雲林分院－藥劑部</div>
+<div class="subtitle">${currentMonth}　${getPDFAreaLabel()}　溫溼度登記表</div>
+
+<table class="log-table">
+  <thead>
+    <tr>
+      <th rowspan="2" style="width:20mm;text-align:center;white-space:nowrap;">日期</th>
+      <th colspan="4" class="th-am" style="text-align:center;">上午 (07:00–10:00)</th>
+      <th colspan="4" class="th-pm" style="text-align:center;">下午 (12:00–15:00)</th>
+    </tr>
+    <tr>
+      <th class="th-am" style="text-align:center;">溫度(℃)</th>
+      <th class="th-am" style="text-align:center;">最高溫(℃)</th>
+      <th class="th-am" style="text-align:center;">溼度(%)</th>
+      <th class="th-am" style="text-align:center;">登記人員</th>
+      <th class="th-pm" style="text-align:center;">溫度(℃)</th>
+      <th class="th-pm" style="text-align:center;">最高溫(℃)</th>
+      <th class="th-pm" style="text-align:center;">溼度(%)</th>
+      <th class="th-pm" style="text-align:center;">登記人員</th>
+    </tr>
+  </thead>
+  <tbody class="log-tbody">${logRowsFile}</tbody>
+</table>
+
+${abnormalRows2.length ? `
+<div class="sec">⚠ 異常處理記錄　<span style="font-size:7pt;font-weight:normal;color:#555">※ 溫度需維持在 25℃ 以下；溼度需維持在 65% 以下</span></div>
+<table class="abn-table">
+  <thead><tr>
+    <th style="white-space:nowrap">日期</th><th style="white-space:nowrap">時段</th><th class="th-warn" style="white-space:nowrap">異常值</th>
+    <th style="white-space:nowrap">原因說明</th><th style="white-space:nowrap">登記人員</th>
+    <th style="white-space:nowrap">是否解除</th><th style="white-space:nowrap">處理方式</th><th style="white-space:nowrap">回復值</th><th style="white-space:nowrap">確認人員</th>
+  </tr></thead>
+  <tbody>${abnormalRows2.join('')}</tbody>
+</table>` : ''}
+
+${(() => {
+  const sv = getSupervisor();
+  if(sv) {
+    return `<div style="margin-top:0.8mm;
+      background:#f0fdf4;padding:0.5mm 2mm;display:flex;align-items:center;gap:2mm;">
+      <div style="font-size:7.5pt;color:#15803d;font-weight:bold;white-space:nowrap;">✅ 組長月底核定</div>
+      <div style="width:0.5px;background:#86efac;align-self:stretch;"></div>
+      <div style="font-size:7pt;color:#166534;line-height:1.5;">
+        <span>核定人員：<strong>${sv.name}</strong>（${sv.id}）</span>
+        <span style="margin-left:3mm;">核定日期：${sv.time && sv.time.length > 5 ? sv.time.slice(0,10) : ''}</span>
+        ${sv.comment ? `<span style="margin-left:3mm;">備註：${sv.comment}</span>` : ''}
+        ${sv.photo ? `<div style="margin-top:0.5mm;"><img src="${sv.photo}" style="max-height:15mm;max-width:25mm;border-radius:2px;border:0.3px solid #86efac;"></div>` : ''}
+      </div>
+    </div>`;
+  } else {
+    return `<div style="margin-top:1mm;
+      background:#fafafa;padding:0.8mm 3mm;display:flex;align-items:center;gap:3mm;">
+      <div style="font-size:9pt;color:#6b7280;font-weight:bold;white-space:nowrap;">📝 組長月底核定</div>
+      <div style="width:0.5px;background:#d1d5db;align-self:stretch;"></div>
+      <div style="font-size:6pt;color:#374151;line-height:1.4;">
+        <span>組長簽名：＿＿＿＿＿＿＿＿</span>
+        <span style="margin-left:6mm;">日期：＿＿＿＿年＿＿月＿＿日</span>
+      </div>
+    </div>`;
+  }
+})()}
+
+<scr` + `ipt>
+window.onload = function() {
+  // 智慧縮放：內容超出 A4 高度才縮小，避免異常筆數多時跨頁
+  var body = document.body;
+  var A4_H_MM = 297 - 10; // 扣除上下邊距 5mm+5mm
+  var A4_H_PX = A4_H_MM * (96 / 25.4);
+  var contentH = body.scrollHeight;
+  if(contentH > A4_H_PX) {
+    var scale = (A4_H_PX / contentH) * 0.97; // 多留3%安全邊界
+    body.style.zoom = scale;
+  }
+  setTimeout(function(){ window.print(); }, 500);
+};
+<\/scr` + `ipt>
+</div>`;
+  return sectionHtml;
+}
+
+function openPDFWindow(allSections) {
+  const now = new Date();
+  const campus = currentArea.split('_')[0];
+  const campusLabel = CAMPUS_LABEL[campus];
+  const fileHtml = `<!DOCTYPE html><html lang="zh-TW"><head>
+<meta charset="UTF-8">
+<title>${currentMonth} 溫溼度登記表</title>
+<style>
+  @page{size:A4 portrait;margin:5mm 6mm 5mm 6mm}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;}
+  body{font-family:'Microsoft JhengHei','標楷體','DFKai-SB',serif;color:#222;background:#fff;}
+  .dept-section{width:100%;page-break-after:always;page-break-inside:avoid;}
+  .dept-section:last-child{page-break-after:auto;}
+  .title{text-align:center;font-size:13pt;font-weight:bold;margin-bottom:1mm}
+  .subtitle{text-align:center;font-size:9pt;margin-bottom:1.5mm;color:#444}
+  .log-table{width:100%;border-collapse:collapse;table-layout:fixed;}
+  table{width:100%;border-collapse:collapse;table-layout:fixed}
+  th{background:#c8e6c9;border:0.5px solid #888;text-align:center;vertical-align:middle;font-weight:bold;
+     -webkit-print-color-adjust:exact;print-color-adjust:exact;line-height:1.5;padding:3px 2px;font-size:9.5pt;color:#1a3a2e;}
+  td{border:0.5px solid #ccc;text-align:center !important;vertical-align:middle;line-height:1.5;padding:2px 2px;font-size:10pt;}
+  .log-table td{height:4mm;}
+  .log-table tr:nth-child(even) td{background:#fafafa !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .td-date{font-weight:bold;background:#eef3f1 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;width:20mm;color:#1a5e4a;}
+  .th-am{background:#ddeef8 !important;color:#1a5276;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .th-pm{background:#fef5e7 !important;color:#784212;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .th-warn{background:#fde8c8 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .abn-table th{font-size:7pt;padding:1px 2px;vertical-align:middle;line-height:1.3;}
+  .abn-table td{font-size:7pt;padding:1px 2px;line-height:1.3;vertical-align:middle;text-align:center !important;height:4mm;}
+  .warn-val{color:#c0392b;font-weight:bold}
+  .sec{font-size:8pt;font-weight:bold;border-bottom:1.5px solid #333;padding-bottom:0.5mm;margin:1.5mm 0 0.8mm}
+  .supervisor-box{margin-top:0.8mm;border:0.5px solid #aaa;border-radius:1mm;padding:0.8mm 2mm;font-size:6.5pt}
+  @media print{*{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{margin:0}}
+</style></head><body>
+${allSections}
+<scr` + `ipt>
+window.onload = function() {
+  var sections = document.querySelectorAll('.dept-section');
+  var A4_H_PX = 277 * (96 / 25.4);
+  sections.forEach(function(sec) {
+    var h = sec.scrollHeight;
+    if(h > A4_H_PX) {
+      var scale = (A4_H_PX / h) * 0.97;
+      sec.style.zoom = scale;
+    }
+  });
+  setTimeout(function(){ window.print(); }, 600);
+};
+<\/scr` + `ipt>
+</body></html>`;
+  const blob = new Blob([fileHtml], {type:'text/html;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `溫溼度登記表_${campusLabel}_${currentMonth}.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  showToast('📥 下載完成！開啟檔案後列印→另存 PDF', 'success');
+}
+
+
+// ══════════ MODAL (今日登記) ══════════
+function openModal() {
+  const now = new Date();
+  const nowYM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const days2 = daysInMonth(currentMonth);
+  const sel = document.getElementById('modalDaySel');
+  sel.innerHTML = '';
+  for(let i=1; i<=days2; i++) {
+    const isToday = (currentMonth === nowYM && i === now.getDate());
+    const o = document.createElement('option');
+    o.value = i; o.textContent = String(i).padStart(2,'0')+'日'+(isToday?' （今日）':'');
+    if(i === (currentDay || now.getDate())) o.selected = true;
+    sel.appendChild(o);
+  }
+  if(!currentDay) currentDay = now.getDate();
+  syncModalSession();
+  const ward = getAreaLabel();
+  document.getElementById('modalSub').textContent = currentMonth+' ｜ '+ward;
+  document.getElementById('modalOverlay').classList.add('open');
+  renderModalBody();
+}
+
+function closeModal(e) {
+  if(e && e.target !== document.getElementById('modalOverlay')) return;
+  document.getElementById('modalOverlay').classList.remove('open');
+  renderTable(); renderStats(); renderAbnormal();
+}
+
+function syncModalSession() {
+  document.getElementById('modalAM').className = currentSession==='AM'?'active':'';
+  document.getElementById('modalPM').className = currentSession==='PM'?'active':'';
+}
+
+function renderModalBody() {
+  const d = currentDay;
+  const e = getEntry(d, currentSession);
+  const tempWarn = e.temp!==''&&parseFloat(e.temp)>25;
+  const maxWarn  = e.maxTemp!==''&&parseFloat(e.maxTemp)>25;
+  const humWarn  = e.humid!==''&&parseFloat(e.humid)>=66;
+  const needReason = tempWarn||maxWarn||humWarn;
+  const now = new Date();
+  const nowYM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const isMakeup = !(currentMonth===nowYM && d===now.getDate());
+  document.getElementById('modalBody').innerHTML = `
+    ${isMakeup?`<div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:10px 14px;font-size:13px;color:#1e40af;font-weight:600;margin-bottom:14px">📝 補登：${currentMonth}-${String(d).padStart(2,'0')}</div>`:''}
+    <div class="today-fields">
+      <div class="field-group">
+        <label>溫度 (℃) <span>≦25</span></label>
+        <input type="tel" id="m-temp" inputmode="decimal" pattern="[0-9]*[.]?[0-9]*" placeholder="—" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="${e.temp}"
+          class="${tempWarn?'warn':''}"
+          oninput="filterDecimalInput(this);updateWarnClass(this,25);refreshModalWarning()"
+          onblur="fmtTempInput(this);setEntry(${d},'${currentSession}','temp',this.value)"
+          onchange="setEntry(${d},'${currentSession}','temp',this.value)">
+      </div>
+      <div class="field-group">
+        <label>最高溫度 (℃) <span>≦25</span></label>
+        <input type="tel" id="m-maxtemp" inputmode="decimal" pattern="[0-9]*[.]?[0-9]*" placeholder="—" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="${e.maxTemp}"
+          class="${maxWarn?'warn':''}"
+          oninput="filterDecimalInput(this);updateWarnClass(this,25);refreshModalWarning()"
+          onblur="fmtTempInput(this);setEntry(${d},'${currentSession}','maxTemp',this.value)"
+          onchange="setEntry(${d},'${currentSession}','maxTemp',this.value)">
+      </div>
+      <div id="m-maxwarn" style="display:none;grid-column:1/-1;background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;padding:8px 14px;font-size:13px;color:var(--red);font-weight:600">⛔ 最高溫度不可小於溫度</div>
+      <div class="field-group">
+        <label>溼度 (%) <span>≦65</span></label>
+        <input type="tel" id="m-humid" inputmode="numeric" pattern="[0-9]*" placeholder="—" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="${e.humid}"
+          class="${humWarn?'warn':''}"
+          oninput="filterIntInput(this);updateWarnClass(this,65);refreshModalWarning()"
+          onblur="fmtIntInput(this);setEntry(${d},'${currentSession}','humid',this.value)"
+          onchange="setEntry(${d},'${currentSession}','humid',this.value)">
+      </div>
+    </div>
+    <div id="m-reason-wrap" style="display:${needReason?'block':'none'};margin-top:12px">
+      <label style="display:block;font-size:12px;font-weight:700;color:var(--red);margin-bottom:6px">⚠ 異常原因說明（必填）</label>
+      <input type="text" id="m-reason" placeholder="請填寫異常原因及處理方式" value="${e.reason}"
+        onchange="setEntry(${d},'${currentSession}','reason',this.value)"
+        style="width:100%;padding:10px 14px;border:2px solid var(--amber);border-radius:8px;font-size:14px;background:#fffbeb;font-family:inherit">
+    </div>
+    ${e.signedBy?`<div style="margin-top:14px;background:var(--green-light);color:var(--green);border-radius:10px;padding:10px 16px;font-size:14px;font-weight:600">✅ 最後登記：${e.signedBy} 於 ${e.time}</div>`:''}
+  `;
+}
+
+function refreshModalWarning() {
+  const t = parseFloat(document.getElementById('m-temp')?.value);
+  const m = parseFloat(document.getElementById('m-maxtemp')?.value);
+  const h = parseFloat(document.getElementById('m-humid')?.value);
+  const need = (!isNaN(t)&&t>25)||(!isNaN(m)&&m>25)||(!isNaN(h)&&h>=66);
+  const wrap = document.getElementById('m-reason-wrap');
+  if(wrap) wrap.style.display = need?'block':'none';
+  const mw = document.getElementById('m-maxwarn');
+  if(mw) mw.style.display = (!isNaN(t)&&!isNaN(m)&&m<t)?'block':'none';
+}
+
+function submitModalSession() {
+  const now = new Date();
+  const targetDay = currentDay;
+  const e = getEntry(targetDay, currentSession);
+  const tVal=parseFloat(e.temp), mVal=parseFloat(e.maxTemp), hVal=parseFloat(e.humid);
+  if(!isNaN(tVal)&&!isNaN(mVal)&&mVal<tVal){ showToast('最高溫度不可小於溫度','error'); return; }
+  const tw=e.temp!==''&&tVal>25, mw2=e.maxTemp!==''&&mVal>25, hw=e.humid!==''&&hVal>=66;
+  if((tw||mw2||hw)&&!e.reason){ showToast('請先填寫異常原因','error'); return; }
+  if(!e.temp&&!e.humid){ showToast('請先填入溫溼度','warn'); return; }
+  const timeStr=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  setEntry(targetDay,currentSession,'signedBy',currentUser.name);
+  setEntry(targetDay,currentSession,'signedId',currentUser.id);
+  setEntry(targetDay,currentSession,'time',timeStr);
+  const ss=document.getElementById('modalSaveStatus');
+  ss.textContent='✔ 已由 '+currentUser.name+' 於 '+timeStr+' 確認';
+  ss.className='save-status saved';
+  setTimeout(()=>{ ss.textContent='資料即時儲存'; ss.className='save-status'; },4000);
+  renderModalBody();
+  showToast('登記完成（'+(currentSession==='AM'?'上午':'下午')+' '+timeStr+'）','success');
+}
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.innerHTML = msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(()=>{ t.className='toast'; }, 3000);
+}
+</script>
+</body>
+</html>
