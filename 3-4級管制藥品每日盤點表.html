@@ -1,0 +1,2177 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>每日 4 級管制藥盤點表</title>
+<style>
+  :root{
+    --text:#141c2b;
+    --muted:#5f6f8c;
+    --paper:#eef4ff;
+    --card:#ffffff;
+    --line:#dbe4f5;
+    --alert:#f0335c;
+    --ok:#12b76a;
+    --warn:#f59e0b;
+    --pad:14px;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  html{scroll-behavior:smooth;scroll-padding-top:calc(var(--hh,150px) + 10px)}
+  body{background:var(--paper);color:var(--text);font-family:var(--sans);font-size:17px;line-height:1.55;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+  .wrap{max-width:900px;margin:0 auto;padding:0 12px 104px}
+
+  /* ---------- 頁首 ---------- */
+  header{
+    position:sticky;top:0;z-index:20;color:#fff;margin:0 -12px 14px;padding:12px 14px 0;
+    background:linear-gradient(120deg,#312e81 0%,#1d4ed8 55%,#0e7490 100%);
+    box-shadow:0 8px 22px rgba(29,78,216,.30);
+  }
+  h1{margin:0;font-size:23px;font-weight:800;letter-spacing:.01em;color:#fff}
+  .sub{margin:5px 0 0;font-size:14.5px;font-weight:600;letter-spacing:.02em;color:rgba(255,255,255,.95)}
+  .masthead{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .brand{min-width:0;flex:1 1 260px}
+  .meta{display:flex;gap:9px;margin:0 0 0 auto;justify-content:flex-end;align-items:center;flex-wrap:nowrap}
+  .meta input{
+    background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.45);color:#fff;
+    border-radius:11px;padding:9px 11px;font-size:17px;font-weight:600;font-family:var(--sans);width:150px;
+  }
+  .sub b{color:#fff;font-weight:800;font-size:16px}
+  .sub button{
+    background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.32);
+    margin-left:10px;padding:4px 12px;border-radius:14px;cursor:pointer;vertical-align:1px;
+    font-family:var(--sans);font-size:13px;font-weight:700;color:#fff;
+  }
+  .sub button:active{transform:translateY(1px)}
+
+  /* ---------- 登入畫面 ---------- */
+  .gate{
+    position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
+    padding:22px;overflow:hidden;
+    background:linear-gradient(140deg,#312e81 0%,#1d4ed8 52%,#0e7490 100%);
+  }
+  .gate[hidden]{display:none}
+
+  /* 背景漂浮的色塊 */
+  .blob{position:absolute;border-radius:50%;filter:blur(46px);opacity:.55;animation:float 14s ease-in-out infinite}
+  .blob.b1{width:260px;height:260px;background:#0ea5e9;top:-70px;left:-60px}
+  .blob.b2{width:220px;height:220px;background:#8b5cf6;bottom:-60px;right:-40px;animation-delay:-4s}
+  .blob.b3{width:180px;height:180px;background:#ec4899;top:38%;right:-70px;animation-delay:-8s}
+  .blob.b4{width:200px;height:200px;background:#14b8a6;bottom:12%;left:-70px;animation-delay:-2s}
+  @keyframes float{
+    0%,100%{transform:translate3d(0,0,0) scale(1)}
+    50%{transform:translate3d(14px,-22px,0) scale(1.12)}
+  }
+
+  .gate .box{
+    position:relative;width:100%;max-width:390px;background:#fff;border-radius:26px;
+    padding:30px 24px 26px;text-align:center;
+    box-shadow:0 24px 60px rgba(8,16,45,.42);
+    animation:pop .45s cubic-bezier(.2,.9,.3,1.2) both;
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:none}}
+
+  /* 儲位色點：呼應盤點表的配色 */
+  .dots{display:flex;justify-content:center;gap:6px;margin-bottom:16px}
+  .dots i{width:11px;height:11px;border-radius:50%;display:block;animation:blink 2.8s ease-in-out infinite}
+  @keyframes blink{0%,100%{opacity:.35;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
+
+  .gate h2{margin:0;font-size:24px;font-weight:800;color:var(--text);letter-spacing:-.01em}
+  .gate .hi{margin:12px 0 2px;font-size:17px;font-weight:800;color:#2563eb}
+  .gate p{margin:3px 0 20px;font-size:14px;color:var(--muted)}
+
+  .gate .field{
+    display:flex;align-items:center;min-height:62px;overflow:hidden;
+    border:2.5px solid var(--line);border-radius:16px;background:#f7f9fc;
+    transition:border-color .15s,box-shadow .15s,background .15s;
+  }
+  .gate .field span{
+    flex:0 0 auto;align-self:stretch;display:flex;align-items:center;padding:0 16px;
+    background:#e8edf5;color:#41506b;font-family:var(--mono);font-size:26px;font-weight:800;
+  }
+  .gate input{
+    flex:1;min-width:0;width:100%;border:none;background:none;text-align:center;
+    font-family:var(--mono);font-size:28px;font-weight:800;letter-spacing:.16em;color:var(--text);
+    padding:0 6px 0 20px;
+  }
+  .gate input::placeholder{font-weight:700;letter-spacing:.16em;color:#c2cddc}
+  .gate input:focus{outline:none}
+  .gate .field:focus-within{border-color:#4f46e5;background:#fff;box-shadow:0 0 0 5px rgba(79,70,229,.16)}
+  .gate .field:focus-within span{background:#e6e9fb;color:#4f46e5}
+  .gate .field.mail{margin-bottom:9px}
+  .gate .field.mail input{font-size:22px;font-weight:700;letter-spacing:.12em;
+    text-align:center;padding:0 12px;text-transform:none}
+  .gate.bad .field{border-color:var(--alert);animation:shake .32s}
+  @keyframes shake{
+    0%,100%{transform:translateX(0)} 25%{transform:translateX(-7px)}
+    50%{transform:translateX(7px)} 75%{transform:translateX(-4px)}
+  }
+
+  .gate button{
+    width:100%;min-height:56px;margin-top:14px;border:none;border-radius:16px;cursor:pointer;
+    background:linear-gradient(120deg,#4f46e5,#0ea5e9 55%,#06b6d4);
+    background-size:180% 100%;color:#fff;font-family:var(--sans);font-size:19px;font-weight:800;
+    letter-spacing:.02em;box-shadow:0 8px 20px rgba(79,70,229,.36);
+    transition:background-position .4s,transform .1s;
+  }
+  .gate button:hover{background-position:100% 0}
+  .gate button:active{transform:translateY(2px)}
+  .gate .err{min-height:22px;margin:13px 0 0;font-size:15px;font-weight:700;color:var(--alert)}
+  .gate .err.ok{color:#0d9488}
+  .gate .foot{margin:15px 0 0;font-size:13.5px;color:#8494ad}
+
+  @media (prefers-reduced-motion:reduce){
+    .blob,.dots i,.gate .box{animation:none}
+  }
+
+  @media (max-width:560px){
+    .masthead{gap:8px}
+    .meta{width:100%;margin:4px 0 0;align-items:center;justify-content:space-between}
+    .advnote{flex:0 1 auto;min-width:0}
+    .advnote span{overflow:hidden;text-overflow:ellipsis}
+    .meta input{flex:1 1 auto;min-width:0;max-width:190px;width:auto}
+    h1{font-size:20px}
+    .sub{font-size:13.5px}
+  }
+  @media (max-width:380px){
+    .sub{font-size:12.5px}
+    .meta input{max-width:158px}
+  }
+  .meta input::placeholder{color:rgba(255,255,255,.72)}
+  .meta input:focus{outline:none;background:rgba(255,255,255,.28);border-color:#fff}
+
+  /* 儲位快捷鍵：每櫃一色 */
+  .nav{display:flex;gap:8px;overflow-x:auto;margin:10px -14px 0;padding:0 14px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .nav::-webkit-scrollbar{display:none}
+  .nav button{
+    flex:0 0 auto;display:flex;align-items:center;gap:7px;
+    color:var(--c,#0ea5e9);background:#fff;border:2px solid var(--c,#0ea5e9);
+    border-radius:24px;padding:9px 17px;font-size:16px;font-weight:800;white-space:nowrap;
+    font-family:var(--sans);cursor:pointer;min-height:46px;transition:transform .1s;
+  }
+  .nav button::before{
+    content:"";width:10px;height:10px;border-radius:50%;background:var(--c,#0ea5e9);flex:0 0 auto;
+  }
+  .nav button i{font-family:var(--mono);font-style:normal;font-size:13px;font-weight:800;color:var(--muted)}
+  /* 盤點狀態 */
+  .nav button.st0{border-color:#e11d48}
+  .nav button.st0 i{color:#e11d48}
+  .nav button.st0::after{
+    content:"未盤";font-size:11.5px;font-weight:900;color:#fff;background:#e11d48;
+    border-radius:8px;padding:2px 7px;margin-left:2px;
+  }
+  .nav button.stp{border-color:#d97706}
+  .nav button.stp i{color:#b45309}
+  .nav button.stp::after{
+    content:"盤點中";font-size:11.5px;font-weight:900;color:#7c3f06;background:#fde68a;
+    border-radius:8px;padding:2px 7px;margin-left:2px;
+  }
+  .nav button.stf i{color:#047857}
+  .nav button.stf::after{
+    content:"已完成";font-size:11.5px;font-weight:900;color:#fff;background:#059669;
+    border-radius:8px;padding:2px 7px;margin-left:2px;
+  }
+  .nav button.active.st0,.nav button.active.stp,.nav button.active.stf{border-color:#fff}
+  .nav button.active i{color:rgba(255,255,255,.9)}
+  .nav button:active{transform:scale(.96)}
+  /* 目前所在的分頁：實心 */
+  .nav button.active{
+    background:var(--c,#0ea5e9);color:#fff;border-color:#fff;
+    box-shadow:0 0 0 3px rgba(255,255,255,.32);
+  }
+  .nav button.active::before{background:#fff}
+  .nav button.active i{color:rgba(255,255,255,.88)}
+  .nav button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+  .advnote{
+    display:flex;align-items:center;justify-content:flex-end;gap:6px;
+    margin:0;padding:5px 6px 5px 10px;border-radius:12px;
+    background:#e11d48;color:#fff;white-space:nowrap;
+    font-size:13.5px;font-weight:900;box-shadow:0 3px 10px rgba(225,29,72,.4);
+  }
+  .advnote[hidden]{display:none}
+  .advnote button{
+    border:none;background:#fff;color:#e11d48;border-radius:9px;
+    padding:4px 9px;font-size:13.5px;font-weight:900;cursor:pointer;font-family:var(--sans);
+  }
+  .advnote button b{font-family:var(--mono)}
+  .advnote button:active{transform:translateY(1px)}
+  .datewarn{
+    margin:0 -14px;padding:9px 14px;background:#fbbf24;color:#3b2600;
+    font-size:15.5px;font-weight:900;text-align:center;letter-spacing:.02em;
+  }
+  .datewarn.ahead{background:#10b981;color:#04291c}
+  .datewarn[hidden]{display:none}
+  .progress{margin:0 -14px;height:6px;background:rgba(0,0,0,.22)}
+  .progress i{display:block;height:100%;background:linear-gradient(90deg,#fde047,#34d399);width:0;transition:width .3s ease}
+
+  /* ---------- 儲位卡片 ---------- */
+  .place{display:none}
+  .place.active{
+    display:block;background:var(--card);border-radius:18px;margin:0 0 16px;
+    box-shadow:0 4px 16px rgba(30,58,138,.10);
+  }
+  .phead{
+    position:sticky;top:var(--hh,150px);z-index:10;
+    display:flex;flex-direction:column;align-items:stretch;gap:5px;
+    padding:10px var(--pad) 9px;
+    background:var(--tint,#eef4ff);border-radius:16px 16px 0 0;
+    border-left:6px solid var(--c,#0ea5e9);
+    box-shadow:0 2px 6px rgba(30,41,90,.06);
+  }
+  .ptop{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .pname{font-size:21px;font-weight:800;color:var(--c,#0ea5e9);letter-spacing:.01em}
+  .pleft{
+    flex:0 0 auto;font-size:13.5px;font-weight:800;color:#92400e;background:#fde68a;
+    border-radius:10px;padding:3px 10px;white-space:nowrap;
+  }
+  .pleft[hidden]{display:none}
+  .pmeta{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--muted);text-align:right;white-space:nowrap}
+  .pmeta.stale{color:var(--warn)}
+  .pmeta.unsaved{color:var(--alert)}
+  .pvhead{
+    display:grid;grid-template-columns:repeat(var(--n,3),1fr) 12px var(--sumw,108px);gap:6px;
+    font-size:12.5px;font-weight:700;color:var(--muted);text-align:center;
+  }
+
+  .row{padding:9px var(--pad);border-top:1px solid var(--line);background:var(--card)}
+  .row:last-child{border-radius:0 0 16px 16px}
+  .dn{margin-bottom:6px;font-size:17px;font-weight:700;letter-spacing:-.01em;word-break:break-word}
+
+  /* ---------- 位值輸入（觸控放大） ---------- */
+  .pv{display:grid;grid-template-columns:repeat(var(--n,3),1fr) 12px var(--sumw,108px);gap:6px;align-items:end}
+  .pv > input{align-self:stretch}
+  .pv .op{align-self:center;text-align:center;font-family:var(--mono);color:var(--muted);font-size:17px;font-weight:700}
+  .fld{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .fld > span{font-size:12.5px;font-weight:700;color:var(--muted);text-align:center;line-height:1.3}
+  .fld > span b{color:var(--c,#0ea5e9);font-family:var(--mono)}
+  input.n{
+    width:100%;min-height:50px;text-align:center;font-family:var(--mono);font-size:24px;font-weight:700;
+    padding:6px 2px;border:2px solid var(--line);border-radius:13px;background:#f7faff;color:var(--text);
+    -moz-appearance:textfield;transition:border-color .12s,background .12s;
+  }
+  input.n::-webkit-outer-spin-button,input.n::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input.n:focus{outline:none;border-color:var(--c,#0ea5e9);background:#fff;box-shadow:0 0 0 4px color-mix(in srgb,var(--c,#0ea5e9) 18%,transparent)}
+  input.n.filled{background:#fff;border-color:#c3cee0}
+  input.n.over{border-color:var(--warn);background:#fff7e8}
+  input.sum{border-style:dashed;background:var(--paper);font-size:29px;font-weight:800;letter-spacing:-.02em}
+  input.sum::placeholder{color:var(--muted);opacity:.7}
+  input.sum.on{color:#fff;border-style:solid;border-color:var(--c,#0ea5e9);background:var(--c,#0ea5e9)}
+  input.sum.on:focus{color:var(--text);background:#fff}
+  .row.tight{padding:6px var(--pad)}
+  .empty{padding:16px 0;text-align:center;color:var(--muted);font-size:15px}
+  .line{display:flex;align-items:center;gap:12px}
+  .line .dn{flex:1;min-width:0;margin-bottom:0}
+  .row.todo{background:#fffdf7;box-shadow:inset 3px 0 0 #fbbf24}
+  .miss{
+    font-size:12px;font-weight:800;color:#92400e;background:#fde68a;
+    border-radius:8px;padding:2px 8px;margin-left:8px;white-space:nowrap;
+  }
+  .miss[hidden]{display:none}
+  .pk{font-family:var(--mono);font-size:12px;font-weight:700;color:#b45309;
+      background:#fff4d6;border-radius:8px;padding:2px 8px;margin-left:8px;white-space:nowrap}
+  .ri{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--muted);margin-left:7px;white-space:nowrap}
+  .ri.bad{color:var(--alert)}
+  input.solo{flex:0 0 auto;width:124px;min-height:48px;font-size:24px}
+  .ref{font-size:12.5px;color:var(--muted);text-align:right;margin-top:3px;font-family:var(--mono)}
+  .ref.bad{color:var(--alert);font-weight:700}
+
+  /* ---------- 置中警示視窗 ---------- */
+  .alertbox{
+    position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;
+    padding:22px;background:rgba(60,10,25,.55);backdrop-filter:blur(3px);
+  }
+  .alertbox[hidden]{display:none}
+  .abox{
+    width:100%;max-width:400px;background:#fff;border-radius:22px;overflow:hidden;text-align:center;
+    box-shadow:0 26px 60px rgba(80,10,30,.45);
+    animation:pop .35s cubic-bezier(.2,.9,.3,1.2) both;
+  }
+  .atop{
+    background:linear-gradient(120deg,#e11d48,#f97316);color:#fff;
+    padding:14px 18px;font-size:18px;font-weight:800;letter-spacing:.04em;
+  }
+  .amid{padding:20px 20px 8px}
+  .amid .big{margin:0 0 16px;font-size:19px;font-weight:800;line-height:1.6;color:var(--text)}
+  .amid .big b{color:var(--alert)}
+  .dcmp{display:flex;align-items:center;justify-content:center;gap:10px}
+  .dcmp > div{flex:1;border:2px solid var(--line);border-radius:14px;padding:10px 6px;background:#fafbfe}
+  .dcmp .arrow{flex:0 0 auto;border:none;background:none;padding:0;font-size:20px;font-weight:800;color:var(--muted)}
+  .dcmp span{display:block;font-size:12px;font-weight:700;color:var(--muted)}
+  .dcmp b{display:block;margin:3px 0 1px;font-family:var(--mono);font-size:18px;font-weight:800;color:var(--text)}
+  .dcmp em{font-style:normal;font-size:12px;font-weight:700;color:var(--muted)}
+  .dcmp .good{border-color:#12b76a;background:#e9fbf2}
+  .dcmp .good b,.dcmp .good em{color:#067a49}
+  .abtn{display:flex;gap:10px;padding:16px 20px 20px}
+  .abtn button{
+    flex:1;min-height:52px;border:2px solid var(--line);background:#fff;color:#33456b;
+    border-radius:14px;font-family:var(--sans);font-size:16px;font-weight:800;cursor:pointer;
+  }
+  .abtn button.k{
+    background:linear-gradient(120deg,#e11d48,#f97316);border-color:transparent;color:#fff;
+    box-shadow:0 5px 16px rgba(225,29,72,.38);
+  }
+  /* 儲存確認：藍色系，與警示區隔 */
+  #savedlg .atop{background:linear-gradient(120deg,#312e81,#1d4ed8)}
+  #savedlg .abtn button.k{
+    background:linear-gradient(120deg,#4f46e5,#0ea5e9);
+    box-shadow:0 5px 16px rgba(79,70,229,.38);
+  }
+  #savedlg{background:rgba(15,25,60,.55)}
+  #askdlg .svlist li{background:#fff1f3;color:var(--alert)}
+  /* 資料已存的登出確認：綠色，與警示區隔 */
+  #askdlg.safe{background:rgba(4,41,28,.5)}
+  #askdlg.safe .atop{background:linear-gradient(120deg,#047857,#10b981)}
+  #askdlg.safe .abtn button.k{
+    background:linear-gradient(120deg,#059669,#10b981);
+    box-shadow:0 5px 16px rgba(5,150,105,.38);
+  }
+  #askdlg .amid .big{font-size:17px;line-height:1.7}
+  .abtn button:active{transform:translateY(1px)}
+
+  .svdate{margin:0 0 14px;font-size:16px;font-weight:700;color:var(--muted)}
+  .svdate b{font-family:var(--mono);font-size:22px;font-weight:800;color:var(--text)}
+  .svlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+  .svlist li{
+    background:#eef4ff;border-radius:12px;padding:11px 13px;
+    font-size:17px;font-weight:800;color:var(--text);
+  }
+  .svlist li em{display:block;margin-top:2px;font-style:normal;font-size:13px;font-weight:600;color:var(--muted)}
+  .svwarn{
+    margin-top:14px;background:#fff4d6;border:2px solid #f59e0b;border-radius:12px;
+    padding:11px 13px;font-size:15.5px;font-weight:800;color:#92400e;text-align:left;
+  }
+  .svwarn[hidden]{display:none}
+  .svwarn div + div{margin-top:5px}
+
+  /* ---------- 管理面板 ---------- */
+  .admin{position:fixed;inset:0;z-index:80;background:rgba(16,24,40,.55);display:flex;
+         align-items:flex-end;justify-content:center;padding:0}
+  .admin[hidden]{display:none}
+  .panel{width:100%;max-width:900px;max-height:92vh;background:#fff;border-radius:18px 18px 0 0;
+         display:flex;flex-direction:column;overflow:hidden}
+  .ahead{display:flex;align-items:center;justify-content:space-between;gap:10px;
+         padding:13px 16px;border-bottom:1px solid var(--line);background:#f7f9fc}
+  .ahead b{font-size:18px;font-weight:800}
+  .ahead button{border:1px solid var(--line);background:#fff;border-radius:10px;
+                padding:9px 16px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans)}
+  .abody{flex:1;overflow:auto;padding:10px 14px}
+  .arow{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:9px}
+  .arow .top{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .arow input.nm{flex:1;min-width:0;border:1.5px solid var(--line);border-radius:9px;
+                 padding:11px 13px;font-size:16px;font-weight:700;font-family:var(--sans)}
+  .arow .del{flex:0 0 auto;border:1px solid #f0c4c4;background:#fff5f5;color:var(--alert);
+             border-radius:10px;padding:10px 14px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans)}
+  .pack{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:9px;
+        font-size:13.5px;font-weight:700;color:var(--muted)}
+  .pack label{display:inline-flex;align-items:center;gap:5px}
+  .pack input{width:66px;border:1.5px solid var(--line);border-radius:8px;padding:7px 8px;
+              font-family:var(--mono);font-size:15px;font-weight:700;text-align:center}
+  .pack em{font-style:normal;font-weight:600;font-size:12.5px;color:#93a2b8}
+  .locs{display:flex;flex-wrap:wrap;gap:6px}
+  .locs label{display:inline-flex;align-items:center;gap:5px;border:1.5px solid var(--line);
+              border-radius:20px;padding:7px 13px;font-size:14px;font-weight:700;cursor:pointer;background:#fff}
+  .locs label.on{border-color:var(--c,#3b6ef0);background:#f2f6ff;color:var(--c,#3b6ef0)}
+  .locs input{margin:0;accent-color:#3b6ef0}
+  .panel.short{max-height:none}
+  .wlist{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+  .wlist button{
+    text-align:left;border:2px solid var(--line);background:#fff;border-radius:12px;
+    padding:13px 15px;font-size:16px;font-weight:700;cursor:pointer;
+    font-family:var(--sans);color:var(--text);
+  }
+  .wlist button.on{border-color:#2563eb;background:#eaf1ff;color:#1d4ed8}
+  .wlist button:active{transform:translateY(1px)}
+  #w-text{
+    width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 13px;
+    font-size:15px;font-family:var(--sans);resize:vertical;box-sizing:border-box;
+  }
+  .hnote{margin:2px 0 14px;font-size:15px;color:var(--muted);line-height:1.6}
+  .hrow{display:flex;gap:10px;margin-bottom:12px}
+  .hrow label{flex:1;display:flex;flex-direction:column;gap:5px;font-size:13px;
+              font-weight:700;color:var(--muted);font-family:var(--mono)}
+  .hrow input{border:1.5px solid var(--line);border-radius:10px;padding:11px;
+              font-size:17px;font-family:var(--sans)}
+  .hquick{display:flex;flex-wrap:wrap;gap:7px}
+  .hquick button{border:1.5px solid var(--line);background:#fff;border-radius:20px;
+                 padding:9px 15px;font-size:14.5px;font-weight:700;cursor:pointer;font-family:var(--sans)}
+  .hquick button:active{transform:translateY(1px)}
+  #h-msg{text-align:left;color:var(--muted);font-weight:600;line-height:1.7;font-size:14.5px}
+  #h-msg a{color:#1d4ed8;font-weight:800}
+  .afoot{display:flex;gap:9px;padding:11px 14px;border-top:1px solid var(--line);background:#f7f9fc}
+  .afoot button{flex:1;min-height:52px;border:1.5px solid var(--line);background:#fff;border-radius:13px;
+                font-size:16px;font-weight:700;cursor:pointer;font-family:var(--sans)}
+  .afoot button.k{background:linear-gradient(120deg,#4f46e5,#0ea5e9);border-color:transparent;color:#fff}
+
+  /* ---------- 底部工具列 ---------- */
+  .bar{
+    position:fixed;left:0;right:0;bottom:0;z-index:30;
+    background:rgba(255,255,255,.94);backdrop-filter:blur(10px);
+    border-top:1px solid var(--line);padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+    display:flex;gap:10px;justify-content:center;
+  }
+  .bar button{
+    flex:1;max-width:220px;min-height:54px;border:1.5px solid var(--line);background:#fff;color:#33456b;
+    font-family:var(--sans);font-size:16.5px;font-weight:700;padding:12px 8px;border-radius:15px;cursor:pointer;
+  }
+  .bar button.k{background:linear-gradient(120deg,#4f46e5,#0ea5e9);border-color:transparent;color:#fff;box-shadow:0 3px 10px rgba(79,70,229,.32)}
+  .bar button.off{opacity:.55;font-size:14.5px}
+  .bar button.k.dirty{background:linear-gradient(120deg,#e11d48,#f97316);box-shadow:0 3px 12px rgba(225,29,72,.38)}
+  .bar button:active{transform:translateY(1px)}
+  .toast{
+    position:fixed;left:50%;transform:translateX(-50%);bottom:86px;z-index:40;
+    background:#141c2b;color:#fff;padding:13px 22px;border-radius:26px;font-size:15.5px;font-weight:700;
+    box-shadow:0 6px 20px rgba(26,34,48,.3);opacity:0;pointer-events:none;transition:opacity .2s;
+  }
+  .toast.show{opacity:1}
+
+  @media (max-width:400px){
+    :root{--pad:10px}
+    :root{--sumw:88px}
+    .pv{gap:5px}
+    input.solo{width:98px}
+    input.n{font-size:22px;min-height:48px}
+    input.sum{font-size:26px}
+    input.solo{width:106px}
+  }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+  @media print{
+    header,.bar,.toast,.nav{position:static}
+    .bar,.nav{display:none}
+    .phead{position:static;background:#fff}
+    body{background:#fff}
+    header{background:#fff;color:#000;border-bottom:2px solid #000}
+    h1,.sub,.pname{color:#000}
+    .meta input{background:#fff;color:#000;border-color:#999}
+    .place{display:block!important;break-inside:avoid;page-break-inside:avoid;box-shadow:none;border:1px solid #999;margin-bottom:10px}
+    .sumbox.on{background:#fff;color:#000}
+  }
+</style>
+
+<header>
+  <div class="wrap" style="padding:0">
+    <div class="masthead">
+      <div class="brand">
+        <h1>每日 4 級管制藥盤點表</h1>
+        <p class="sub">臺大醫院雲林分院藥劑部－斗六院區<b id="d-user"></b><button type="button" id="b-logout" hidden>登出</button></p>
+      </div>
+      <div class="meta">
+        <div class="advnote" id="adv-note" hidden>
+          <span id="adv-txt">管四盤點日期為明日</span>
+          <button type="button" data-settom="1">選 <b id="adv-d">—</b></button>
+        </div>
+        <input type="date" id="d-date" aria-label="盤點日期">
+      </div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="datewarn" id="d-warn" hidden></div>
+    <div class="progress"><i id="t-bar"></i></div>
+  </div>
+</header>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut as fbSignOut,
+         onAuthStateChanged, setPersistence, browserSessionPersistence }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, collection, getDoc, getDocs, setDoc, addDoc,
+         deleteDoc, onSnapshot, serverTimestamp, query, where, orderBy, limit,
+         runTransaction }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const app  = initializeApp({
+  apiKey: "AIzaSyAmO7j_GvnTu-oje0wBFDT940UwRSht6d4",
+  authDomain: "ntuh-yunlin-drug-count.firebaseapp.com",
+  projectId: "ntuh-yunlin-drug-count",
+  storageBucket: "ntuh-yunlin-drug-count.firebasestorage.app",
+  messagingSenderId: "53089383614",
+  appId: "1:53089383614:web:420b5c30e628fc40eb5aef"
+});
+const auth = getAuth(app);
+const db   = getFirestore(app);
+const SHEET   = doc(db, "sheets", "douliu");        // 目前的盤點表
+const CONFIG  = doc(db, "config", "drugs");        // 藥品與儲位設定
+const HISTORY = collection(db, "history");          // 每次儲存的歷史紀錄（保留兩年）
+const AUDIT   = collection(db, "audit");            // 修改軌跡（覆蓋、藥品增刪）
+
+/* 關閉分頁即登出，避免共用裝置上沿用前一位同仁的身分 */
+setPersistence(auth, browserSessionPersistence).catch(()=>{});
+
+window.FB = {
+  ready: true,
+  signIn: (mail, pw) => signInWithEmailAndPassword(auth, mail, pw),
+  signOut: () => fbSignOut(auth),
+  watch(onIn, onOut){
+    onAuthStateChanged(auth, u => u ? onIn(u) : onOut());
+  },
+  async read(){
+    const snap = await getDoc(SHEET);
+    return snap.exists() ? snap.data() : null;
+  },
+  /* 多人安全的儲存：以交易讀取雲端最新狀態，只替換本次儲存的儲位 */
+  async saveLocs(locs, cellsSub, metaSub, by){
+    let merged = null;
+    await runTransaction(db, async tx=>{
+      const snap = await tx.get(SHEET);
+      const cur  = snap.exists() ? snap.data() : {};
+      const cells = { ...(cur.cells || {}) }, meta = { ...(cur.meta || {}) };
+      Object.keys(cells).forEach(k=>{ if(locs.includes(k.split('|')[1])) delete cells[k]; });
+      Object.assign(cells, cellsSub);
+      locs.forEach(l=>{ meta[l] = metaSub[l]; });
+      merged = { cells, meta };
+      tx.set(SHEET, { cells, meta, by, updatedAt: serverTimestamp() });
+    });
+    await addDoc(HISTORY, { ...merged, by, date: new Date().toISOString().slice(0,10), at: serverTimestamp() });
+    return merged;
+  },
+  async write(payload){
+    await setDoc(SHEET, { ...payload, updatedAt: serverTimestamp() }, { merge: false });
+    /* 同時留一筆歷史，供日後查詢（保留兩年） */
+    await addDoc(HISTORY, {
+      ...payload, date: new Date().toISOString().slice(0,10), at: serverTimestamp()
+    });
+  },
+  /* 寫入一筆修改軌跡 */
+  async audit(entry){
+    await addDoc(AUDIT, { ...entry, date: new Date().toISOString().slice(0,10), at: serverTimestamp() });
+  },
+  async auditRange(from, to){
+    const q = query(AUDIT, where('date', '>=', from), where('date', '<=', to),
+                    orderBy('date', 'asc'), limit(2000));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => d.data());
+  },
+  async readConfig(){
+    const snap = await getDoc(CONFIG);
+    return snap.exists() ? snap.data() : null;
+  },
+  async writeConfig(cfg){
+    await setDoc(CONFIG, { ...cfg, updatedAt: serverTimestamp() }, { merge: false });
+  },
+  /* 清除兩年前的歷史 */
+  async purgeHistory(){
+    const cut = new Date(Date.now() - 730 * 86400000).toISOString().slice(0,10);
+    let n = 0;
+    for(const col of [HISTORY, AUDIT]){
+      const snap = await getDocs(query(col, where('date', '<', cut), limit(300)));
+      await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+      n += snap.size;
+    }
+    return n;
+  },
+  /* 查一段期間的歷史紀錄 */
+  async historyRange(from, to){
+    const q = query(HISTORY, where('date', '>=', from), where('date', '<=', to),
+                    orderBy('date', 'asc'), limit(2000));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => d.data());
+  },
+  /* 其他裝置存檔後即時通知 */
+  listen(cb){
+    return onSnapshot(SHEET, snap=>{
+      if(snap.exists() && !snap.metadata.hasPendingWrites) cb(snap.data());
+    });
+  }
+};
+window.dispatchEvent(new Event("fb-ready"));
+</script>
+
+<div class="gate" id="gate">
+  <span class="blob b1"></span><span class="blob b2"></span>
+  <span class="blob b3"></span><span class="blob b4"></span>
+  <div class="box">
+    <div class="dots" id="g-dots"></div>
+    <h2>每日 4 級管制藥盤點</h2>
+    <p class="hi" id="g-hi">早安</p>
+    <p>臺大醫院雲林分院藥劑部－斗六院區</p>
+    <div class="field" id="g-field">
+      <span>Y</span>
+      <input id="g-id" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off"
+             spellcheck="false" placeholder="00000" maxlength="5">
+    </div>
+    <div class="field mail">
+      <input id="g-pw" type="password" inputmode="numeric" pattern="[0-9]*"
+             autocomplete="current-password" placeholder="密碼">
+    </div>
+    <button type="button" id="g-go">登入</button>
+    <p class="err" id="g-err"></p>
+    <p class="foot">員編後 5 碼　·　密碼：藥局電話</p>
+  </div>
+</div>
+
+<div class="alertbox warn" id="askdlg" hidden>
+  <div class="abox">
+    <div class="atop" id="ak-top">確認</div>
+    <div class="amid">
+      <p class="big" id="ak-msg"></p>
+      <ul class="svlist" id="ak-list"></ul>
+    </div>
+    <div class="abtn">
+      <button type="button" id="ak-no">取消</button>
+      <button type="button" class="k" id="ak-yes">確定</button>
+    </div>
+  </div>
+</div>
+
+<div class="alertbox" id="savedlg" hidden>
+  <div class="abox">
+    <div class="atop" id="sv-top">確認儲存</div>
+    <div class="amid">
+      <p class="svdate">標記日期　<b id="sv-date">—</b></p>
+      <ul class="svlist" id="sv-list"></ul>
+      <div class="svwarn" id="sv-warn" hidden></div>
+    </div>
+    <div class="abtn">
+      <button type="button" id="sv-no">取消</button>
+      <button type="button" class="k" id="sv-yes">確定儲存</button>
+    </div>
+  </div>
+</div>
+
+<div class="alertbox" id="advdlg" hidden>
+  <div class="abox">
+    <div class="atop">預先盤點提醒</div>
+    <div class="amid">
+      <p class="big" id="ad-big">本表為預先盤點<br>紀錄日期應為<b>下個上班日</b></p>
+      <div class="dcmp">
+        <div><span>目前日期</span><b id="ad-now">—</b><em id="ad-nw">今日</em></div>
+        <div class="arrow">→</div>
+        <div class="good"><span>建議日期</span><b id="ad-tom">—</b><em id="ad-tw">明日</em></div>
+      </div>
+    </div>
+    <div class="abtn">
+      <button type="button" id="ad-no">維持今日</button>
+      <button type="button" class="k" id="ad-yes">改為明日</button>
+    </div>
+  </div>
+</div>
+
+<div class="admin" id="why" hidden>
+  <div class="panel short">
+    <div class="ahead">
+      <b>修改原因</b>
+      <button type="button" id="w-cancel">取消</button>
+    </div>
+    <div class="abody">
+      <p class="hnote" id="w-note"></p>
+      <div class="wlist" id="w-list"></div>
+      <textarea id="w-text" rows="2" placeholder="其他原因（可自行輸入或補充說明）"></textarea>
+    </div>
+    <div class="afoot">
+      <button type="button" class="k" id="w-ok">確認並儲存</button>
+    </div>
+  </div>
+</div>
+
+<div class="admin" id="hist" hidden>
+  <div class="panel short">
+    <div class="ahead">
+      <b>匯出歷史紀錄</b>
+      <button type="button" id="h-close">關閉</button>
+    </div>
+    <div class="abody">
+      <p class="hnote">選擇期間，匯出每次儲存的完整盤點紀錄與修改軌跡（保留兩年）。</p>
+      <div class="hrow">
+        <label>起<input type="date" id="h-from"></label>
+        <label>迄<input type="date" id="h-to"></label>
+      </div>
+      <div class="hquick">
+        <button type="button" data-days="7">近 7 天</button>
+        <button type="button" data-days="30">近 30 天</button>
+        <button type="button" data-days="90">近 3 個月</button>
+        <button type="button" data-days="365">近 1 年</button>
+      </div>
+      <p class="err" id="h-msg"></p>
+    </div>
+    <div class="afoot">
+      <button type="button" class="k" id="h-go">匯出 CSV</button>
+    </div>
+  </div>
+</div>
+
+<div class="admin" id="admin" hidden>
+  <div class="panel">
+    <div class="ahead">
+      <b>藥品與儲位管理</b>
+      <button type="button" id="a-close">關閉</button>
+    </div>
+    <div class="abody">
+      <div id="a-body"></div>
+    </div>
+    <div class="afoot">
+      <button type="button" id="a-add">＋ 新增藥品</button>
+      <button type="button" class="k" id="a-save">儲存設定</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap" id="app"></div>
+
+<div class="bar">
+  <button id="b-csv">匯出今日 CSV</button>
+  <button id="b-hist" title="匯出歷史紀錄" hidden>歷史</button>
+  <button id="b-admin" title="管理藥品與儲位" hidden>管理</button>
+  <button class="k" id="b-save">儲存</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const DATA = {"locations":["鐵櫃","IC冰箱","UD抽屜","Pandora","藍","黃","小8","小10","預約耗用","無醫村","草嶺樟湖"],"drugs":[{"name":"Apano 200mg/tab","oral":true,"cells":{"Pandora":null,"預約耗用":null}},{"name":"Ativan 0.5mg/tab","oral":true,"cells":{"鐵櫃":null,"藍":null,"黃":null,"小8":null,"小10":null,"預約耗用":null,"無醫村":100}},{"name":"Dupin 5mg/tab","oral":true,"cells":{"鐵櫃":null,"藍":null,"黃":null,"小8":null,"小10":null,"預約耗用":null}},{"name":"Eurodin 2mg/tab","oral":true,"cells":{"鐵櫃":null,"藍":null,"黃":null,"小8":null,"小10":null,"預約耗用":null,"無醫村":100}},{"name":"Frisium 10mg/tab","oral":true,"cells":{"鐵櫃":null,"Pandora":null,"預約耗用":null}},{"name":"Imovane 7.5mg/tab","oral":true,"cells":{"鐵櫃":null,"藍":null,"黃":null,"小8":null,"小10":null,"預約耗用":null,"無醫村":140}},{"name":"Lendormin 0.25mg/tab","oral":true,"cells":{"鐵櫃":null,"藍":null,"黃":null,"小8":null,"小10":null,"預約耗用":null,"草嶺樟湖":100}},{"name":"Lexotan 3mg/tab","oral":true,"cells":{"鐵櫃":null,"藍":null,"黃":null,"小8":null,"小10":null,"預約耗用":null}},{"name":"Phenobarbital 30mg/tab","oral":true,"cells":{"鐵櫃":null,"Pandora":null,"預約耗用":null}},{"name":"Rivotril 0.5mg/tab","oral":true,"cells":{"鐵櫃":null,"藍":null,"黃":null,"小8":null,"小10":null,"預約耗用":null,"草嶺樟湖":100}},{"name":"Secorin 10mg/tab","oral":true,"cells":{"鐵櫃":null,"藍":null,"黃":null,"小8":null,"小10":null,"預約耗用":null}},{"name":"Stilnox 10mg/tab","oral":true,"cells":{"鐵櫃":null,"藍":null,"黃":null,"小8":null,"小10":null,"預約耗用":null,"無醫村":140,"草嶺樟湖":140}},{"name":"Muaction 100 mg/tab","oral":true,"cells":{"鐵櫃":null,"藍":null,"黃":null,"小8":null,"小10":null,"預約耗用":null}},{"name":"Utraphen F.C. Tab","oral":true,"cells":{"鐵櫃":null,"藍":null,"黃":null,"小8":null,"小10":null,"預約耗用":null}},{"name":"Alpraline 0.5 mg/tab","oral":true,"cells":{"鐵櫃":null,"藍":null,"黃":null,"小8":null,"小10":null,"預約耗用":null,"無醫村":200,"草嶺樟湖":200}},{"name":"Stesolid Rectal 10mg/2.5ml/tube","oral":false,"cells":{"鐵櫃":null}},{"name":"Anxicam 2mg 1ml/amp","oral":false,"cells":{"IC冰箱":null}},{"name":"Dormicum 5mg/1ml/amp","oral":false,"cells":{"Pandora":null}},{"name":"Dormicum 15mg/3ml/amp","oral":false,"cells":{"UD抽屜":null}},{"name":"Phenobital 100mg/ml/amp","oral":false,"cells":{"鐵櫃":null}},{"name":"Hypnomidate(專案)20 mg/10 ml/amp","oral":false,"cells":{"Pandora":null}},{"name":"Limadol 100 mg/2 mL/amp","oral":false,"cells":{"鐵櫃":null,"Pandora":null}},{"name":"新 1% Fresofol (Sweden) 20 ml/amp","oral":false,"cells":{"UD抽屜":null}},{"name":"1% Fresofol (Austria) 20 ml/amp","oral":false,"cells":{"鐵櫃":null}},{"name":"2% Fresofol 50ml/vial","oral":false,"cells":{"鐵櫃":null}},{"name":"Hypnomidate(非專案)有中文20 mg/10 ml/amp","oral":false,"cells":{"鐵櫃":null}}]};
+
+/* 斗六院區藥劑部人員名單（識別用，非權限管控） */
+/* 管理者：可匯出、寄送、修改藥品設定 */
+const ADMINS = ['Y01643','Y06100','Y08215','Y00326','Y02331','Y07352'];
+const isAdmin = () => !!USER && ADMINS.includes(USER.id);
+
+/* 顯示姓名（Firebase 帳號未設定顯示名稱時使用） */
+const DISPLAY = {
+  'Y01643':'謝姍珊','Y06100':'陳麗珺','Y08215':'王玟璇',
+  'Y00326':'沈倩如','Y02331':'張如萱','Y07352':'鍾意'
+};
+
+const $ = s => document.querySelector(s);
+const state = {};
+let dirty = false;                                // 有未儲存的變更
+let USER = null;                                  // {id, name}
+
+/* 每個儲位一組顏色：藍櫃用藍、黃櫃用黃、草嶺用草綠，其餘依序分配 */
+const HUES = {
+  '鐵櫃':      ['#2559e6','#e8f0ff'],
+  'IC冰箱':    ['#0e7f9e','#dcf7fd'],
+  'UD抽屜':    ['#4d6285','#eef2f9'],
+  'Pandora':  ['#8425db','#f5eaff'],
+  '藍':        ['#0a72ae','#e2f5ff'],
+  '黃':        ['#a86a06','#fff4d6'],
+  '小8':       ['#d81b70','#ffe9f3'],
+  '小10':      ['#08857a','#dcfaf5'],
+  '預約耗用':  ['#c44f08','#ffeede'],
+  '無醫村':    ['#b930cc','#fbe8ff'],
+  '草嶺樟湖':  ['#537f0b','#f2fbdd']
+};
+const FALLBACK = ['#3b6ef0','#eaf0ff'];
+
+/* 劑型分類，用於匯出時分組 */
+const FORMS = ['口服','外用','注射'];
+
+/* 匯出時的排序微調：指定某項藥品要排在哪一項之後（不影響畫面上的順序） */
+const EXPORT_AFTER = {
+  'Hypnomidate(專案)20 mg/10 ml/amp': '2% Fresofol 50ml/vial'
+};
+function orderedDrugs(group){
+  const list  = group.filter(d => !EXPORT_AFTER[d.name]);
+  group.filter(d => EXPORT_AFTER[d.name]).forEach(d=>{
+    const at = list.findIndex(x => x.name === EXPORT_AFTER[d.name]);
+    at >= 0 ? list.splice(at + 1, 0, d) : list.push(d);
+  });
+  return list;
+}
+const formOf = d => d.oral ? '口服'
+  : /tube|rectal|supp|cream|oint|gel|patch|lotion|spray/i.test(d.name) ? '外用'
+  : '注射';
+
+/* 位值計算的倍數：預設 100／10／個位，可依儲位另外指定 */
+const UNITS_DEFAULT = {
+  parts: ['a','b','c'],
+  a: 100, b: 10, c: 1,
+  la: '100 錠/束', lb: '10 錠/排', lc: '個位'
+};
+const UNITS_BY_LOC = {
+  'IC冰箱': { parts: ['a','b','c'], a: 50, b: 10, c: 1,
+              la: '50 支/盒', lb: '10 支/排', lc: '個位' },
+  'UD抽屜': { parts: ['a','b'],     a: 5,  b: 1,
+              la: '5 支/盒',  lb: '個位' }
+};
+/* 逐項藥品的包裝規格（每束／每排錠數），管理者可調整；未設定者用該儲位預設 */
+let PACK = {
+  'Imovane 7.5mg/tab':   {a:140,  b:14, ua:'束'},
+  'Stilnox 10mg/tab':    {a:140,  b:14, ua:'束'},
+  /* locs 指定只在哪些儲位套用；未填則全部儲位適用 */
+  'Alpraline 0.5 mg/tab':{a:1000, b:10, ua:'盒', locs:['鐵櫃']},
+  'Utraphen F.C. Tab':   {a:1000, b:10, ua:'盒', locs:['鐵櫃']},
+  'Dupin 5mg/tab':       {a:500,  b:10, ua:'盒', locs:['鐵櫃']}
+};
+
+/* 取某藥品在某儲位適用的包裝 */
+const packOf = (name, loc) => {
+  const pk = name && PACK[name];
+  if(!pk) return null;
+  return (pk.locs && !pk.locs.includes(loc)) ? null : pk;
+};
+
+const drugOf = key => key.split('|')[0];
+const unitsOf = (loc, name) => {
+  const base = UNITS_BY_LOC[loc] || UNITS_DEFAULT;
+  const pk = packOf(name, loc);
+  if(!pk || base.parts.length < 3) return base;      // 只調整三欄式（束／排／個位）
+  return { ...base, a: pk.a, b: pk.b,
+           la: `${pk.a} 錠/${pk.ua || '束'}`, lb: `${pk.b} 錠/排`, lc: '個位' };
+};
+
+/* 非口服劑型也要用位值計算的儲位 */
+const PLACE_VALUE = ['IC冰箱','UD抽屜'];
+const usePv = (loc, d) => (d.oral && !isTotalOnly(loc, d.name)) || PLACE_VALUE.includes(loc);
+
+/* 各欄上限：超過就該進位到左邊那一欄，會亮黃框提醒 */
+const locOf = key => key.split('|')[1];
+/* 各欄一律容許 3 位數：未進位（例如 12 排、15 顆）也能照實填 */
+const MAXLEN = 3;
+const HOP_MS = 1000;      // 未滿位數時，停頓多久自動跳下一格（毫秒）
+const isOver = (part, v, loc, name) => {
+  if(v == null) return false;
+  const u = unitsOf(loc, name), k = u.parts.indexOf(part);
+  if(k <= 0) return false;
+  return v > u[u.parts[k-1]] / u[part] - 1;
+};
+
+/* 這兩櫃為固定配置量，開表時先帶入原表數字；仍可手動修改，也會隨存檔覆寫 */
+const PREFILL = ['無醫村','草嶺樟湖'];
+
+/* 各儲位的盤點順序（依實際擺放位置）；未列出的儲位沿用藥品清單順序 */
+const ORDER = {
+  '藍':  ['Utraphen F.C. Tab','Rivotril 0.5mg/tab','Imovane 7.5mg/tab','Eurodin 2mg/tab',
+          'Stilnox 10mg/tab','Lendormin 0.25mg/tab','Lexotan 3mg/tab','Dupin 5mg/tab',
+          'Alpraline 0.5 mg/tab','Secorin 10mg/tab','Ativan 0.5mg/tab','Muaction 100 mg/tab'],
+  '黃':  ['Utraphen F.C. Tab','Rivotril 0.5mg/tab','Imovane 7.5mg/tab','Eurodin 2mg/tab',
+          'Stilnox 10mg/tab','Lendormin 0.25mg/tab','Lexotan 3mg/tab','Dupin 5mg/tab',
+          'Alpraline 0.5 mg/tab','Secorin 10mg/tab','Ativan 0.5mg/tab','Muaction 100 mg/tab'],
+  '小8': ['Stilnox 10mg/tab','Utraphen F.C. Tab','Lexotan 3mg/tab','Rivotril 0.5mg/tab',
+          'Imovane 7.5mg/tab','Lendormin 0.25mg/tab','Secorin 10mg/tab','Eurodin 2mg/tab',
+          'Ativan 0.5mg/tab','Alpraline 0.5 mg/tab','Muaction 100 mg/tab'],
+  '小10':['Utraphen F.C. Tab','Alpraline 0.5 mg/tab','Lendormin 0.25mg/tab','Rivotril 0.5mg/tab',
+          'Imovane 7.5mg/tab','Lexotan 3mg/tab','Stilnox 10mg/tab','Eurodin 2mg/tab',
+          'Ativan 0.5mg/tab','Secorin 10mg/tab','Dupin 5mg/tab']
+};
+
+/* 預先盤點：'*' 代表全部儲位，紀錄應標記為隔天；也可改成 ['小8','小10'] 只指定部分 */
+const ADVANCE = '*';
+const isAdvance = loc => ADVANCE === '*' || ADVANCE.includes(loc);
+const fmtDate = d =>
+  `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+/* 國定假日（依行政院人事行政總處 115 年辦公日曆表；僅列平日者，週末本就休假）
+   每年底請依隔年辦公日曆表更新 */
+const HOLIDAYS = [
+  '2026-01-01',                                          // 元旦（四）
+  '2026-02-16','2026-02-17','2026-02-18','2026-02-19',   // 除夕、春節初一至初三
+  '2026-02-20',                                          // 小年夜補假（五）
+  '2026-02-27',                                          // 和平紀念日補假（五）
+  '2026-04-03','2026-04-06',                             // 兒童節補假（五）、清明節補假（一）
+  '2026-05-01',                                          // 勞動節（五）
+  '2026-06-19',                                          // 端午節（五）
+  '2026-09-25','2026-09-28',                             // 中秋節（五）、教師節（一）
+  '2026-10-09',                                          // 國慶日補假（五）
+  '2026-10-26',                                          // 光復節補假（一）
+  '2026-12-25',                                          // 行憲紀念日（五）
+  '2027-01-01'                                           // 元旦（五）
+];
+/* 補班日（2026 年起已取消補班制度，如日後恢復再填入） */
+const WORKDAYS = [];
+const isWorkday = d => {
+  const k = fmtDate(d);
+  if(WORKDAYS.includes(k)) return true;
+  if(HOLIDAYS.includes(k)) return false;
+  const w = d.getDay();
+  return w >= 1 && w <= 5;                 // 週一至週五
+};
+
+/* 下一個上班日：跳過週末與國定假日 */
+const nextWorkday = (from) => {
+  const d = from ? new Date(from + 'T00:00:00') : new Date();
+  for(let i = 0; i < 30; i++){
+    d.setDate(d.getDate() + 1);
+    if(isWorkday(d)) return fmtDate(d);
+  }
+  return fmtDate(d);
+};
+
+const WD = ['日','一','二','三','四','五','六'];
+const weekOf = str => WD[new Date(str + 'T00:00:00').getDay()];
+const daysBetween = (a, b) =>
+  Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000);
+
+const tomorrowStr = () => nextWorkday();
+
+
+/* 同一櫃內再細分的儲位。日後要增修，只要改這張表 */
+const SUBSLOTS = {
+  'Pandora': {
+    'Limadol 100 mg/2 mL/amp': ['A/B', 'C', 'D']
+  }
+};
+const slotsOf = (loc, name) => (SUBSLOTS[loc] && SUBSLOTS[loc][name]) || null;
+
+/* 這些櫃／藥品的口服藥不拆 A、B、C，只填總數量。'*' = 該櫃全部口服藥 */
+const TOTAL_ONLY = { 'Pandora': '*', '預約耗用': '*', '無醫村': '*', '草嶺樟湖': '*' };
+const isTotalOnly = (loc, name) => {
+  const c = TOTAL_ONLY[loc];
+  return c === '*' || (Array.isArray(c) && c.includes(name));
+};
+/* 鍵值用藥名而非序號，日後增刪或調整順序都不會對錯已存的數字 */
+const cellKey = (d, loc, slot) => d.name + '|' + loc + (slot ? '|' + slot : '');
+const keysFor = (d, loc) => {
+  const sl = slotsOf(loc, d.name);
+  return sl ? sl.map(x => cellKey(d, loc, x)) : [cellKey(d, loc)];
+};
+
+/* which drugs live in each location, in the sheet's own order */
+let PLACES = [];
+function computePlaces(){
+  return DATA.locations.map((loc, li) => {
+    let items = DATA.drugs.map((d,i)=>({d,i}))
+      .filter(x => Object.prototype.hasOwnProperty.call(x.d.cells, loc));
+    if(ORDER[loc]){
+      const rank = new Map(ORDER[loc].map((n, k) => [n, k]));
+      items = items.filter(x => rank.has(x.d.name))
+                   .sort((a, b) => rank.get(a.d.name) - rank.get(b.d.name));
+    }
+    const keys = items.flatMap(({d}) => keysFor(d, loc));
+    return { loc, li, items, keys };
+  });
+}
+
+/* 位值欄位的格線：欄數會隨儲位設定變動 */
+const pvCols = u => `--n:${u.parts.length}`;
+
+/* ---------- build ---------- */
+function rebuild(){
+  PLACES = computePlaces();
+  $('#app').innerHTML = '';
+  $('#nav').innerHTML = '';
+  build();
+  show(Math.min(current, PLACES.length - 1));
+}
+
+function build(){
+  PLACES = PLACES.length ? PLACES : computePlaces();
+  const app = $('#app'), nav = $('#nav');
+
+  PLACES.forEach(p=>{
+    const [c, tint] = HUES[p.loc] || FALLBACK;
+
+    const a = document.createElement('button');
+    a.type = 'button'; a.id = 'nav' + p.li;
+    a.style.setProperty('--c', c);
+    a.innerHTML = `${p.loc}<i data-navcount="${p.li}">0/${p.keys.length}</i>`;
+    a.addEventListener('click', ()=> show(p.li));
+    nav.appendChild(a);
+
+    const card = document.createElement('section');
+    card.className = 'place'; card.id = 'L' + p.li;
+    card.style.setProperty('--c', c);
+    card.style.setProperty('--tint', tint);
+
+    const rows = p.items.map(({d,i})=>{
+      const key = cellKey(d, p.loc);
+      const ref = d.cells[p.loc];
+      const refHtml = ref!=null ? `<div class="ref" data-ref="${key}">參考量 ${ref}</div>` : '';
+      const refInline = ref!=null ? ` <b class="ri" data-ref="${key}">參考 ${ref}</b>` : '';
+      const pk = packOf(d.name, p.loc);
+      const packTag = pk ? ` <b class="pk">${pk.a} 錠/${pk.ua || '束'} · ${pk.b} 錠/排</b>` : '';
+      const rowId = cellKey(d, p.loc);
+      const miss = `<b class="miss" data-miss="${rowId}" hidden>未填</b>`;
+      const head = `<div class="dn">${d.name}${packTag}${miss}</div>`;
+      const slots = slotsOf(p.loc, d.name);
+
+      /* 同一櫃內多個子儲位：各自輸入，右側自動合計 */
+      if(slots){
+        const flds = slots.map(sl=>{
+          const k = cellKey(d, p.loc, sl);
+          return d.oral
+            ? `<div class="fld"><span><b>${sl}</b> 總和</span><input class="n" data-k="${k}" data-p="t" data-sum="${k}" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0"></div>`
+            : `<div class="fld"><span><b>${sl}</b></span><input class="n" data-k="${k}" data-p="q" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0"></div>`;
+        }).join('');
+        return `<div class="row" data-row="${rowId}">${head}
+          <div class="pv" style="--n:${slots.length}">
+            ${flds}
+            <div class="op">=</div>
+            <div class="fld"><span>合計</span><input class="n sum" data-rowsum="${key}" placeholder="—" readonly tabindex="-1"></div>
+          </div>${refHtml}</div>`;
+      }
+
+      /* 只填一個數字：輸入框接在藥名後面 */
+      if(!usePv(p.loc, d)){
+        return `<div class="row tight" data-row="${rowId}">
+          <div class="line"><div class="dn">${d.name}${refInline}${miss}</div>
+            <input class="n solo" data-k="${key}" data-p="${d.oral ? 't' : 'q'}" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0">
+          </div>
+        </div>`;
+      }
+
+      /* 位值計算 */
+      const un = unitsOf(p.loc, d.name);
+      const boxes = un.parts.map(k =>
+        `<input class="n" data-k="${key}" data-p="${k}" data-max="${MAXLEN}"
+           type="text" inputmode="numeric" pattern="[0-9]*" maxlength="${MAXLEN}" placeholder="0">`).join('');
+      return `<div class="row" data-row="${rowId}">${head}
+          <div class="pv" style="${pvCols(un)}">
+            ${boxes}
+            <div class="op">=</div>
+            <input class="n sum" data-k="${key}" data-p="t" data-sum="${key}" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="—">
+          </div>${refHtml}</div>`;
+    }).join('') || `<div class="row tight"><div class="empty">尚未設定藥品</div></div>`;
+
+    const u = unitsOf(p.loc);
+    const hasPv = p.items.some(({d}) => usePv(p.loc, d) && !slotsOf(p.loc, d.name));
+    const pvHead = hasPv ? `<div class="pvhead" style="${pvCols(u)}">
+        ${u.parts.map(k => `<span>${k.toUpperCase()} · ${u['l'+k]}</span>`).join('')}
+        <span></span><span>總和</span>
+      </div>` : '';
+
+    card.innerHTML = `<div class="phead">
+        <div class="ptop">
+          <div class="pname">${p.loc}</div>
+          <b class="pleft" data-left="${p.li}" hidden></b>
+          <div class="pmeta" data-meta="${p.li}"></div>
+        </div>${pvHead}
+      </div>${rows}`;
+    app.appendChild(card);
+  });
+
+}
+
+/* ---------- 登入 ---------- */
+function paintGate(){
+  const h = new Date().getHours();
+  $('#g-hi').textContent = h < 5 ? '夜深了，辛苦了' : h < 11 ? '早安' : h < 14 ? '午安'
+                         : h < 18 ? '午後好' : h < 23 ? '晚安' : '夜深了，辛苦了';
+  $('#g-dots').innerHTML = DATA.locations.map((l, n)=>{
+    const [c] = HUES[l] || FALLBACK;
+    return `<i style="background:${c};animation-delay:${(n * 0.18).toFixed(2)}s"></i>`;
+  }).join('');
+}
+const MAIL_DOMAIN = '@ms1.ylh.gov.tw';
+const normalizeId = raw => {
+  const v = String(raw || '').replace(/\D/g, '');
+  return v ? 'Y' + v.padStart(5, '0') : '';
+};
+
+async function signIn(){
+  const id = normalizeId($('#g-id').value), pw = $('#g-pw').value;
+  if(!id || !pw){ $('#g-err').textContent = '請輸入員編與密碼'; return; }
+  const mail = id + MAIL_DOMAIN;
+  $('#g-err').className = 'err'; $('#g-err').textContent = '登入中…';
+  try{
+    await FB.signIn(mail, pw);
+  }catch(err){
+    const code = (err && err.code) || '';
+    $('#g-err').textContent =
+      /invalid-credential|wrong-password|user-not-found|invalid-email/.test(code) ? '員編或密碼錯誤'
+      : /too-many-requests/.test(code) ? '嘗試次數過多，請稍後再試'
+      : /network/.test(code) ? '無法連線，請確認網路'
+      : '登入失敗：' + code;
+    const g = $('#gate');
+    g.classList.remove('bad'); void g.offsetWidth; g.classList.add('bad');
+  }
+}
+
+/* Firebase 回報登入狀態後才進入主畫面 */
+async function applyConfig(){
+  try{
+    const cfg = await FB.readConfig();
+    if(cfg && Array.isArray(cfg.drugs) && cfg.drugs.length){
+      DATA.locations = cfg.locations || DATA.locations;
+      DATA.drugs = cfg.drugs;
+      if(cfg.pack) PACK = cfg.pack;
+      rebuild();
+    }
+  }catch(_){}
+}
+
+async function onSignedIn(u){
+  const id = u.email.split('@')[0].toUpperCase();
+  USER = { id, name: u.displayName || DISPLAY[id] || id, uid: u.uid };
+  $('#gate').classList.remove('bad');
+  $('#g-err').className = 'err'; $('#g-err').textContent = '';
+  $('#g-id').value = '';
+  $('#g-pw').value = '';
+  $('#b-logout').hidden = false;
+  $('#d-user').textContent = '－' + USER.name + (isAdmin() ? '（管理者）' : '');
+  ['#b-csv','#b-hist','#b-admin'].forEach(sel=>{
+    const el = $(sel); if(el) el.hidden = !isAdmin();
+  });
+  $('#gate').hidden = true;
+  $('#d-date').value = todayStr();
+  advToasted = true;                 // 改用登入後的警示視窗提醒，不再另跳浮動提示
+  await applyConfig();
+  await load();
+  watchRemote();
+  setTimeout(showAdvDialog, 350);
+  if(isAdmin()) FB.purgeHistory().catch(()=>{});   // 順手清掉兩年前的紀錄
+}
+
+let unwatch = null;
+let advToasted = false;
+function watchRemote(){
+  if(unwatch) unwatch();
+  unwatch = FB.listen(o=>{
+    if(dirty){                       // 自己有未存的數字，先不覆蓋畫面
+      toast('其他裝置已更新資料，儲存後將重新載入');
+      return;
+    }
+    applyRemote(o);
+    paintInputs(); refresh();
+    toast('已同步其他裝置的更新');
+  });
+}
+
+async function signOut(){
+  const unsaved = [...dirtyLocs];
+  const ok = unsaved.length
+    ? await askConfirm('尚未儲存',
+        '以下儲位的數字<b>還沒儲存</b>，<br>登出後將會遺失且無法復原。',
+        unsaved, '仍要登出')
+    : await askConfirm('確認登出',
+        '本次盤點資料<b>已全部儲存</b>。<br>確定要登出嗎？',
+        [], '確定登出', 'ok');
+  if(!ok) return;
+  await FB.signOut();
+}
+
+function onSignedOut(){
+  if(unwatch){ unwatch(); unwatch = null; }
+  USER = null;
+  $('#g-pw').value = '';
+  $('#g-id').value = '';
+  $('#g-err').textContent = '';
+  $('#d-user').textContent = '';
+  $('#b-logout').hidden = true;
+  $('#gate').hidden = false;
+  $('#gate').classList.remove('bad');
+  paintGate();
+  setTimeout(()=>$('#g-id').focus(), 50);
+}
+
+/* ---------- 分頁切換 ---------- */
+let current = 0;
+function show(li){
+  if(li < 0 || li >= PLACES.length) return;
+  current = li;
+  PLACES.forEach(q=>{
+    document.getElementById('L' + q.li).classList.toggle('active', q.li === li);
+    document.getElementById('nav' + q.li).classList.toggle('active', q.li === li);
+  });
+  if(isAdvance(PLACES[li].loc) && $('#d-date').value !== tomorrowStr() && !advToasted){
+    advToasted = true;                       // 每次登入只提醒一次，避免切換分頁一直跳
+    toast(`預先盤點，請將日期設為明日（${tomorrowStr()}）`);
+  }
+
+  const chip = document.getElementById('nav' + li);
+  if(chip) chip.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+  window.scrollTo({top:0, behavior:'auto'});
+}
+/* ---------- compute ---------- */
+const num = v => { const n = parseInt(String(v).replace(/[^\d]/g,''),10); return isNaN(n)?null:n; };
+
+function cellSum(key){
+  const s = state[key]; if(!s) return null;
+  if(s.q != null) return s.q;          // 針劑：直接輸入
+  if(s.t != null) return s.t;          // 口服：手動覆寫總和
+  const u = unitsOf(locOf(key), drugOf(key));
+  if(u.parts.every(k => s[k] == null)) return null;
+  return u.parts.reduce((sum, k) => sum + (s[k]||0) * u[k], 0);
+}
+const isManual = key => !!(state[key] && state[key].t != null);
+
+function refresh(){
+  let done = 0, all = 0, grand = 0;
+  PLACES.forEach(p=>{
+    let filled = 0, total = 0;
+    const shown = shownLoc(p.loc);            // 舊日期的紀錄不顯示，需重新盤點
+    let left = 0;                              // 該櫃尚未填寫的品項數
+    p.items.forEach(({d,i})=>{
+      const key = cellKey(d, p.loc);
+      let rowTotal = 0, rowAny = false;
+
+      keysFor(d, p.loc).forEach(k=>{
+        const v = cellSum(k);
+        const box = document.querySelector(`[data-sum="${k}"]`);
+        if(box){
+          const dv = shown && v != null ? v : '';
+          if(document.activeElement !== box) box.value = dv;
+          box.classList.toggle('on', dv !== '');
+        }
+        if(v!=null){ if(shown && savedKeys.has(k)) filled++; rowTotal += v; rowAny = true; }
+      });
+
+      /* 未填提示：該櫃已開始盤點時，標出尚未填寫的品項 */
+      const rowEl = document.querySelector(`[data-row="${key}"]`);
+      const missEl = document.querySelector(`[data-miss="${key}"]`);
+      const rowDone = shown && keysFor(d, p.loc).every(k => cellSum(k) != null);
+      if(rowEl) rowEl.classList.toggle('todo', !rowDone);
+      if(missEl) missEl.hidden = rowDone;
+      if(!rowDone) left++;
+
+      const rs = document.querySelector(`[data-rowsum="${key}"]`);
+      if(rs){
+        rs.value = (shown && rowAny) ? rowTotal : '';
+        rs.classList.toggle('on', shown && rowAny);
+      }
+      const r = document.querySelector(`[data-ref="${key}"]`);
+      if(r) r.classList.toggle('bad', shown && rowAny && rowTotal !== d.cells[p.loc]);
+      total += rowTotal;
+    });
+    all += p.keys.length; done += filled; grand += total;
+    document.querySelector(`[data-navcount="${p.li}"]`).textContent = filled + '/' + p.keys.length;
+    const chip = document.getElementById('nav' + p.li);
+    if(chip){
+      const st = p.keys.length === 0 ? '' :
+                 filled === 0 ? 'st0' :
+                 filled < p.keys.length ? 'stp' : 'stf';
+      chip.classList.remove('st0','stp','stf');
+      if(st) chip.classList.add(st);
+    }
+    const lf = document.querySelector(`[data-left="${p.li}"]`);
+    if(lf){
+      lf.hidden = !(left > 0);
+      lf.textContent = `尚缺 ${left} 項`;
+    }
+
+    const m = META[p.loc], el = document.querySelector(`[data-meta="${p.li}"]`);
+    if(el){
+      const gap = m ? daysAgo(m.date) : null;
+      el.classList.toggle('unsaved', dirtyLocs.has(p.loc));
+      el.classList.toggle('stale', !dirtyLocs.has(p.loc) && gap != null && gap >= 3);
+      el.textContent = dirtyLocs.has(p.loc) ? '尚未儲存'
+        : !m ? '未盤點'
+        : `${m.date.slice(5)} ${m.user}${gap > 0 ? `（${gap} 天前）` : ''}`;
+      el.title = m && m.at ? `實際存檔時間：${m.at}` : '';
+    }
+  });
+  const an = $('#adv-note'), nx = tomorrowStr();
+  an.hidden = !(ADVANCE && $('#d-date').value !== nx);
+  $('#adv-d').textContent = `${nx.slice(5)}（${weekOf(nx)}）`;
+  $('#adv-txt').textContent = daysBetween(todayStr(), nx) > 1
+    ? '跨假日，請選下個上班日'
+    : '盤點日期請選明日';
+
+  const w = $('#d-warn'), pick = $('#d-date').value, td = todayStr();
+  w.hidden = pick === td;
+  w.classList.toggle('ahead', pick > td);
+  if(!w.hidden){
+    const gap = Math.abs(Math.round(
+      (new Date(pick + 'T00:00:00') - new Date(td + 'T00:00:00')) / 86400000));
+    const off = !isWorkday(new Date(pick + 'T00:00:00')) ? '　⚠ 該日非上班日' : '';
+    w.textContent = pick > td
+      ? `預先盤點：紀錄標記為 ${pick}（週${weekOf(pick)}，${gap} 天後）${off}`
+      : `補登紀錄：紀錄標記為 ${pick}（週${weekOf(pick)}，${gap} 天前）${off}`;
+  }
+
+  $('#t-bar').style.width = all ? (done/all*100)+'%' : '0';
+  const cb = $('#b-csv');
+  if(cb){
+    const n = PLACES.filter(p => p.keys.length && META[p.loc]
+                && META[p.loc].date === $('#d-date').value).length;
+    cb.classList.toggle('off', n === 0);
+    cb.textContent = '匯出今日 CSV';
+  }
+}
+
+/* 通用置中確認視窗 */
+function askConfirm(title, msg, items, okText, tone){
+  return new Promise(resolve=>{
+    $('#askdlg').classList.toggle('safe', tone === 'ok');
+    $('#ak-top').textContent = title;
+    $('#ak-msg').innerHTML = msg;
+    $('#ak-list').innerHTML = (items || []).map(x => `<li>${x}</li>`).join('');
+    $('#ak-yes').textContent = okText || '確定';
+    $('#askdlg').hidden = false;
+    const done = ok=>{
+      $('#ak-yes').removeEventListener('click', yes);
+      $('#ak-no').removeEventListener('click', no);
+      $('#askdlg').hidden = true;
+      resolve(ok);
+    };
+    const yes = ()=> done(true), no = ()=> done(false);
+    $('#ak-yes').addEventListener('click', yes);
+    $('#ak-no').addEventListener('click', no);
+  });
+}
+
+/* 儲存確認視窗（置中） */
+function confirmSave(mark, items, warns){
+  return new Promise(resolve=>{
+    $('#sv-top').textContent = `確認儲存　${items.length} 個儲位`;
+    $('#sv-date').textContent = `${mark}（週${weekOf(mark)}）`;
+    $('#sv-list').innerHTML = items
+      .map(x => `<li>${x.loc}<em>${x.note}</em></li>`).join('');
+    const w = $('#sv-warn');
+    w.hidden = !warns.length;
+    w.innerHTML = warns.map(t => `<div>⚠　${t}</div>`).join('');
+    $('#savedlg').hidden = false;
+
+    const done = ok=>{
+      $('#sv-yes').removeEventListener('click', yes);
+      $('#sv-no').removeEventListener('click', no);
+      $('#savedlg').hidden = true;
+      resolve(ok);
+    };
+    const yes = ()=> done(true), no = ()=> done(false);
+    $('#sv-yes').addEventListener('click', yes);
+    $('#sv-no').addEventListener('click', no);
+  });
+}
+
+/* 預先盤點提醒視窗 */
+function showAdvDialog(){
+  const nx = tomorrowStr(), now = $('#d-date').value;
+  if(now === nx) return;
+  const cross = daysBetween(todayStr(), nx) > 1;
+  $('#ad-big').innerHTML = cross
+    ? `明日為休假日<br>紀錄日期應為<b>下個上班日</b>`
+    : `本表為預先盤點<br>紀錄日期應為<b>隔天</b>`;
+  $('#ad-now').textContent = now;
+  $('#ad-nw').textContent = `週${weekOf(now)}`;
+  $('#ad-tom').textContent = nx;
+  $('#ad-tw').textContent = `週${weekOf(nx)}`;
+  $('#advdlg').hidden = false;
+}
+$('#ad-yes') && null;
+
+/* 一鍵把標記日期設為明日 */
+document.addEventListener('click', e=>{
+  if(!e.target.closest('[data-settom]')) return;
+  $('#d-date').value = tomorrowStr();
+  refresh();
+  toast(`標記日期已設為 ${tomorrowStr()}（週${weekOf(tomorrowStr())}）`);
+});
+
+/* ---------- 自動跳到下一格 ---------- */
+function fields(el){
+  const card = el.closest('.place');
+  return card ? [...card.querySelectorAll('input.n:not([readonly])')] : [];
+}
+function focusNext(el){
+  const list = fields(el), i = list.indexOf(el);
+  if(i >= 0 && i + 1 < list.length){
+    const next = list[i + 1];
+    next.focus(); next.select();
+  }else{
+    el.blur();                                   // 已是最後一格，收起鍵盤
+  }
+}
+let hopTimer = null;
+const cancelHop = () => clearTimeout(hopTimer);
+
+document.addEventListener('focusin', e=>{
+  cancelHop();
+  if(e.target.matches('input.n')) setTimeout(()=>e.target.select(), 0);
+});
+document.addEventListener('focusout', cancelHop);
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Enter' && e.target.matches('input.n')){
+    e.preventDefault();
+    focusNext(e.target);
+  }
+});
+
+/* ---------- input ---------- */
+document.addEventListener('input', e=>{
+  const el = e.target;
+  if(!el.matches('input.n')) return;
+  const key = el.dataset.k, p = el.dataset.p, v = num(el.value);
+  const loc = locOf(key);
+
+  /* 這一櫃本次第一次輸入：先清掉舊紀錄的數字，避免新舊混用 */
+  if(!shownLoc(loc)){
+    session.add(loc);
+    PLACES.filter(x => x.loc === loc).forEach(x => x.keys.forEach(k => delete state[k]));
+    document.querySelectorAll(`input.n[data-k$="|${loc}"], input.n[data-k*="|${loc}|"]`)
+      .forEach(o => { if(o !== el){ o.value = ''; o.classList.remove('filled','over'); } });
+  }
+
+  state[key] = state[key] || {};
+  if(v==null) delete state[key][p]; else state[key][p] = v;
+
+  if(p === 't'){
+    // 直接輸入總和 → 清掉 A/B/C
+    ['a','b','c'].forEach(k => delete state[key][k]);
+    document.querySelectorAll(`input.n[data-k="${key}"]`).forEach(o=>{
+      if(o.dataset.p !== 't'){ o.value=''; o.classList.remove('filled','over'); }
+    });
+  }else if(p === 'a' || p === 'b' || p === 'c'){
+    // 改用 A/B/C → 取消手動總和
+    delete state[key].t;
+  }
+
+  if(!Object.keys(state[key]).length) delete state[key];
+  el.classList.toggle('filled', v!=null);
+  el.classList.toggle('over', isOver(p, v, locOf(key), drugOf(key)));
+  dirtyLocs.add(locOf(key));
+  refresh(); markDirty(true);
+
+  /* 跳下一格：位數填滿立刻跳；未滿位數則停頓 0.8 秒後跳 */
+  cancelHop();
+  const max = Number(el.dataset.max);
+  if(max){
+    if(el.value.length >= max) focusNext(el);
+    else if(el.value.length > 0) hopTimer = setTimeout(()=>focusNext(el), HOP_MS);
+  }
+});
+
+const todayStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
+
+const META = {};                    // { 儲位: {date, user, staffId} }
+const dirtyLocs = new Set();        // 本次尚未儲存的儲位
+const session   = new Set();        // 本次已重新盤點的儲位
+let savedKeys   = new Set();        // 已寫入雲端的格子（分頁籤以此計數）
+const snapSaved = () => {
+  savedKeys = new Set();
+  PLACES.forEach(p => p.keys.forEach(k => { if(cellSum(k) != null) savedKeys.add(k); }));
+};
+/* 是否顯示數字：本次盤過，或雲端已有「目前標記日期」的紀錄（同一天續填） */
+const shownLoc = loc => session.has(loc) ||
+  (META[loc] && META[loc].date === $('#d-date').value);
+
+function applyRemote(o){
+  Object.keys(state).forEach(k=>delete state[k]);
+  Object.keys(META).forEach(k=>delete META[k]);
+  Object.assign(state, (o && o.cells) || {});
+  Object.assign(META,  (o && o.meta)  || {});
+}
+
+async function load(){
+  dirtyLocs.clear();
+  session.clear();
+  PREFILL.forEach(l => session.add(l));      // 固定量櫃位仍顯示，供核對
+  try{
+    applyRemote(await FB.read());
+  }catch(err){
+    toast('無法讀取雲端資料，請確認網路');
+  }
+  applyPrefill();
+  snapSaved();
+  paintInputs();
+  refresh();
+  markDirty(false);
+}
+
+/* 尚未填寫的固定櫃位帶入原表數字 */
+function applyPrefill(){
+  PLACES.forEach(p=>{
+    if(!PREFILL.includes(p.loc)) return;
+    p.items.forEach(({d,i})=>{
+      const key = cellKey(d, p.loc), ref = d.cells[p.loc];
+      if(ref == null || state[key]) return;
+      state[key] = d.oral ? {t:ref} : {q:ref};
+    });
+  });
+}
+function paintInputs(){
+  document.querySelectorAll('input.n').forEach(el=>{
+    if(!el.dataset.k) return;              // 唯讀合計欄不還原
+    const show = shownLoc(locOf(el.dataset.k));
+    const st = show ? state[el.dataset.k] : null;
+    const v = st ? st[el.dataset.p] : null;
+    el.value = v==null ? '' : v;
+    el.classList.toggle('filled', v!=null && el.dataset.p!=='t');
+    el.classList.toggle('over', isOver(el.dataset.p, v, locOf(el.dataset.k), drugOf(el.dataset.k)));
+  });
+}
+function markDirty(v){
+  dirty = v;
+  const b = $('#b-save');
+  b.textContent = v ? '儲存 •' : '儲存';
+  b.classList.toggle('dirty', v);
+}
+
+/* 儲存：只有這次動過的儲位會更新盤點日期與人員 */
+/* 修改原因的常用選項 */
+const REASONS = [
+  '重新清點，更正原輸入數字',
+  '與帳面不符，複查後更正'
+];
+
+let whyPick = '';
+function askReason(note){
+  return new Promise(resolve=>{
+    whyPick = '';
+    $('#w-note').textContent = note;
+    $('#w-text').value = '';
+    $('#w-list').innerHTML = REASONS
+      .map(r => `<button type="button" data-r="${r}">${r}</button>`).join('');
+    $('#why').hidden = false;
+
+    const list = $('#w-list');
+    const pick = e=>{
+      const b = e.target.closest('[data-r]'); if(!b) return;
+      whyPick = whyPick === b.dataset.r ? '' : b.dataset.r;
+      [...list.children].forEach(x => x.classList.toggle('on', x.dataset.r === whyPick));
+    };
+    const done = ok=>{
+      list.removeEventListener('click', pick);
+      $('#w-ok').removeEventListener('click', okFn);
+      $('#w-cancel').removeEventListener('click', noFn);
+      $('#why').hidden = true;
+      resolve(ok);
+    };
+    const okFn = ()=>{
+      const extra = $('#w-text').value.trim();
+      const txt = [whyPick, extra].filter(Boolean).join('：');
+      if(!txt) return toast('請選擇或輸入修改原因');
+      done(txt);
+    };
+    const noFn = ()=> done(null);
+    list.addEventListener('click', pick);
+    $('#w-ok').addEventListener('click', okFn);
+    $('#w-cancel').addEventListener('click', noFn);
+    setTimeout(()=>$('#w-text').focus(), 60);
+  });
+}
+
+let auditPending = null;
+
+/* 取某儲位目前各品項的數量，供修改前後比對 */
+function snapshotOf(loc){
+  const out = {};
+  const p = PLACES.find(x => x.loc === loc);
+  if(!p) return out;
+  p.items.forEach(({d})=>{
+    const slots = slotsOf(loc, d.name);
+    (slots || [null]).forEach(sl=>{
+      const v = cellSum(cellKey(d, loc, sl));
+      if(v != null) out[d.name + (sl ? '（' + sl + '）' : '')] = v;
+    });
+  });
+  return out;
+}
+
+async function save(quiet){
+  const mark = $('#d-date').value;
+
+  /* 目前所在的儲位一律列入紀錄（看過即算盤點，可能整櫃無使用量） */
+  const here = PLACES[current];
+  const hadHere = here ? dirtyLocs.has(here.loc) : false;
+  if(here && here.keys.length) dirtyLocs.add(here.loc);
+
+  const list = [...dirtyLocs];
+  if(list.length){
+    const lines = list.map(loc =>
+      !META[loc] ? { loc, note: '首次盤點' }
+      : META[loc].date === mark ? { loc, note: `覆蓋今日紀錄（原 ${META[loc].user}）` }
+      : { loc, note: `上次 ${META[loc].date.slice(5)} ${META[loc].user}` });
+    const older = list.filter(loc => META[loc] && META[loc].date > mark);
+    const warns = [];
+    /* 漏盤提醒：列出本次要儲存的儲位中，尚未填寫數量的品項 */
+    list.forEach(loc=>{
+      const p2 = PLACES.find(x => x.loc === loc);
+      if(!p2) return;
+      const blanks = p2.items.filter(({d}) =>
+        keysFor(d, loc).some(k => cellSum(k) == null)).map(x => x.d.name);
+      if(blanks.length) warns.push(
+        `${loc} 有 ${blanks.length} 項未填：${blanks.slice(0,3).join('、')}` +
+        (blanks.length > 3 ? ' 等' : ''));
+    });
+
+    if(mark !== tomorrowStr() && list.some(isAdvance))
+      warns.push(`預先盤點：建議標記為 ${tomorrowStr().slice(5)}（週${weekOf(tomorrowStr())}）`);
+    if(!isWorkday(new Date(mark + 'T00:00:00')))
+      warns.push(`${mark.slice(5)}（週${weekOf(mark)}）為非上班日，請確認`);
+    if(older.length)
+      warns.push('標記日期早於既有紀錄，請確認日期');
+    if(!await confirmSave(mark, lines, warns)){
+      if(here && !hadHere) dirtyLocs.delete(here.loc);
+      refresh();
+      return;
+    }
+
+    /* 覆蓋既有紀錄：必須填修改原因，並留下前後數字 */
+    const over = list.filter(loc => META[loc] && META[loc].date === mark);
+    if(over.length){
+      const why = await askReason(`${over.join('、')} 今日（${mark}）已有盤點紀錄，本次為修改，原因將永久留存。`);
+      if(!why){
+        if(here && !hadHere) dirtyLocs.delete(here.loc);
+        refresh();
+        return;
+      }
+      auditPending = over.map(loc=>({
+        type: '修改盤點紀錄', loc, reason: why,
+        before: { date: META[loc].date, user: META[loc].user, cells: snapshotOf(loc) },
+        markDate: mark
+      }));
+    }
+  }
+
+  dirtyLocs.forEach(loc=>{
+    META[loc] = {
+      date: mark, user: USER ? USER.name : '', staffId: USER ? USER.id : '',
+      at: new Date().toISOString().slice(0,16).replace('T',' ')
+    };
+  });
+  try{
+    const locs = [...dirtyLocs];
+    const cellsSub = {}, metaSub = {};
+    Object.keys(state).forEach(k=>{ if(locs.includes(locOf(k))) cellsSub[k] = state[k]; });
+    locs.forEach(l=>{ metaSub[l] = META[l]; });
+    const merged = await FB.saveLocs(locs, cellsSub, metaSub, USER ? USER.name : '');
+    /* 以合併後的雲端資料為準：其他同仁剛存的儲位也一併更新到本機 */
+    Object.keys(state).forEach(k=>{ if(!locs.includes(locOf(k))) delete state[k]; });
+    Object.entries(merged.cells).forEach(([k,v])=>{ if(!locs.includes(locOf(k))) state[k] = v; });
+    Object.keys(META).forEach(k=>delete META[k]);
+    Object.assign(META, merged.meta);
+    if(auditPending){
+      for(const a of auditPending){
+        await FB.audit({ ...a, after: { date: mark, user: USER ? USER.name : '', cells: snapshotOf(a.loc) },
+                         by: USER ? USER.name : '', staffId: USER ? USER.id : '' }).catch(()=>{});
+      }
+      auditPending = null;
+    }
+    const n = dirtyLocs.size;
+    dirtyLocs.clear();
+    snapSaved();
+    markDirty(false);
+    paintInputs();
+    refresh();
+    if(!quiet) toast(n ? `已儲存 ${n} 個儲位（${mark}）` : '已儲存');
+  }catch(err){
+    markDirty(true);
+    const code = (err && err.code) || '', m = (err && err.message) || '';
+    toast(
+      /permission-denied/.test(code) ? '儲存失敗：權限不足，請確認 Firestore 安全規則已更新'
+      : /unauthenticated/.test(code) ? '登入已逾時，請重新登入'
+      : /unavailable|network/i.test(code + m) ? '儲存失敗：無法連線，請確認網路'
+      : '儲存失敗：' + (code || m)
+    );
+    console.error('save failed:', err);
+  }
+}
+
+/* 距今幾天 */
+function daysAgo(d){
+  if(!d) return null;
+  const a = new Date(d + 'T00:00:00'), b = new Date($('#d-date').value + 'T00:00:00');
+  return Math.round((b - a) / 86400000);
+}
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1900); }
+
+/* ---------- 匯出歷史紀錄（限管理者） ---------- */
+const shiftDate = n => {
+  const d = new Date(); d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0,10);
+};
+
+function openHist(){
+  if(!isAdmin()) return toast('僅管理者可匯出');
+  $('#h-from').value = shiftDate(30);
+  $('#h-to').value   = todayStr();
+  $('#h-msg').textContent = '';
+  $('#hist').hidden = false;
+}
+
+function cellOf(rec, d, loc, slot){
+  const k = d.name + '|' + loc + (slot ? '|' + slot : '');
+  const st = rec.cells && rec.cells[k];
+  if(!st) return null;
+  if(st.q != null) return st.q;
+  if(st.t != null) return st.t;
+  const u = unitsOf(loc, d.name);
+  if(u.parts.every(x => st[x] == null)) return null;
+  return u.parts.reduce((sum, x) => sum + (st[x]||0) * u[x], 0);
+}
+
+async function histCsv(){
+  const from = $('#h-from').value, to = $('#h-to').value;
+  if(!from || !to) return ($('#h-msg').textContent = '請選擇起迄日期');
+  if(from > to)    return ($('#h-msg').textContent = '起始日期不可晚於結束日期');
+
+  $('#h-msg').textContent = '查詢中…';
+  let recs;
+  try{ recs = await FB.historyRange(from, to); }
+  catch(err){
+    const code = (err && err.code) || '', msg = (err && err.message) || '';
+    if(/permission-denied/.test(code)){
+      $('#h-msg').innerHTML = '權限不足：請確認 Firestore 規則已更新，且你是管理者';
+    }else if(/failed-precondition|index/i.test(code + msg)){
+      const url = (msg.match(/https:\/\/\S+/) || [])[0];
+      $('#h-msg').innerHTML = '需要建立索引才能查詢。'
+        + (url ? `<br><a href="${url}" target="_blank" rel="noopener">點此開啟 Firebase 建立索引</a>（約 1 分鐘完成後再試）`
+               : '請至 Firebase 主控台建立 history 集合的 date 索引。');
+    }else if(/unavailable|network/i.test(code + msg)){
+      $('#h-msg').textContent = '無法連線，請確認網路';
+    }else{
+      $('#h-msg').textContent = '查詢失敗：' + (code || msg);
+    }
+    return;
+  }
+
+  if(!recs.length) return ($('#h-msg').textContent = '這段期間沒有紀錄');
+
+  const L = [];
+
+  /* 一、每次儲存的摘要 */
+  L.push(`歷史紀錄　${from} 至 ${to}`);
+  L.push('');
+  L.push('儲存紀錄');
+  L.push('序,盤點日期,儲存人員,更新儲位數');
+  recs.forEach((r, n)=>{
+    const locs = Object.keys(r.meta || {}).length;
+    L.push([n+1, r.date, `"${r.by || ''}"`, locs].join(','));
+  });
+
+  /* 二、各儲位最後一次盤點 */
+  L.push('');
+  L.push('各儲位最後盤點');
+  L.push('儲位,盤點日期,盤點人員,員工編號');
+  const lastMeta = {};
+  recs.forEach(r => Object.assign(lastMeta, r.meta || {}));
+  DATA.locations.forEach(loc=>{
+    const m = lastMeta[loc];
+    L.push([loc, m ? m.date : '', m ? `"${m.user}"` : '', m ? m.staffId : ''].join(','));
+  });
+
+  /* 三、每次儲存的完整數量 */
+  L.push('');
+  L.push('數量明細');
+  L.push(['盤點日期','儲存人員','藥品名稱','劑型', ...DATA.locations, '總量'].join(','));
+  recs.forEach(r=>{
+    DATA.drugs.forEach(d=>{
+      const row = [r.date, `"${r.by || ''}"`, `"${d.name}"`, d.oral ? '口服' : '針劑/其他'];
+      let tot = 0, any = false;
+      DATA.locations.forEach(loc=>{
+        if(!(loc in d.cells)){ row.push('*'); return; }
+        const slots = slotsOf(loc, d.name);
+        let sum = 0, has = false;
+        (slots || [null]).forEach(sl=>{
+          const v = cellOf(r, d, loc, sl);
+          if(v != null){ sum += v; has = true; }
+        });
+        if(has){ tot += sum; any = true; }
+        row.push(has ? sum : '');
+      });
+      row.push(any ? tot : '');
+      L.push(row.join(','));
+    });
+  });
+
+  /* 四、修改軌跡 */
+  let audits = [];
+  try{ audits = await FB.auditRange(from, to); }catch(_){}
+  L.push('');
+  L.push('修改軌跡');
+  if(!audits.length){
+    L.push('（這段期間沒有修改紀錄）');
+  }else{
+    L.push('日期,類型,儲位／項目,修改原因,操作人員,員工編號,修改前,修改後');
+    audits.forEach(a=>{
+      if(a.type === '藥品設定變更'){
+        (a.changes || []).forEach(c=>{
+          L.push([a.date, a.type, `"${c}"`, `"${a.reason || ''}"`,
+                  `"${a.by || ''}"`, a.staffId || '', '', ''].join(','));
+        });
+      }else{
+        const fmt = o => o && o.cells
+          ? Object.entries(o.cells).map(([k,v]) => `${k}=${v}`).join(' / ') : '';
+        L.push([a.date, a.type, a.loc || '', `"${a.reason || ''}"`,
+                `"${a.by || ''}"`, a.staffId || '',
+                `"${(a.before ? a.before.date + ' ' + (a.before.user||'') + '：' : '') + fmt(a.before)}"`,
+                `"${(a.after ? a.after.date + ' ' + (a.after.user||'') + '：' : '') + fmt(a.after)}"`
+               ].join(','));
+      }
+    });
+  }
+
+  L.push('');
+  L.push(`匯出時間,${todayStr()},匯出人員,"${USER ? USER.name : ''}",紀錄筆數,${recs.length},修改軌跡,${audits.length}`);
+
+  download(new Blob(['\ufeff' + L.join('\r\n')], {type:'text/csv;charset=utf-8'}),
+           `管制藥歷史紀錄_${from}_至_${to}.csv`);
+  $('#h-msg').textContent = `已匯出 ${recs.length} 筆盤點紀錄`;
+}
+
+function bindHist(){
+  $('#b-hist').addEventListener('click', openHist);
+  $('#h-close').addEventListener('click', ()=>{ $('#hist').hidden = true; });
+  $('#h-go').addEventListener('click', histCsv);
+  document.querySelectorAll('.hquick button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      $('#h-from').value = shiftDate(+b.dataset.days);
+      $('#h-to').value   = todayStr();
+      $('#h-msg').textContent = '';
+    });
+  });
+}
+
+/* ---------- 藥品與儲位管理（限管理者） ---------- */
+let draft = null;
+let before = null;
+
+function openAdmin(){
+  if(!isAdmin()) return toast('僅管理者可修改設定');
+  if(dirty && !confirm('目前有尚未儲存的盤點數字，開啟管理後將重新載入。仍要繼續？')) return;
+  draft = DATA.drugs.map(d=>({ name:d.name, oral:d.oral, locs:Object.keys(d.cells),
+                               pack: PACK[d.name] ? {...PACK[d.name]} : null }));
+  before = DATA.drugs.map(d=>({ name:d.name, locs:Object.keys(d.cells).join('、'),
+                                pack: PACK[d.name] ? `${PACK[d.name].a}/${PACK[d.name].b}` : '預設' }));
+  renderAdmin();
+  $('#admin').hidden = false;
+}
+
+function renderAdmin(){
+  $('#a-body').innerHTML = draft.map((d, i)=>`
+    <div class="arow" data-i="${i}">
+      <div class="top">
+        <input class="nm" value="${d.name.replace(/"/g,'&quot;')}" placeholder="藥品名稱（含 tab 視為口服）">
+        <button type="button" class="del">刪除</button>
+      </div>
+      <div class="pack">
+        <span>包裝</span>
+        <label>每束<input class="pa" type="text" inputmode="numeric" pattern="[0-9]*"
+               value="${d.pack ? d.pack.a : ''}" placeholder="100"></label>
+        <label>每排<input class="pb" type="text" inputmode="numeric" pattern="[0-9]*"
+               value="${d.pack ? d.pack.b : ''}" placeholder="10"></label>
+        <em>錠（留空＝用預設 100／10）</em>
+      </div>
+      <div class="locs">
+        ${DATA.locations.map(l=>`
+          <label class="${d.locs.includes(l) ? 'on' : ''}" style="--c:${(HUES[l]||FALLBACK)[0]}">
+            <input type="checkbox" data-loc="${l}" ${d.locs.includes(l) ? 'checked' : ''}>${l}
+          </label>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+$('#a-body') && null;
+
+function bindAdmin(){
+  $('#a-body').addEventListener('input', e=>{
+    const row = e.target.closest('.arow'); if(!row) return;
+    const i = +row.dataset.i;
+    if(e.target.matches('input.nm')){
+      draft[i].name = e.target.value;
+      draft[i].oral = /tab/i.test(e.target.value);
+    }
+    if(e.target.matches('input.pa') || e.target.matches('input.pb')){
+      e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
+      const pa = +row.querySelector('.pa').value, pb = +row.querySelector('.pb').value;
+      draft[i].pack = (pa > 0 && pb > 0) ? {a:pa, b:pb} : null;
+    }
+    if(e.target.matches('input[type=checkbox]')){
+      const loc = e.target.dataset.loc;
+      const on  = e.target.checked;
+      draft[i].locs = on ? [...new Set([...draft[i].locs, loc])]
+                         : draft[i].locs.filter(x => x !== loc);
+      e.target.closest('label').classList.toggle('on', on);
+    }
+  });
+  $('#a-body').addEventListener('click', e=>{
+    if(!e.target.matches('.del')) return;
+    const row = e.target.closest('.arow'), i = +row.dataset.i;
+    if(!confirm(`確定刪除「${draft[i].name}」？\n該藥品所有儲位的盤點數字也會一併移除。`)) return;
+    draft.splice(i, 1); renderAdmin();
+  });
+  $('#a-add').addEventListener('click', ()=>{
+    draft.push({ name:'', oral:false, locs:[] });
+    renderAdmin();
+    const last = $('#a-body').lastElementChild;
+    last && last.querySelector('input.nm').focus();
+  });
+  $('#a-close').addEventListener('click', ()=>{ $('#admin').hidden = true; draft = null; });
+  $('#a-save').addEventListener('click', saveAdmin);
+  $('#b-admin').addEventListener('click', openAdmin);
+}
+
+async function saveAdmin(){
+  const bad = draft.filter(d => !d.name.trim());
+  if(bad.length) return toast('有藥品名稱未填寫');
+  const names = draft.map(d => d.name.trim());
+  if(new Set(names).size !== names.length) return toast('藥品名稱重複');
+
+  /* 比對變更內容 */
+  const now = draft.map(d=>({ name:d.name.trim(), locs:d.locs.join('、'),
+                              pack: d.pack ? `${d.pack.a}/${d.pack.b}` : '預設' }));
+  const oldMap = new Map(before.map(x=>[x.name, x]));
+  const newMap = new Map(now.map(x=>[x.name, x]));
+  const changes = [];
+  before.forEach(x=>{ if(!newMap.has(x.name)) changes.push(`刪除　${x.name}（原儲位：${x.locs || '無'}）`); });
+  now.forEach(x=>{
+    const o = oldMap.get(x.name);
+    if(!o){ changes.push(`新增　${x.name}（儲位：${x.locs || '無'}）`); return; }
+    if(o.locs !== x.locs)
+      changes.push(`調整儲位　${x.name}：${o.locs || '無'} → ${x.locs || '無'}`);
+    if(o.pack !== x.pack)
+      changes.push(`調整包裝　${x.name}：每束/每排 ${o.pack} → ${x.pack}`);
+  });
+
+  if(!changes.length) return toast('設定沒有變更');
+
+  if(!confirm([`本次共 ${changes.length} 項變更：`, '',
+               ...changes.slice(0, 12).map(c => '　・' + c),
+               changes.length > 12 ? `　…等共 ${changes.length} 項` : '', '',
+               '確定要儲存嗎？'].filter(Boolean).join('\n'))) return;
+
+  const why = await askReason(`共 ${changes.length} 項藥品設定變更，原因將永久留存。`);
+  if(!why) return;
+
+  /* 保留仍存在的盤點數字，移除已刪除的品項 */
+  const keep = {};
+  draft.forEach(d=>{
+    d.locs.forEach(l=>{
+      Object.keys(state).forEach(k=>{
+        if(k.startsWith(d.name.trim() + '|' + l)) keep[k] = state[k];
+      });
+    });
+  });
+
+  const cfg = {
+    locations: DATA.locations,
+    pack: Object.fromEntries(draft.filter(d=>d.pack).map(d=>[d.name.trim(), d.pack])),
+    drugs: draft.map(d=>({
+      name: d.name.trim(),
+      oral: /tab/i.test(d.name),
+      cells: Object.fromEntries(d.locs.map(l=>[l, null]))
+    }))
+  };
+
+  try{
+    await FB.audit({ type:'藥品設定變更', reason: why, changes,
+                     by: USER ? USER.name : '', staffId: USER ? USER.id : '' }).catch(()=>{});
+    await FB.writeConfig(cfg);
+    await FB.write({ cells: keep, meta: META, by: USER.name });
+    toast('設定已儲存，重新載入中…');
+    setTimeout(()=>location.reload(), 900);
+  }catch(err){
+    toast('儲存失敗，請確認網路');
+  }
+}
+
+/* ---------- 匯出：以藥品為主體，總量在前，各儲位明細在後 ---------- */
+/* 匯出範圍：標記日期等於畫面上日期的儲位 */
+const todayLocs = () => PLACES
+  .filter(p => p.keys.length && META[p.loc] && META[p.loc].date === $('#d-date').value)
+  .map(p => p.loc);
+
+function locTotal(d, loc){          // 該藥品在某儲位的量；納入範圍內的空格視為 0
+  if(!todayLocs().includes(loc)) return null;
+  let sum = 0, has = false;
+  keysFor(d, loc).forEach(k=>{
+    const v = cellSum(k);
+    if(v != null){ sum += v; has = true; }
+  });
+  return has ? sum : 0;
+}
+
+/* 尚未有任何儲存紀錄的儲位 */
+function missingInfo(){
+  const locs = PLACES.filter(p => p.keys.length && !META[p.loc]);
+  return { count: locs.length, names: locs.map(p => p.loc), firstLi: locs.length ? locs[0].li : null };
+}
+
+/* 已盤儲位中沒填數字的格子（視為 0） */
+function blankCells(){
+  const out = [];
+  const inc = todayLocs();
+  PLACES.forEach(p=>{
+    if(!inc.includes(p.loc)) return;               // 只檢查當日納入的儲位
+    p.items.forEach(({d})=>{
+      const slots = slotsOf(p.loc, d.name);
+      (slots || [null]).forEach(sl=>{
+        if(cellSum(cellKey(d, p.loc, sl)) == null)
+          out.push(`　・${p.loc}　${d.name}${sl ? '（' + sl + '）' : ''}`);
+      });
+    });
+  });
+  return out;
+}
+
+function buildRows(){
+  const scope = todayLocs();
+
+  const L = [];
+
+  /* 1. 彙總：依劑型分組，每項藥品跨所有儲位的總量 */
+  L.push(`盤點日期　${$('#d-date').value}`);
+  L.push(`納入儲位　${scope.join('、') || '無'}`);
+  L.push('');
+  L.push('盤點彙總');
+  L.push('藥品名稱,劑型,總量');
+  FORMS.forEach(f=>{
+    const group = orderedDrugs(DATA.drugs.filter(d => formOf(d) === f));
+    if(!group.length) return;
+    L.push(f);
+    group.forEach(d=>{
+      let tot = 0, any = false;
+      DATA.locations.forEach(l=>{
+        if(!(l in d.cells)) return;
+        const v = locTotal(d, l);
+        if(v!=null){ tot += v; any = true; }
+      });
+      L.push([`"${d.name}"`, f, any?tot:''].join(','));
+    });
+  });
+
+  /* 2. 各儲位明細（原表格式），同樣依劑型分組 */
+  L.push('');
+  L.push('各儲位明細');
+  L.push(['藥品名稱', ...DATA.locations, '總量'].join(','));
+  FORMS.forEach(f=>{
+    const group = orderedDrugs(DATA.drugs.filter(d => formOf(d) === f));
+    if(!group.length) return;
+    L.push(f);
+    group.forEach(d=>{
+      const row = [`"${d.name}"`]; let tot = 0, any = false;
+      DATA.locations.forEach(l=>{
+        if(!(l in d.cells)){ row.push('*'); return; }
+        const v = locTotal(d, l);
+        if(v!=null){ tot += v; any = true; }
+        row.push(v==null ? '' : v);
+      });
+      row.push(any?tot:'');
+      L.push(row.join(','));
+    });
+  });
+
+  /* 3. 子儲位明細（僅有細分的品項才列出） */
+  const subs = [];
+  PLACES.forEach(p=>{
+    p.items.forEach(({d})=>{
+      const sl = slotsOf(p.loc, d.name);
+      if(!sl) return;
+      keysFor(d, p.loc).forEach((k, n)=>{
+        const v = cellSum(k);
+        subs.push([`${p.loc} ${sl[n]}`, `"${d.name}"`, v==null?'':v].join(','));
+      });
+    });
+  });
+  if(subs.length){
+    L.push('');
+    L.push('子儲位明細');
+    L.push('儲位,藥品名稱,數量');
+    subs.forEach(r => L.push(r));
+  }
+
+  /* 4. 各儲位的盤點時間與負責人 */
+  L.push('');
+  L.push('儲位盤點紀錄　（★ 為本次匯出範圍）');
+  L.push('儲位,盤點日期,盤點人員,員工編號,本次匯出');
+  const inc = todayLocs();
+  PLACES.forEach(p=>{
+    const m = META[p.loc];
+    L.push([p.loc, m ? m.date : '', m ? `"${m.user}"` : '', m ? m.staffId : '',
+            inc.includes(p.loc) ? '★' : ''].join(','));
+  });
+
+  L.push('');
+  L.push(`匯出日期,${$('#d-date').value},匯出人員,"${USER ? USER.name : ''}",員工編號,${USER ? USER.id : ''}`);
+
+  return L;
+}
+
+const csvName = () => `管制藥盤點_${$('#d-date').value}.csv`;
+const csvBlob = () => new Blob(['\ufeff' + buildRows().join('\r\n')], {type:'text/csv;charset=utf-8'});
+
+/* 盤完才放行，未完成時跳到第一個缺口 */
+function ensureComplete(){
+  if(dirtyLocs.size){
+    toast('尚有未儲存的儲位，請先按儲存');
+    return false;
+  }
+  const inc = todayLocs();
+  if(!inc.length){
+    toast(`${$('#d-date').value} 沒有任何儲位的盤點紀錄`);
+    return false;
+  }
+  const rest = PLACES.filter(p => p.keys.length && !inc.includes(p.loc));
+  if(rest.length && !confirm([
+      `本次匯出 ${$('#d-date').value} 的盤點結果，包含 ${inc.length} 個儲位：`, '',
+      '　' + inc.join('、'), '',
+      `以下 ${rest.length} 個儲位當日未盤點，不納入本次匯出：`, '',
+      ...rest.map(p => `　・${p.loc}（${META[p.loc] ? '最後盤點 ' + META[p.loc].date : '尚無紀錄'}）`), '',
+      '確定要匯出嗎？'
+    ].join('\n'))) return false;
+
+  /* 空格視為 0，匯出前先讓使用者確認 */
+  const blanks = blankCells();
+  if(blanks.length){
+    const show10 = blanks.slice(0, 10);
+    const msg = [
+      `以下 ${blanks.length} 個項目未填數字，將以 0 匯出：`, '',
+      ...show10,
+      blanks.length > 10 ? `　…等共 ${blanks.length} 項` : '', '',
+      '確定要匯出嗎？'
+    ].filter(x => x !== '').join('\n');
+    if(!confirm(msg)) return false;
+  }
+  return true;
+}
+
+function csv(){
+  if(!ensureComplete()) return;
+  download(csvBlob(), csvName());
+  refresh();
+  toast('今日盤點 CSV 已下載');
+}
+
+function download(blob, name){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
+
+
+
+/* ---------- sticky offset: measure the real header height ---------- */
+function syncHeader(){
+  const h = document.querySelector('header').getBoundingClientRect().height;
+  document.documentElement.style.setProperty('--hh', Math.round(h) + 'px');
+}
+
+/* ---------- init ---------- */
+build();
+bindAdmin();
+bindHist();
+show(0);
+syncHeader();
+addEventListener('resize', syncHeader);
+addEventListener('orientationchange', syncHeader);
+if(window.ResizeObserver) new ResizeObserver(syncHeader).observe(document.querySelector('header'));
+$('#d-date').value = todayStr();
+$('#d-date').addEventListener('change', ()=>{
+  advToasted = false;
+  paintInputs();
+  refresh();                        // 只更新「幾天前」的顯示，不會清空資料
+  toast('本次儲存將標記為 ' + $('#d-date').value);
+});
+$('#g-go').addEventListener('click', signIn);
+let idHop = null;
+['#g-id','#g-pw'].forEach(sel=>{
+  $(sel).addEventListener('keydown', e=>{
+    if(e.key !== 'Enter') return;
+    clearTimeout(idHop);
+    if(sel === '#g-id') $('#g-pw').focus();       // 員編按 Enter 先跳密碼
+    else signIn();
+  });
+  $(sel).addEventListener('input', e=>{
+    if(sel === '#g-pw') e.target.value = e.target.value.replace(/\D/g, '');
+    if(sel === '#g-id'){
+      e.target.value = e.target.value.replace(/\D/g, '').slice(0, 5);
+      /* 員編滿 5 碼才自動跳到密碼 */
+      clearTimeout(idHop);
+      if(e.target.value.length >= 5) $('#g-pw').focus();
+    }
+    $('#gate').classList.remove('bad');
+    if($('#g-err').textContent) $('#g-err').textContent = '';
+  });
+});
+$('#g-id').addEventListener('blur', ()=> clearTimeout(idHop));
+$('#ad-yes').addEventListener('click', ()=>{
+  $('#advdlg').hidden = true;
+  $('#d-date').value = tomorrowStr();
+  refresh();
+  toast(`標記日期已設為 ${tomorrowStr()}（週${weekOf(tomorrowStr())}）`);
+});
+$('#ad-no').addEventListener('click', ()=>{ $('#advdlg').hidden = true; });
+$('#b-logout').addEventListener('click', signOut);
+$('#b-save').addEventListener('click', ()=>save(false));
+$('#b-csv').addEventListener('click', csv);
+
+addEventListener('beforeunload', e=>{
+  if(dirty){ e.preventDefault(); e.returnValue = ''; }
+});
+
+paintGate();
+function boot(){ FB.watch(onSignedIn, onSignedOut); }
+window.FB && window.FB.ready ? boot() : addEventListener('fb-ready', boot);
+</script>
