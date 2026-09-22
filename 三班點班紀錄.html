@@ -1,0 +1,1841 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>管制藥品(1-3級)三班點交表</title>
+<style>
+  :root{
+    --text:#26333d;
+    --muted:#6b8394;
+    --paper:#f0f6fa;
+    --card:#ffffff;
+    --line:#dce8ef;
+    --alert:#f0335c;
+    --ok:#12b76a;
+    --warn:#cbe6f5;
+    --pad:14px;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  html{scroll-behavior:smooth;scroll-padding-top:calc(var(--hh,190px) + 10px)}
+  body{background:var(--paper);color:var(--text);font-family:var(--sans);font-size:17px;line-height:1.55;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+  .wrap{max-width:900px;margin:0 auto;padding:0 12px 180px}
+
+  /* ---------- 頁首 ---------- */
+  header{
+    position:sticky;top:0;z-index:20;color:#fff;margin:0 -12px 14px;padding:12px 14px 0;
+    background:linear-gradient(120deg,#3f7ba3 0%,#5b9bd5 50%,#3f7ba3 100%);
+    box-shadow:0 6px 18px rgba(74,144,194,.22);
+  }
+  h1{margin:0;font-size:22px;font-weight:800;letter-spacing:.02em;color:#fff;
+     font-family:"Noto Serif TC","Songti TC",serif}
+  .sub{margin:5px 0 0;font-size:14px;font-weight:600;letter-spacing:.02em;color:rgba(255,255,255,.95)}
+  .masthead{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .brand{min-width:0;flex:1 1 260px}
+  .meta{display:flex;gap:9px;margin:0 0 0 auto;justify-content:flex-end;align-items:center;flex-wrap:wrap}
+  .meta input{
+    background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.45);color:#fff;
+    border-radius:11px;padding:9px 11px;font-size:16px;font-weight:600;font-family:var(--sans);width:150px;
+  }
+  .sub b{color:#fff;font-weight:800;font-size:15px}
+  .sub button{
+    background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.32);
+    margin-left:10px;padding:4px 12px;border-radius:14px;cursor:pointer;vertical-align:1px;
+    font-family:var(--sans);font-size:13px;font-weight:700;color:#fff;
+  }
+  .sub button:active{transform:translateY(1px)}
+
+  /* ---------- 班別切換 ---------- */
+  .shiftsel{display:flex;gap:7px;margin:10px 0 10px;width:100%}
+  .shiftsel button{
+    flex:1;min-height:46px;border:1.5px solid rgba(255,255,255,.5);background:rgba(255,255,255,.1);
+    color:#fff;border-radius:13px;font-family:var(--sans);font-size:15.5px;font-weight:800;cursor:pointer;
+  }
+  .shiftsel button.on{background:#fff;color:#2f5f80;border-color:#fff}
+  .shiftsel button:active{transform:translateY(1px)}
+
+  /* ---------- 交班/接班簽章 ---------- */
+  .hand{
+    display:flex;gap:9px;margin:0 0 12px;background:var(--card);border-radius:14px;
+    padding:11px 12px;box-shadow:0 4px 14px rgba(30,20,40,.08);flex-wrap:wrap;
+  }
+  .hand > div{flex:1;min-width:130px}
+  .hand label{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:4px}
+  .hand input{
+    width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 10px;
+    font-size:16px;font-family:var(--sans);font-weight:700;color:var(--text);background:#f5fafd;
+  }
+  .hand input:focus{outline:none;border-color:#4a90c2;background:#fff}
+  /* 交班藥師：藍色系；接班藥師：紫色系，方便一眼分辨兩個不同的人 */
+  .handfrom{background:#eaf3fb;border:1.5px solid #bcd4e0;border-radius:12px;padding:9px 11px}
+  .handfrom label{color:#1d5a85;font-weight:800}
+  .handfrom input{border-color:#9dc3dc}
+  .handfrom input:focus{border-color:#1d6ea8}
+  .handfrom .handrow button{border-color:#1d6ea8;color:#1d6ea8}
+  .handfrom .handrow button[id$="-self"]{border-color:#8ec5e8;color:#1d5a85;background:#dceefa}
+  .handto{background:#f6eefc;border:1.5px solid #d8bdee;border-radius:12px;padding:9px 11px}
+  .handto label{color:#6b2fa0;font-weight:800}
+  .handto input{border-color:#cba3e6;background:#fbf7fe}
+  .handto input:focus{border-color:#7b2fc4;background:#fff}
+  .handto .handrow button{border-color:#7b2fc4;color:#7b2fc4}
+  .handto .handrow button[id$="-self"]{border-color:#c9a0e8;color:#6b2fa0;background:#f1e3fb}
+  .handrow{display:flex;gap:6px;flex-wrap:wrap}
+  .handrow input{flex:1 1 140px;min-width:0}
+  .handrow button{
+    flex:0 0 auto;border:1.5px solid #4a90c2;background:#fff;color:#4a90c2;
+    border-radius:10px;padding:0 11px;min-height:38px;font-size:13px;font-weight:800;cursor:pointer;font-family:var(--sans);
+    white-space:nowrap;
+  }
+  .handrow button:active{transform:translateY(1px)}
+  .handrow button.loading{opacity:.6;pointer-events:none}
+  .confirmrow{
+    display:inline-flex;align-items:center;gap:9px;max-width:calc(100% - 24px);
+    margin:0 0 8px;background:#eef5f9;border:1.5px solid #bcd4e0;border-radius:12px;padding:9px 15px;
+    font-size:14px;font-weight:800;color:var(--text);cursor:pointer;text-align:left;
+  }
+  .confirmrow input{width:19px;height:19px;flex:0 0 auto;accent-color:#4a90c2;margin:0}
+  .confirmrow.warn{background:#fff4e0;border-color:#e0a468;color:#7a4a10}
+  .confirmrow.locked{background:#f0f2f4;border-color:#cfd8de;color:#8a97a1;cursor:not-allowed}
+  .confirmrow.locked input{cursor:not-allowed}
+  .prevhint{font-size:12px;font-weight:700;color:var(--muted);margin-left:7px;white-space:nowrap}
+
+  /* ---------- 登入畫面 ---------- */
+  .gate{
+    position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
+    padding:22px;overflow:hidden;
+    background:linear-gradient(140deg,#f3f9fc 0%,#e3f0f7 50%,#d3e8f1 100%);
+  }
+  .gate[hidden]{display:none}
+  .blob{position:absolute;border-radius:50%;filter:blur(46px);opacity:.6;animation:float 14s ease-in-out infinite}
+  .blob.b1{width:260px;height:260px;background:#dceef7;top:-70px;left:-60px}
+  .blob.b2{width:220px;height:220px;background:#c9e3f0;bottom:-60px;right:-40px;animation-delay:-4s}
+  .blob.b3{width:180px;height:180px;background:#a9d0e6;top:38%;right:-70px;animation-delay:-8s}
+  .blob.b4{width:200px;height:200px;background:#e8f4fa;bottom:12%;left:-70px;animation-delay:-2s}
+  @keyframes float{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(14px,-22px,0) scale(1.12)}}
+  .gate .box{
+    position:relative;width:100%;max-width:390px;background:#fff;border-radius:26px;
+    padding:30px 24px 26px;text-align:center;box-shadow:0 20px 50px rgba(63,123,163,.18);
+    animation:pop .45s cubic-bezier(.2,.9,.3,1.2) both;
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:none}}
+  .dots{display:flex;justify-content:center;gap:6px;margin-bottom:16px}
+  .dots i{width:11px;height:11px;border-radius:50%;display:block;animation:blink 2.8s ease-in-out infinite}
+  @keyframes blink{0%,100%{opacity:.35;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
+  .gate h2{margin:0;font-size:23px;font-weight:800;color:var(--text);letter-spacing:-.01em}
+  .gate .hi{margin:12px 0 2px;font-size:17px;font-weight:800;color:#4a90c2}
+  .gate p{margin:3px 0 20px;font-size:14px;color:var(--muted)}
+  .gate .field{
+    display:flex;align-items:center;min-height:62px;overflow:hidden;
+    border:2.5px solid var(--line);border-radius:16px;background:#eef5f9;
+    transition:border-color .15s,box-shadow .15s,background .15s;
+  }
+  .gate .field span{
+    flex:0 0 auto;align-self:stretch;display:flex;align-items:center;padding:0 16px;
+    background:#e2eef5;color:#2f4a5c;font-family:var(--mono);font-size:26px;font-weight:800;
+  }
+  .gate input{
+    flex:1;min-width:0;width:100%;border:none;background:none;text-align:center;
+    font-family:var(--mono);font-size:28px;font-weight:800;letter-spacing:.16em;color:var(--text);
+    padding:0 6px 0 20px;
+  }
+  .gate input::placeholder{font-weight:700;letter-spacing:.16em;color:#bcd4e0}
+  .gate input:focus{outline:none}
+  .gate .field:focus-within{border-color:#4a90c2;background:#fff;box-shadow:0 0 0 5px rgba(74,144,194,.16)}
+  .gate .field:focus-within span{background:#d7e9f2;color:#4a90c2}
+  .gate .field.mail{margin-bottom:9px}
+  .gate .field.mail input{font-size:22px;font-weight:700;letter-spacing:.12em;text-align:center;padding:0 12px}
+  .gate.bad .field{border-color:var(--alert);animation:shake .32s}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}50%{transform:translateX(7px)}75%{transform:translateX(-4px)}}
+  .gate button{
+    width:100%;min-height:56px;margin-top:14px;border:none;border-radius:16px;cursor:pointer;
+    background:linear-gradient(120deg,#4a90c2,#8ec5e8 55%,#cbe6f5);
+    background-size:180% 100%;color:#fff;font-family:var(--sans);font-size:19px;font-weight:800;
+    letter-spacing:.02em;box-shadow:0 8px 20px rgba(74,144,194,.22);
+    transition:background-position .4s,transform .1s;
+  }
+  .gate button:hover{background-position:100% 0}
+  .gate button:active{transform:translateY(2px)}
+  .gate .err{min-height:22px;margin:13px 0 0;font-size:15px;font-weight:700;color:var(--alert)}
+  .gate .foot{margin:15px 0 0;font-size:13.5px;color:#8494ad}
+  @media (prefers-reduced-motion:reduce){.blob,.dots i,.gate .box{animation:none}}
+  @media (max-width:560px){
+    .masthead{gap:8px}
+    .meta{width:100%;margin:4px 0 0}
+    .meta input{flex:1 1 auto;min-width:0;max-width:190px;width:auto}
+    h1{font-size:19px}
+    .sub{font-size:13px}
+  }
+  .meta input::placeholder{color:rgba(255,255,255,.72)}
+  .meta input:focus{outline:none;background:rgba(255,255,255,.28);border-color:#fff}
+
+  /* ---------- 儲位快捷鍵 ---------- */
+  .nav{display:flex;gap:8px;overflow-x:auto;margin:2px -14px 0;padding:0 14px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .nav::-webkit-scrollbar{display:none}
+  .nav button{
+    flex:1 0 auto;display:flex;align-items:center;justify-content:center;gap:7px;
+    color:var(--c,#4a90c2);background:#fff;border:2px solid var(--c,#4a90c2);
+    border-radius:24px;padding:9px 15px;font-size:15.5px;font-weight:800;white-space:nowrap;
+    font-family:var(--sans);cursor:pointer;min-height:46px;transition:transform .1s;
+  }
+  .nav button::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--c,#4a90c2);flex:0 0 auto}
+  .nav button i{font-family:var(--mono);font-style:normal;font-size:13px;font-weight:800;color:var(--muted)}
+  /* 盤點狀態徽章 */
+  .nav button.st0{border-color:#b3543f}
+  .nav button.st0 i{color:#b3543f}
+  .nav button.st0::after{
+    content:"未盤";font-size:11.5px;font-weight:900;color:#fff;background:#b3543f;
+    border-radius:8px;padding:2px 7px;margin-left:2px;
+  }
+  .nav button.stp{border-color:#d97706}
+  .nav button.stp i{color:#b45309}
+  .nav button.stp::after{
+    content:"盤點中";font-size:11.5px;font-weight:900;color:#7c3f06;background:#fde68a;
+    border-radius:8px;padding:2px 7px;margin-left:2px;
+  }
+  .nav button.stf i{color:#047857}
+  .nav button.stf::after{
+    content:"已完成";font-size:11.5px;font-weight:900;color:#fff;background:#059669;
+    border-radius:8px;padding:2px 7px;margin-left:2px;
+  }
+  .nav button.active.st0,.nav button.active.stp,.nav button.active.stf{border-color:#fff}
+  .nav button.active{background:var(--c,#4a90c2);color:#fff;border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.32)}
+  .nav button.active::before{background:#fff}
+  .nav button.active i{color:rgba(255,255,255,.88)}
+  .nav button:active{transform:scale(.96)}
+  .progress{margin:0 -14px;height:6px;background:rgba(0,0,0,.18)}
+  .progress i{display:block;height:100%;background:linear-gradient(90deg,#fde047,#34d399);width:0;transition:width .3s ease}
+
+  /* ---------- 儲位卡片 ---------- */
+  .place{display:none}
+  .place.active{display:block;background:var(--card);border-radius:18px;margin:0 0 16px;box-shadow:0 4px 16px rgba(60,20,40,.10)}
+  .phead{
+    position:sticky;top:var(--hh,190px);z-index:10;
+    padding:12px var(--pad);background:var(--tint,#eaf3f8);border-radius:16px 16px 0 0;
+    border-left:6px solid var(--c,#4a90c2);box-shadow:0 2px 6px rgba(60,20,40,.06);
+  }
+  .ptop{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .pname{font-size:20px;font-weight:800;color:var(--c,#4a90c2);letter-spacing:.01em}
+  .pleft{
+    flex:0 0 auto;font-size:13.5px;font-weight:800;color:#92400e;background:#fde68a;
+    border-radius:10px;padding:3px 10px;white-space:nowrap;
+  }
+  .pleft[hidden]{display:none}
+  .pmeta{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--muted);text-align:right;white-space:nowrap}
+  .pmeta.unsaved{color:var(--alert)}
+
+  .row{padding:9px var(--pad);border-top:1px solid var(--line);background:var(--card)}
+  .row:last-child{border-radius:0 0 16px 16px}
+  .dn{font-size:16.5px;font-weight:700;letter-spacing:-.01em;word-break:break-word}
+  .line{display:flex;align-items:center;gap:12px}
+  .line .dn{flex:1;min-width:0}
+  .empty{padding:16px 0;text-align:center;color:var(--muted);font-size:15px}
+  .miss{font-size:12px;font-weight:800;color:#92400e;background:#fde68a;border-radius:8px;padding:2px 8px;margin-left:8px;white-space:nowrap}
+  .miss[hidden]{display:none}
+  input.n.solo{
+    flex:0 0 auto;width:110px;min-height:48px;text-align:center;font-family:var(--mono);font-size:22px;font-weight:700;
+    padding:6px 4px;border:2px solid var(--line);border-radius:13px;background:#f5fafd;color:var(--text);
+    -moz-appearance:textfield;transition:border-color .12s,background .12s;
+  }
+  input.n.solo::-webkit-outer-spin-button,input.n.solo::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input.n.solo:focus{outline:none;border-color:var(--c,#4a90c2);background:#fff;box-shadow:0 0 0 4px color-mix(in srgb,var(--c,#4a90c2) 18%,transparent)}
+  input.n.solo.filled{background:#fff;border-color:#bcd4e0}
+  input.n.solo.mismatch{border-color:#e0a468;background:#fff8ec}
+  .prevhint.mismatch{color:#a15c00;font-weight:800}
+
+  /* 位值（盒／個位）包裝輸入，係數標示直接放在每個欄位輸入框上方，跟另一份 3-4 級管制藥每日盤點表相同格式 */
+  .row.pack{padding-top:10px;padding-bottom:10px}
+  .pv{display:grid;grid-template-columns:repeat(var(--n,2),1fr) 14px 110px;gap:6px;align-items:end;margin-top:8px}
+  .pv .op{align-self:end;text-align:center;font-family:var(--mono);color:var(--muted);font-size:17px;font-weight:700;padding-bottom:12px}
+  .pvcol{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .pvlabel{
+    font-size:11.5px;font-weight:800;color:#b45309;background:#fff4d6;border-radius:7px;
+    padding:2px 6px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  input.n{
+    width:100%;min-height:48px;text-align:center;font-family:var(--mono);font-size:20px;font-weight:700;
+    padding:6px 2px;border:2px solid var(--line);border-radius:13px;background:#f5fafd;color:var(--text);
+    -moz-appearance:textfield;transition:border-color .12s,background .12s;
+  }
+  input.n::-webkit-outer-spin-button,input.n::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input.n:focus{outline:none;border-color:var(--c,#4a90c2);background:#fff;box-shadow:0 0 0 4px color-mix(in srgb,var(--c,#4a90c2) 18%,transparent)}
+  input.n.filled{background:#fff;border-color:#bcd4e0}
+  input.sum{border-style:dashed;background:var(--paper);font-size:22px;font-weight:800;letter-spacing:-.02em;min-height:48px}
+  input.sum::placeholder{color:var(--muted);opacity:.7}
+  input.sum.on{color:#fff;border-style:solid;border-color:var(--c,#4a90c2);background:var(--c,#4a90c2)}
+  input.n.mismatch{border-color:#e0a468;background:#fff8ec}
+  input.sum.on.mismatch{border-color:#e0a468;background:#e0a468}
+
+  /* ---------- 置中警示視窗 ---------- */
+  .alertbox{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;padding:22px;background:rgba(20,40,55,.42);backdrop-filter:blur(3px)}
+  .alertbox[hidden]{display:none}
+  .abox{width:100%;max-width:400px;background:#fff;border-radius:22px;overflow:hidden;text-align:center;box-shadow:0 26px 60px rgba(20,40,55,.34);animation:pop .35s cubic-bezier(.2,.9,.3,1.2) both}
+  .atop{background:linear-gradient(120deg,#4a90c2,#8ec5e8);color:#fff;padding:14px 18px;font-size:18px;font-weight:800;letter-spacing:.04em}
+  .amid{padding:20px 20px 8px}
+  .amid .big{margin:0 0 16px;font-size:18px;font-weight:800;line-height:1.6;color:var(--text)}
+  .abtn{display:flex;gap:10px;padding:16px 20px 20px}
+  .abtn button{flex:1;min-height:52px;border:2px solid var(--line);background:#fff;color:#2f4a5c;border-radius:14px;font-family:var(--sans);font-size:16px;font-weight:800;cursor:pointer}
+  .abtn button.k{background:linear-gradient(120deg,#4a90c2,#8ec5e8);border-color:transparent;color:#fff;box-shadow:0 5px 16px rgba(74,144,194,.24)}
+  #savedlg .atop{background:linear-gradient(120deg,#1d4ed8,#0ea5e9)}
+  #savedlg .abtn button.k{background:linear-gradient(120deg,#1d4ed8,#0ea5e9);box-shadow:0 5px 16px rgba(29,78,216,.38)}
+  #askdlg.safe .atop{background:linear-gradient(120deg,#047857,#10b981)}
+  #askdlg.safe .abtn button.k{background:linear-gradient(120deg,#059669,#10b981);box-shadow:0 5px 16px rgba(5,150,105,.38)}
+  .abtn button:active{transform:translateY(1px)}
+  .svdate{margin:0 0 14px;font-size:16px;font-weight:700;color:var(--muted)}
+  .svdate b{font-family:var(--mono);font-size:20px;font-weight:800;color:var(--text)}
+  .svlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;text-align:left}
+  .svlist li{background:#eaf3f8;border-radius:12px;padding:11px 13px;font-size:15.5px;font-weight:800;color:var(--text)}
+  .svlist li em{display:block;margin-top:2px;font-style:normal;font-size:13px;font-weight:600;color:var(--muted)}
+  .svwarn{margin-top:14px;background:#fff4d6;border:2px solid #cbe6f5;border-radius:12px;padding:11px 13px;font-size:15px;font-weight:800;color:#92400e;text-align:left}
+  .svwarn.info{background:#eef5f9;border-color:#bcd4e0;color:#2f5f80}
+  .svwarn[hidden]{display:none}
+
+  /* ---------- 管理面板 ---------- */
+  .admin{position:fixed;inset:0;z-index:80;background:rgba(16,24,40,.55);display:flex;align-items:flex-end;justify-content:center;padding:0}
+  .admin[hidden]{display:none}
+  .panel{width:100%;max-width:900px;max-height:92vh;background:#fff;border-radius:18px 18px 0 0;display:flex;flex-direction:column;overflow:hidden}
+  .ahead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);background:#eef5f9}
+  .ahead b{font-size:18px;font-weight:800}
+  .ahead button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 16px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans)}
+  .abody{flex:1;overflow:auto;padding:10px 14px}
+  .arow{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:9px}
+  .arow .top{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .arow input.nm{flex:1;min-width:0;border:1.5px solid var(--line);border-radius:9px;padding:11px 13px;font-size:16px;font-weight:700;font-family:var(--sans)}
+  .arow .del{flex:0 0 auto;border:1px solid #f0c4c4;background:#fff5f5;color:var(--alert);border-radius:10px;padding:10px 14px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans)}
+  .locs{display:flex;flex-wrap:wrap;gap:6px}
+  .locs label{display:inline-flex;align-items:center;gap:5px;border:1.5px solid var(--line);border-radius:20px;padding:7px 13px;font-size:14px;font-weight:700;cursor:pointer;background:#fff}
+  .locs label.on{border-color:var(--c,#4a90c2);background:#eaf3f8;color:var(--c,#4a90c2)}
+  .locs input{margin:0;accent-color:#4a90c2}
+  .packwrap{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+  .packrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;background:#f7fafc;border:1.5px solid var(--line);border-radius:10px;padding:8px 10px}
+  .packrow .packloc{flex:0 0 auto;font-size:13px;font-weight:800;color:var(--c,#4a90c2);white-space:nowrap}
+  .packrow .pklabel{flex:0 0 auto;font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap}
+  .packrow input.pk-num{width:64px}
+  .packrow input.pk-unit{width:56px}
+  .packrow input.pk-txt{width:64px}
+  .packrow input.pk-num,.packrow input.pk-unit,.packrow input.pk-txt{
+    min-width:0;border:1.5px solid var(--line);border-radius:8px;padding:6px 7px;font-size:13px;font-family:var(--sans);
+  }
+  .packrow .packc{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-weight:700;color:var(--muted);white-space:nowrap}
+  .packrow .packc input{margin:0;accent-color:#4a90c2}
+  .packnote{font-size:11.5px;color:var(--muted);margin:0 0 2px}
+  .panel.short{max-height:none}
+  #w-text{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 13px;font-size:15px;font-family:var(--sans);resize:vertical;box-sizing:border-box}
+  .hnote{margin:2px 0 14px;font-size:15px;color:var(--muted);line-height:1.6}
+  .hrow{display:flex;gap:10px;margin-bottom:12px}
+  .hrow label{flex:1;display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:700;color:var(--muted);font-family:var(--mono)}
+  .hrow input{border:1.5px solid var(--line);border-radius:10px;padding:11px;font-size:17px;font-family:var(--sans)}
+  .hquick{display:flex;flex-wrap:wrap;gap:7px}
+  .hquick button{border:1.5px solid var(--line);background:#fff;border-radius:20px;padding:9px 15px;font-size:14.5px;font-weight:700;cursor:pointer;font-family:var(--sans)}
+  .hquick button:active{transform:translateY(1px)}
+  #h-msg{text-align:left;color:var(--muted);font-weight:600;line-height:1.7;font-size:14.5px}
+  .afoot{display:flex;gap:9px;padding:11px 14px;border-top:1px solid var(--line);background:#eef5f9}
+  .afoot button{flex:1;min-height:52px;border:1.5px solid var(--line);background:#fff;border-radius:13px;font-size:16px;font-weight:700;cursor:pointer;font-family:var(--sans)}
+  .afoot button.k{background:linear-gradient(120deg,#4a90c2,#8ec5e8);border-color:transparent;color:#fff}
+
+  /* ---------- 底部工具列 ---------- */
+  .bottompanel{
+    position:fixed;left:0;right:0;bottom:0;z-index:30;
+    background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-top:1px solid var(--line);
+    padding-top:10px;padding-bottom:env(safe-area-inset-bottom);text-align:center;
+  }
+  .bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:0 12px 10px}
+  .bar button{flex:1 1 120px;max-width:220px;min-height:54px;border:1.5px solid var(--line);background:#fff;color:#2f4a5c;font-family:var(--sans);font-size:16px;font-weight:700;padding:12px 8px;border-radius:15px;cursor:pointer}
+  .bar button.k{background:linear-gradient(120deg,#4a90c2,#8ec5e8);border-color:transparent;color:#fff;box-shadow:0 3px 10px rgba(74,144,194,.20)}
+  .bar button.k.dirty{background:linear-gradient(120deg,#b3543f,#8ec5e8);box-shadow:0 3px 12px rgba(225,29,72,.38)}
+  .bar button:active{transform:translateY(1px)}
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:150px;z-index:40;background:#141c2b;color:#fff;padding:13px 22px;border-radius:26px;font-size:15.5px;font-weight:700;box-shadow:0 6px 20px rgba(26,34,48,.3);opacity:0;pointer-events:none;transition:opacity .2s}
+  .toast.show{opacity:1}
+
+  @media (max-width:400px){
+    :root{--pad:10px}
+    input.n.solo{width:92px;font-size:20px;min-height:46px}
+    .pv{grid-template-columns:repeat(var(--n,2),1fr) 10px 92px;gap:4px}
+    .pvlabel{font-size:10px;padding:2px 3px}
+    input.n{font-size:17px;min-height:42px}
+  }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+  #printreport{display:none}
+  @media print{
+    @page{size:A4 landscape;margin:8mm}
+    /* 列印時只呈現產生的報表，互動介面全部隱藏 */
+    header,.bottompanel,.toast,.nav,.wrap,.gate,.alertbox,.admin{display:none!important}
+    body{background:#fff;font-size:13px}
+    #printreport{display:block}
+    .pday{page-break-after:always;break-after:page}
+    .pday:last-child{page-break-after:auto;break-after:auto}
+    .ptitle{font-size:19px;font-weight:800;margin:0 0 3px;color:#000}
+    .psub{font-size:13px;font-weight:700;color:#333;margin:0 0 8px}
+    .psign{
+      display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 0;padding:8px 10px;
+      border:1px solid #999;border-radius:8px;font-size:12.5px;font-weight:700;color:#000;
+    }
+    .psign span{flex:1 1 150px}
+    table.prpt{width:100%;border-collapse:collapse;margin:0 0 8px;font-size:10px;table-layout:fixed}
+    table.prpt th,table.prpt td{border:1px solid #333;padding:3px 2px;text-align:center;word-break:break-word;vertical-align:middle}
+    table.prpt thead th{background:#eee;font-weight:800;color:#000;font-size:10px;line-height:1.3;height:66px}
+    table.prpt thead th .locnote{font-size:9px;font-weight:800;color:#7b2fc4}
+    table.prpt th.rowh{background:#e4e4e4;font-weight:800;width:66px;font-size:13px}
+    table.prpt th.rowh span{font-weight:700;font-size:10px;color:#333}
+    table.prpt tbody td{height:36px;font-size:13px;font-weight:700;font-family:var(--mono)}
+    table.prpt tr{break-inside:avoid;page-break-inside:avoid}
+    .pnote{font-size:11px;color:#444;margin:6px 0 0}
+  }
+</style>
+
+<header>
+  <div class="wrap" style="padding:0">
+    <div class="masthead">
+      <div class="brand">
+        <h1>管制藥品(1-3級)三班點交表</h1>
+        <p class="sub">臺大醫院雲林分院藥劑部－斗六院區<b id="d-user"></b><button type="button" id="b-logout" hidden>登出</button></p>
+      </div>
+      <div class="meta">
+        <input type="date" id="d-date" aria-label="點交日期">
+      </div>
+    </div>
+    <div class="shiftsel" id="shiftsel"></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="progress"><i id="t-bar"></i></div>
+  </div>
+</header>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut as fbSignOut,
+         onAuthStateChanged, setPersistence, browserSessionPersistence, signInAnonymously }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, collection, getDoc, getDocs, setDoc, addDoc,
+         deleteDoc, onSnapshot, serverTimestamp, query, where, orderBy, limit }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const app  = initializeApp({
+  apiKey: "AIzaSyAmO7j_GvnTu-oje0wBFDT940UwRSht6d4",
+  authDomain: "ntuh-yunlin-drug-count.firebaseapp.com",
+  projectId: "ntuh-yunlin-drug-count",
+  storageBucket: "ntuh-yunlin-drug-count.firebasestorage.app",
+  messagingSenderId: "53089383614",
+  appId: "1:53089383614:web:420b5c30e628fc40eb5aef"
+});
+const auth = getAuth(app);
+const db   = getFirestore(app);
+/* 獨立於原「每日4級管制藥盤點」的集合/文件名稱，避免互相覆蓋 */
+const SHEET   = doc(db, "sheets13", "douliu");
+const CONFIG  = doc(db, "config13", "drugs");
+const HISTORY = collection(db, "history13");
+const AUDIT   = collection(db, "audit13");
+
+setPersistence(auth, browserSessionPersistence).catch(()=>{});
+
+window.FB = {
+  ready: true,
+  signIn: (mail, pw) => signInWithEmailAndPassword(auth, mail, pw),
+  signOut: () => fbSignOut(auth),
+  watch(onIn, onOut){ onAuthStateChanged(auth, u => u ? onIn(u) : onOut()); },
+  async read(){ const s = await getDoc(SHEET); return s.exists() ? s.data() : null; },
+  async write(payload){
+    await setDoc(SHEET, { ...payload, updatedAt: serverTimestamp() }, { merge: false });
+    await addDoc(HISTORY, { ...payload, at: serverTimestamp() });
+  },
+  async audit(entry){ await addDoc(AUDIT, { ...entry, date: new Date().toISOString().slice(0,10), at: serverTimestamp() }); },
+  async readConfig(){ const s = await getDoc(CONFIG); return s.exists() ? s.data() : null; },
+  async writeConfig(cfg){ await setDoc(CONFIG, { ...cfg, updatedAt: serverTimestamp() }, { merge:false }); },
+  async purgeHistory(){
+    const cut = new Date(Date.now() - 730*86400000).toISOString().slice(0,10);
+    let n = 0;
+    for(const col of [HISTORY, AUDIT]){
+      const snap = await getDocs(query(col, where('date','<',cut), limit(300)));
+      await Promise.all(snap.docs.map(d=>deleteDoc(d.ref)));
+      n += snap.size;
+    }
+    return n;
+  },
+  async historyRange(from, to){
+    const q = query(HISTORY, where('date','>=',from), where('date','<=',to), orderBy('date','asc'), limit(2000));
+    const snap = await getDocs(q);
+    return snap.docs.map(d=>d.data());
+  },
+  /* 讀取指定日期「最後一次」的儲存紀錄（唯讀），用於覆核前一班數量比對 */
+  async latestForDate(dateStr){
+    const q = query(HISTORY, where('date','==',dateStr), orderBy('at','desc'), limit(1));
+    const snap = await getDocs(q);
+    return snap.empty ? null : snap.docs[0].data();
+  },
+  listen(cb){ return onSnapshot(SHEET, snap=>{ if(snap.exists() && !snap.metadata.hasPendingWrites) cb(snap.data()); }); }
+};
+window.dispatchEvent(new Event("fb-ready"));
+
+/* ================= 班表系統：唯讀串接（只呼叫 getDoc，絕不寫入） ================= */
+const rosterApp  = initializeApp({
+  apiKey: "AIzaSyApEBgpAFaytqPBtPTEXE-fr8o4LdzKzPA",
+  authDomain: "pharmacy-scheduling-e20ad.firebaseapp.com",
+  projectId: "pharmacy-scheduling-e20ad",
+  storageBucket: "pharmacy-scheduling-e20ad.firebasestorage.app",
+  messagingSenderId: "779276168089",
+  appId: "1:779276168089:web:c57dfd4db57beef3804108"
+}, "rosterApp");                       // 第二參數避免跟本系統自己的 app 撞名
+const rosterAuth = getAuth(rosterApp);
+const rosterDb   = getFirestore(rosterApp);
+let rosterReady = signInAnonymously(rosterAuth).catch(e=>{
+  console.error("班表系統匿名登入失敗：", e);
+  rosterReady = null;
+});
+
+let _directoryCache = null;                 // { id: name }，登入後查一次就快取
+const _monthCache = {};                      // { "2026-09": entries }
+
+async function rosterDirectory(){
+  if(_directoryCache) return _directoryCache;
+  const ref = doc(rosterDb, "artifacts","pharmacy-system-v1-8","public","data","roster","directory");
+  const snap = await getDoc(ref);
+  _directoryCache = snap.exists() ? (snap.data().entries || {}) : {};
+  return _directoryCache;
+}
+async function rosterMonth(monthKey){
+  if(_monthCache[monthKey]) return _monthCache[monthKey];
+  const ref = doc(rosterDb, "artifacts","pharmacy-system-v1-8","public","data",
+                  "roster","main","scheduleDirectory", monthKey);
+  const snap = await getDoc(ref);
+  const entries = snap.exists() ? (snap.data().entries || {}) : {};
+  _monthCache[monthKey] = entries;
+  return entries;
+}
+
+window.ROSTER = {
+  /* 只讀，絕不呼叫任何寫入 API */
+  async namesOnShift(dateStr, codes){
+    if(rosterReady) { try{ await rosterReady; }catch(_){} }
+    const [y, m, d] = dateStr.split('-');
+    const monthKey = `${y}-${m}`;
+    const dayKey = String(parseInt(d, 10));
+    const [entries, dir] = await Promise.all([rosterMonth(monthKey), rosterDirectory()]);
+    const hit = [];
+    Object.keys(entries).forEach(id=>{
+      const code = entries[id] ? entries[id][dayKey] : null;
+      if(code && codes.includes(code)) hit.push(dir[id] || id);
+    });
+    return hit;
+  }
+};
+</script>
+
+
+<div class="gate" id="gate">
+  <span class="blob b1"></span><span class="blob b2"></span>
+  <span class="blob b3"></span><span class="blob b4"></span>
+  <div class="box">
+    <div class="dots" id="g-dots"></div>
+    <h2>管制藥品1-3級三班點交</h2>
+    <p class="hi" id="g-hi">早安</p>
+    <p>臺大醫院雲林分院藥劑部－斗六院區</p>
+    <div class="field" id="g-field">
+      <span>Y</span>
+      <input id="g-id" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off"
+             spellcheck="false" placeholder="00000" maxlength="5">
+    </div>
+    <div class="field mail">
+      <input id="g-pw" type="password" inputmode="numeric" pattern="[0-9]*"
+             autocomplete="current-password" placeholder="密碼">
+    </div>
+    <button type="button" id="g-go">登入</button>
+    <p class="err" id="g-err"></p>
+    <p class="foot">員編後 5 碼　·　密碼：藥局電話</p>
+  </div>
+</div>
+
+<div class="alertbox" id="askdlg" hidden>
+  <div class="abox">
+    <div class="atop" id="ak-top">確認</div>
+    <div class="amid"><p class="big" id="ak-msg"></p><ul class="svlist" id="ak-list"></ul></div>
+    <div class="abtn"><button type="button" id="ak-no">取消</button><button type="button" class="k" id="ak-yes">確定</button></div>
+  </div>
+</div>
+
+<div class="alertbox" id="savedlg" hidden>
+  <div class="abox">
+    <div class="atop">確認儲存</div>
+    <div class="amid">
+      <p class="svdate">點交日期　<b id="sv-date">—</b>　班別　<b id="sv-shift">—</b></p>
+      <ul class="svlist" id="sv-list"></ul>
+      <div class="svwarn" id="sv-mismatch" hidden></div>
+      <div class="svwarn" id="sv-warn" hidden></div>
+      <div class="svwarn" id="sv-confirm" hidden></div>
+      <div class="svwarn" id="sv-pending" hidden></div>
+    </div>
+    <div class="abtn"><button type="button" id="sv-no">取消</button><button type="button" class="k" id="sv-yes">確定儲存</button></div>
+  </div>
+</div>
+
+<div class="admin" id="hist" hidden>
+  <div class="panel short">
+    <div class="ahead"><b>匯出歷史紀錄</b><button type="button" id="h-close">關閉</button></div>
+    <div class="abody">
+      <p class="hnote">選擇期間，匯出每次儲存的完整點交紀錄（保留兩年）。</p>
+      <div class="hrow"><label>起<input type="date" id="h-from"></label><label>迄<input type="date" id="h-to"></label></div>
+      <div class="hquick">
+        <button type="button" data-days="7">近 7 天</button>
+        <button type="button" data-days="30">近 30 天</button>
+        <button type="button" data-days="90">近 3 個月</button>
+        <button type="button" data-days="365">近 1 年</button>
+      </div>
+      <p class="err" id="h-msg"></p>
+    </div>
+    <div class="afoot">
+      <button type="button" id="h-pdf">匯出 PDF</button>
+      <button type="button" class="k" id="h-go">匯出 CSV</button>
+    </div>
+  </div>
+</div>
+
+<div class="admin" id="admin" hidden>
+  <div class="panel">
+    <div class="ahead"><b>藥品與儲位管理</b><button type="button" id="a-close">關閉</button></div>
+    <div class="abody"><div id="a-body"></div></div>
+    <div class="afoot">
+      <button type="button" id="a-add">＋ 新增藥品</button>
+      <button type="button" id="a-reset" title="還原成系統內建的儲位設定清單">還原預設清單</button>
+      <button type="button" class="k" id="a-save">儲存設定</button>
+    </div>
+  </div>
+</div>
+
+<div id="printreport"></div>
+<div class="wrap" id="app"></div>
+
+<div class="bottompanel">
+  <label class="confirmrow" id="confirmrow">
+    <input type="checkbox" id="hc-confirm">
+    已核對數量與前一班相符，確認接班
+  </label>
+  <div class="bar">
+    <button id="b-csv">匯出今日 CSV</button>
+    <button id="b-pdf" title="用瀏覽器列印功能另存為 PDF">匯出 PDF</button>
+    <button id="b-hist" title="匯出歷史紀錄" hidden>歷史</button>
+    <button id="b-admin" title="管理藥品與儲位" hidden>管理</button>
+    <button class="k" id="b-save">儲存</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- 資料：儲位與藥品清單（沿用交班表照片） ---------- */
+const DATA = {
+  locations: ["UD鐵櫃","Pandora","智慧調劑臺","冰箱"],
+  /* 依「儲位設定.xlsx」設定實際擺放儲位與每個儲位各自的排列順序（order，數字愈小排愈前面）；
+     一個藥品若同時放在多個儲位，各儲位可以有不同的順序（例如智慧調劑臺跟 Pandora 的排法不一樣）。
+     locs 為空陣列 [] 代表尚未分配儲位的備用／候選品項（常見於容易替換廠牌/劑型的藥品，
+     例如反黃標示的 Fentanyl 貼片系列），這些品項仍會出現在「管理」面板中，之後確定要放哪個儲位時再勾選即可 */
+  drugs: [
+    {name:"警 Esmeron 50 mg/5 mL /vial", locs:["冰箱"], order:{"冰箱":0}, pack:{parts:["a","b"], a:10, b:1, la:"10 vial/盒", lb:"個位"}},
+    {name:"警 Nimbex 10 mg/5 mL /amp", locs:["冰箱"], order:{"冰箱":1}, pack:{parts:["a","b"], a:5, b:1, la:"5 amp/盒", lb:"個位"}},
+    {name:"(管3) Modipanol F.C. 1 mg/tab", locs:["UD鐵櫃"], order:{"UD鐵櫃":0}, pack:{parts:["a","b"], a:1000, b:100, la:"1000 粒/盒", lb:"100 粒/束"}},
+    {name:"(管1) 針 Morphine Inj 10 mg/1 mL /amp", locs:["UD鐵櫃"], order:{"UD鐵櫃":1}, pack:{parts:["a","b"], a:10, b:1, la:"10 支/盒", lb:"個位"}},
+    {name:"(管2) Fentanyl 0.1 mg/2 mL /amp", locs:["UD鐵櫃"], order:{"UD鐵櫃":2}, pack:{parts:["a","b"], a:10, b:1, la:"10 支/盒", lb:"個位"}},
+    {name:"(管2) Alfentanil 1 mg/2 mL /amp", locs:["UD鐵櫃"], order:{"UD鐵櫃":3}, pack:{parts:["a","b"], a:10, b:1, la:"10 支/盒", lb:"個位"}},
+    {name:"(管2) Fentanyl 0.5 mg/10 mL /amp", locs:["UD鐵櫃"], order:{"UD鐵櫃":4}, pack:{parts:["a","b"], a:5, b:1, la:"5 支/盒", lb:"個位"}},
+    {name:"(管2) 速效 OxyNorm IR 5 mg/cap", locs:["Pandora"], order:{"Pandora":0}, pack:{parts:["a","b","c"], a:56, b:14, c:1, la:"56 粒/盒", lb:"14 粒/排", lc:"個位"}},
+    {name:"(管2) PAINKYL buccal soluble films 200 mcg/film", locs:["Pandora"], order:{"Pandora":1}, pack:{parts:["a","b","c"], a:30, b:10, c:1, la:"30 片/盒", lb:"10 片/捆", lc:"個位"}},
+    {name:"(管3) Desud Plus Sublingual tab", locs:["Pandora"], order:{"Pandora":2}, pack:{parts:["a","b","c"], a:28, b:7, c:1, la:"28 粒/盒", lb:"7 粒/片", lc:"個位"}},
+    {name:"警 Relaxin 500 mg/vial", locs:["Pandora"], order:{"Pandora":3}},
+    {name:"(管3) Ketalar 500 mg/10 mL /vial", locs:["Pandora"], order:{"Pandora":4}},
+    {name:"(管3) 22 Methydur SR 22 mg/cap", locs:["Pandora","智慧調劑臺"], order:{"Pandora":5,"智慧調劑臺":2}, pack:{
+      "Pandora":{parts:["a","b"], a:28, b:1, la:"28 粒/瓶", lb:"個位"},
+      "智慧調劑臺":{parts:["a"], a:140, la:"140 粒/包(5瓶)"}
+    }},
+    {name:"(管3) 33 Methydur SR 33 mg/cap", locs:["Pandora","智慧調劑臺"], order:{"Pandora":6,"智慧調劑臺":0}, pack:{
+      "Pandora":{parts:["a","b"], a:28, b:1, la:"28 粒/瓶", lb:"個位"},
+      "智慧調劑臺":{parts:["a"], a:140, la:"140 粒/包(5瓶)"}
+    }},
+    {name:"(管1) 15 Morphine Sulfate 15 mg/tab", locs:["Pandora"], order:{"Pandora":7}, pack:{parts:["a","b","c"], a:100, b:10, c:1, la:"100 粒/盒", lb:"10 粒/片", lc:"個位"}},
+    {name:"(管2) Codeine 30 mg/tab", locs:["Pandora"], order:{"Pandora":8}, pack:{parts:["a","b","c"], a:100, b:10, c:1, la:"100 粒/盒", lb:"10 粒/片", lc:"個位"}},
+    {name:"(管2) OxyContin CR 10 mg/tab", locs:["Pandora"], order:{"Pandora":9}, pack:{parts:["a","b","c"], a:20, b:10, c:1, la:"20 粒/盒", lb:"10 粒/片", lc:"個位"}},
+    {name:"(管3) 18mg Concerta E.R. 18 mg/tab", locs:["Pandora","智慧調劑臺"], order:{"Pandora":10,"智慧調劑臺":1}, pack:{
+      "Pandora":{parts:["a","b"], a:30, b:1, la:"30 粒/瓶", lb:"個位"},
+      "智慧調劑臺":{parts:["a"], a:30, la:"30 粒/瓶"}
+    }},
+    {name:"(管3) 36mg Concerta E.R. 36 mg/tab", locs:["Pandora","智慧調劑臺"], order:{"Pandora":11,"智慧調劑臺":3}, pack:{
+      "Pandora":{parts:["a","b"], a:30, b:1, la:"30 粒/瓶", lb:"個位"},
+      "智慧調劑臺":{parts:["a"], a:30, la:"30 粒/瓶"}
+    }},
+    {name:"(管3) 新 Ritalin 10 mg/tab", locs:["Pandora"], order:{"Pandora":12}, pack:{parts:["a","b","c"], a:30, b:15, c:1, la:"30 粒/盒", lb:"15 粒/片", lc:"個位"}},
+    {name:"(管3) LA 20 Ritalin LA 20 mg/cap", locs:["Pandora","智慧調劑臺"], order:{"Pandora":13,"智慧調劑臺":4}, pack:{
+      "Pandora":{parts:["a","b"], a:30, b:1, la:"30 粒/瓶", lb:"個位"},
+      "智慧調劑臺":{parts:["a"], a:30, la:"30 粒/瓶"}
+    }},
+    {name:"(管1) 30 Morphine Sulfate SR 30 mg/tab", locs:["Pandora"], order:{"Pandora":14}, pack:{parts:["a","b","c"], a:50, b:10, c:1, la:"50 粒/盒", lb:"10 粒/片", lc:"個位"}},
+    {name:"(管2) 貼25 Opiodur Transdermal Patch 25 mcg/1 hr /pce", locs:["Pandora"], order:{"Pandora":15}, pack:{parts:["a","b"], a:5, b:1, la:"5 片/盒", lb:"個位"}},
+    {name:"(管2) Opiodur Transdermal Patch 12 mcg/1 hr /pce（實際劑量12.5mcg/hr）", locs:["Pandora"], order:{"Pandora":16}, pack:{parts:["a","b"], a:5, b:1, la:"5 片/盒", lb:"個位"}},
+    {name:"(管1) 液(60mL/瓶) Morphine Sulfate Oral Soln 2 mg/1 mL 60 mL/btl", locs:["Pandora"], order:{"Pandora":17}},
+    {name:"(管2) Remifentanil Powder for Inj 2 mg/vial", locs:["Pandora"], order:{"Pandora":18}, pack:{parts:["a","b"], a:5, b:1, la:"5 vial/盒", lb:"個位"}},
+    {name:"(管2) Pethidine HCl 50 mg/1 mL /amp", locs:["Pandora"], order:{"Pandora":19}},
+    {name:"(管3) Apo-Methylphenidate 10 mg/tab", locs:["Pandora","智慧調劑臺"], order:{"Pandora":20,"智慧調劑臺":5}, pack:{
+      "Pandora":{parts:["a","b","c"], a:280, b:28, c:1, la:"280 粒/束", lb:"28 粒/包", lc:"個位"},
+      "智慧調劑臺":{parts:["a","b"], a:1400, b:280, la:"1400 粒/大包", lb:"280 粒/束"}
+    }},
+    {name:"(管2) 貼75 Opiodur Transdermal Patch 75 mcg/1 hr /pce", locs:["Pandora"], order:{"Pandora":21}, pack:{parts:["a","b"], a:5, b:1, la:"5 片/盒", lb:"個位"}},
+    /* 反黃／備用品項：先加入清單，但不指定儲位，之後品項替換確定時再到「管理」面板勾選 */
+    {name:"(管2) 速效 Oxycodone Hydrochloride IR 5 mg/cap", locs:[], order:{}},
+    {name:"(管2) 貼75 Fentanyl Transdermal Patch 75 mcg/1 hr /pce (PPCD)", locs:[], order:{}},
+    {name:"(管2) 12 Durogesic D-TRANS 12 mcg/1 hr /pce (實際劑量12.5mcg/hr)", locs:[], order:{}},
+    {name:"(管2) 貼25 Durogesic D-TRANS 25 mcg/1 hr /pce", locs:[], order:{}},
+    {name:"(管2) 12 Fentanyl Transdermal Patch 12.5 mcg/1 hr /pce (實際劑量12.5mcg/hr)", locs:[], order:{}},
+    {name:"(管2) 貼25 Fentanyl Transdermal Patch 25 mcg/1 hr /pce (PPCD)", locs:[], order:{}},
+    {name:"(管2) 貼50 Fentanyl Transdermal Patch 50 mcg/1 hr /pce (PPCD)", locs:[], order:{}}
+  ]
+};
+/* 這份清單每一項都已明確標好 locs（含刻意留空的備用品項），
+   只有在未來用「管理」面板新增藥品、完全沒設定 locs 時，才補預設值 */
+const DEFAULT_DRUGS = JSON.parse(JSON.stringify(DATA.drugs));
+DATA.drugs.forEach(d=>{ if(d.locs === undefined) d.locs = [...DATA.locations]; if(!d.order) d.order = {}; });
+
+
+
+const SHIFTS = ["白班","小夜","大夜"];
+const SHIFT_HUE = { "白班":["#4a90c2","#eaf3f8"], "小夜":["#4d7fa0","#e6f0f6"], "大夜":["#2f5f80","#dbe9f0"] };
+/* 班表系統的「主要交班人員」班別代碼，對應本表的三個班別（唯讀查詢用）
+   查詢時只看「當天實際班別代碼」是否落在下面的清單裡，所以已經自動涵蓋平日／假日的差異：
+   - 白班（交給小夜）：平日固定用 U7.5；假日／國定假日改用 SD 或 HD
+   - 小黃：是「大夜交給隔天白班」時，早上接班覆盤的專屬代碼，只用在這個方向，
+     不會出現在「白班交給小夜」的查詢裡，所以另外獨立成 INCOMING_WHITE_CODES
+   - 小夜／大夜目前平日假日代碼相同，維持單一清單即可 */
+const SHIFT_CODES = {
+  "白班": ["SD","HD","U7.5"],
+  "小夜": ["A1","SA1","HA1"],
+  "大夜": ["P","SP","HP"]
+};
+/* 大夜交給隔天白班時，接班覆盤人員的代碼（小黃 + 假日 SD/HD） */
+const INCOMING_WHITE_CODES = ["小黃","SD","HD"];
+/* 交班鏈：白班→小夜→大夜→（次日）白班 */
+const NEXT_SHIFT = { "白班":"小夜", "小夜":"大夜", "大夜":"白班" };
+const PREV_SHIFT = { "白班":"大夜", "小夜":"白班", "大夜":"小夜" };
+function addDays(dateStr, n){
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+/* 前一天「大夜」班的結存數量快照（唯讀查詢，只用來給白班覆核比對，不寫入） */
+let prevDayNight = null;      // { loc: { drug: qty } }
+let prevDayNightDate = null;  // 目前快取對應的日期（前一天日期）
+async function loadPrevDayNight(){
+  const dateStr = $('#d-date').value;
+  const yest = addDays(dateStr, -1);
+  if(prevDayNightDate === yest) return;
+  prevDayNightDate = yest;
+  prevDayNight = null;
+  try{
+    const rec = await FB.latestForDate(yest);
+    if(rec && rec.shifts && rec.shifts['大夜']) prevDayNight = rec.shifts['大夜'].locations || {};
+  }catch(_){ prevDayNight = null; }
+  paintInputs();
+}
+/* 取得「前一班」在同一個儲位／藥品的數量，找不到回傳 null（白班會去比對前一天的大夜快照） */
+function getPrevValue(shift, loc, drug){
+  if(shift === '白班'){
+    return (prevDayNight && prevDayNight[loc] && prevDayNight[loc][drug] != null) ? prevDayNight[loc][drug] : null;
+  }
+  const prev = PREV_SHIFT[shift];
+  return (state[prev] && state[prev][loc] && state[prev][loc][drug] != null) ? state[prev][loc][drug] : null;
+}
+
+/* 斗六院區藥劑部人員名單（識別用，非權限管控） */
+const ADMINS = ['Y01643','Y06100','Y08215','Y00326','Y02331','Y07352'];
+const isAdmin = () => !!USER && ADMINS.includes(USER.id);
+const DISPLAY = {
+  'Y01643':'謝姍珊','Y06100':'陳麗珺','Y08215':'王玟璇',
+  'Y00326':'沈倩如','Y02331':'張如萱','Y07352':'鍾意'
+};
+
+const $ = s => document.querySelector(s);
+let USER = null;
+let dirty = false;
+const dirtySet = new Set();           // "shift||loc" 集合：本次登入後有異動但尚未儲存
+let currentShift = SHIFTS[0];
+let currentLoc = DATA.locations[0];
+
+/* state[shift][loc][drug] = 數量(number) 或 null */
+const state = {};
+/* handover[shift] = { from:'', to:'' } */
+const handover = {};
+SHIFTS.forEach(s=>{ state[s] = {}; handover[s] = { from:'', to:'', confirmed:false };
+  DATA.locations.forEach(l=> state[s][l] = {}); });
+
+const cellKey = (shift, loc, drug) => `${shift}||${loc}||${drug}`;
+const todayStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
+
+/* ---------- 畫面建立 ---------- */
+function buildShiftSel(){
+  const box = $('#shiftsel');
+  box.innerHTML = SHIFTS.map(s=>`<button type="button" data-shift="${s}">${s}</button>`).join('');
+  box.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click', ()=>{ currentShift = b.dataset.shift; paintShift(); });
+  });
+  paintShift();
+}
+/* 依「班表系統」的班別代碼，自動帶入交班／接班藥師姓名（唯讀查詢，查不到就退回登入者姓名）
+   side='from'：本班（同一天、自己班別代碼）　side='to'：下一班（大夜的下一班要查「次日」白班）
+   force=true：由使用者按「從班表帶入」觸發，會覆蓋目前欄位內容並顯示查詢結果 toast */
+async function autofillSide(shift, side, force){
+  const dateStr = $('#d-date').value;
+  let queryDate = dateStr, codes = SHIFT_CODES[shift] || [], label = shift;
+  if(side === 'to'){
+    const next = NEXT_SHIFT[shift];
+    queryDate = shift === '大夜' ? addDays(dateStr, 1) : dateStr;
+    /* 大夜 → 隔天白班：用專屬的接班覆盤代碼（小黃/SD/HD），其餘班別沿用一般代碼 */
+    codes = shift === '大夜' ? INCOMING_WHITE_CODES : (SHIFT_CODES[next] || []);
+    label = next + (shift === '大夜' ? '（次日）' : '');
+  }
+  let names = [];
+  if(window.ROSTER && codes.length && queryDate){
+    try{ names = await window.ROSTER.namesOnShift(queryDate, codes); }
+    catch(err){
+      toast('查詢班表失敗：' + (err && err.message ? err.message : err));
+      names = [];
+    }
+  }
+  if(names && names.length){
+    handover[shift][side] = names.join('、');
+    toast(`已從班表帶入（${label}）：${names.join('、')}`);
+  }else{
+    toast(`${queryDate} 查無「${label}」對應班別代碼的人員，請手動輸入`);
+  }
+  if(shift === currentShift) paintInputs();
+}
+const autofillHandover = (shift, force) => autofillSide(shift, 'from', force);
+const autofillIncoming = (shift, force) => autofillSide(shift, 'to', force);
+
+function paintShift(){
+  $('#shiftsel').querySelectorAll('button').forEach(b=> b.classList.toggle('on', b.dataset.shift === currentShift));
+  if(currentShift === '白班') loadPrevDayNight();
+  paintInputs();
+  refreshBadges();
+}
+
+function build(){
+  const app = $('#app'), nav = $('#nav');
+  nav.innerHTML = '';
+  app.innerHTML = `<div class="hand">
+      <div class="handfrom">
+        <label>交班藥師（本班／點交人）</label>
+        <div class="handrow">
+          <input id="hf" data-hand="from" placeholder="請選擇下方來源，或直接輸入姓名">
+          <button type="button" id="hf-roster" title="依當天班表查詢">班表帶入</button>
+          <button type="button" id="hf-self" title="填入目前登入者姓名">登入者</button>
+        </div>
+      </div>
+      <div class="handto">
+        <label>接班藥師（核對前一班數量）</label>
+        <div class="handrow">
+          <input id="ht" data-hand="to" placeholder="請選擇下方來源，或直接輸入姓名">
+          <button type="button" id="ht-roster" title="依班表查詢下一班人員">班表帶入</button>
+          <button type="button" id="ht-self" title="填入目前登入者姓名">登入者</button>
+        </div>
+      </div>
+    </div>`;
+  DATA.locations.forEach(loc=>{
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.id = 'nav-' + loc;
+    btn.innerHTML = `${loc}<i data-navcount="${loc}">0/0</i>`;
+    btn.addEventListener('click', ()=> show(loc));
+    nav.appendChild(btn);
+
+    const card = document.createElement('section');
+    card.className = 'place'; card.id = 'L-' + loc;
+
+    const drugs = DATA.drugs.filter(d => d.locs.includes(loc))
+      .sort((a,b)=> (a.order && a.order[loc] != null ? a.order[loc] : 999) - (b.order && b.order[loc] != null ? b.order[loc] : 999));
+    const rows = drugs.map(d=>{
+      const p = packFor(d, loc);
+      if(p){
+        const head = `<div class="dn">${d.name}<b class="miss" data-loc="${loc}" data-drug="${d.name}" hidden>未填</b>
+            <span class="prevhint" data-loc="${loc}" data-drug="${d.name}"></span></div>`;
+        const boxes = p.parts.map(part=>{
+          const mult = p[part];
+          const label = p['l' + part] || '';
+          return `<div class="pvcol">
+            <span class="pvlabel">${label}</span>
+            <input class="n" data-loc="${loc}" data-drug="${d.name}" data-part="${part}" data-mult="${mult}"
+               type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="0">
+          </div>`;
+        }).join('');
+        return `<div class="row pack" data-loc="${loc}" data-drug="${d.name}">
+          ${head}
+          <div class="pv" style="--n:${p.parts.length}">
+            ${boxes}
+            <div class="op">=</div>
+            <div class="pvcol"><span class="pvlabel">總和</span>
+              <input class="n sum" data-total-loc="${loc}" data-total-drug="${d.name}" placeholder="—" readonly tabindex="-1">
+            </div>
+          </div>
+        </div>`;
+      }
+      const head = `<div class="dn">${d.name}<b class="miss" data-loc="${loc}" data-drug="${d.name}" hidden>未填</b>
+            <span class="prevhint" data-loc="${loc}" data-drug="${d.name}"></span></div>`;
+      return `<div class="row tight" data-loc="${loc}" data-drug="${d.name}">
+        <div class="line">${head}
+          <input class="n solo" data-loc="${loc}" data-drug="${d.name}"
+                 type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="0">
+        </div>
+      </div>`;
+    }).join('') || `<div class="row tight"><div class="empty">此儲位尚未設定藥品</div></div>`;
+
+    card.innerHTML = `<div class="phead">
+        <div class="ptop">
+          <div class="pname">${loc}</div>
+          <b class="pleft" data-left="${loc}" hidden></b>
+          <div class="pmeta" data-meta="${loc}"></div>
+        </div>
+      </div>
+      ${rows}`;
+    app.appendChild(card);
+  });
+  bindInputs();
+  show(currentLoc);
+}
+
+function rebuild(){ build(); paintInputs(); refreshBadges(); }
+
+function show(loc){
+  currentLoc = loc;
+  document.querySelectorAll('.place').forEach(p=> p.classList.toggle('active', p.id === 'L-' + loc));
+  document.querySelectorAll('#nav button').forEach(b=> b.classList.toggle('active', b.id === 'nav-' + loc));
+}
+
+/* ---------- 自動跳到下一格（比照3-4級管制藥品每日盤點表：位數填滿立刻跳，未滿停頓1秒後跳） ---------- */
+const HOP_MS = 1000;
+function pvFields(el){
+  const card = el.closest('.place');
+  return card ? [...card.querySelectorAll('input.n:not([readonly])')] : [];
+}
+function focusNextPv(el){
+  const list = pvFields(el), i = list.indexOf(el);
+  if(i >= 0 && i + 1 < list.length){
+    const next = list[i + 1];
+    next.focus(); next.select();
+  }else{
+    el.blur();
+  }
+}
+let hopTimer = null;
+const cancelHop = () => clearTimeout(hopTimer);
+document.addEventListener('focusin', e=>{
+  cancelHop();
+  if(e.target.matches('input.n')) setTimeout(()=> e.target.select(), 0);
+});
+document.addEventListener('focusout', cancelHop);
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Enter' && e.target.matches('input.n')){
+    e.preventDefault();
+    focusNextPv(e.target);
+  }
+});
+document.addEventListener('input', e=>{
+  const el = e.target;
+  if(!el.matches('input.n[data-part]')) return;
+  cancelHop();
+  const max = Number(el.maxLength);
+  if(max > 0){
+    if(el.value.length >= max) focusNextPv(el);
+    else if(el.value.length > 0) hopTimer = setTimeout(()=> focusNextPv(el), HOP_MS);
+  }
+});
+
+function bindInputs(){
+  document.querySelectorAll('input.solo').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      inp.value = inp.value.replace(/[^0-9]/g,'').slice(0,6);
+      const { loc, drug } = inp.dataset;
+      const v = inp.value === '' ? null : Number(inp.value);
+      state[currentShift][loc][drug] = v;
+      inp.classList.toggle('filled', v != null);
+      const miss = document.querySelector(`.miss[data-loc="${CSS.escape(loc)}"][data-drug="${CSS.escape(drug)}"]`);
+      if(miss) miss.hidden = v != null;
+      updateMismatch(currentShift, loc, drug);
+      markDirty(currentShift, loc);
+      refreshBadges();
+    });
+  });
+  document.querySelectorAll('input.n[data-part]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      const max = Number(inp.maxLength) > 0 ? inp.maxLength : 4;
+      inp.value = inp.value.replace(/[^0-9]/g,'').slice(0, max);
+      const { loc, drug } = inp.dataset;
+      updatePackTotal(loc, drug);
+    });
+  });
+  const hf = $('#hf'), ht = $('#ht');
+  if(hf) hf.addEventListener('input', ()=>{
+    handover[currentShift].from = hf.value;
+    DATA.locations.forEach(loc=> markDirty(currentShift, loc));
+  });
+  if(ht) ht.addEventListener('input', ()=>{
+    handover[currentShift].to = ht.value;
+    DATA.locations.forEach(loc=> markDirty(currentShift, loc));
+    paintConfirmRow();
+  });
+  const hfRoster = $('#hf-roster');
+  if(hfRoster) hfRoster.addEventListener('click', async ()=>{
+    hfRoster.classList.add('loading'); hfRoster.textContent = '查詢中…';
+    await autofillHandover(currentShift, true);
+    DATA.locations.forEach(loc=> markDirty(currentShift, loc));
+    hfRoster.classList.remove('loading'); hfRoster.textContent = '班表帶入';
+  });
+  const hfSelf = $('#hf-self');
+  if(hfSelf) hfSelf.addEventListener('click', ()=>{
+    if(!USER){ toast('尚未登入'); return; }
+    handover[currentShift].from = USER.name;
+    DATA.locations.forEach(loc=> markDirty(currentShift, loc));
+    paintInputs();
+    toast('已帶入登入者姓名：' + USER.name);
+  });
+  const htRoster = $('#ht-roster');
+  if(htRoster) htRoster.addEventListener('click', async ()=>{
+    htRoster.classList.add('loading'); htRoster.textContent = '查詢中…';
+    await autofillIncoming(currentShift, true);
+    DATA.locations.forEach(loc=> markDirty(currentShift, loc));
+    htRoster.classList.remove('loading'); htRoster.textContent = '班表帶入';
+  });
+  const htSelf = $('#ht-self');
+  if(htSelf) htSelf.addEventListener('click', ()=>{
+    if(!USER){ toast('尚未登入'); return; }
+    handover[currentShift].to = USER.name;
+    DATA.locations.forEach(loc=> markDirty(currentShift, loc));
+    paintInputs();
+    toast('已帶入登入者姓名：' + USER.name);
+  });
+}
+
+/* 依藥品名稱找回完整定義（含 pack 包裝設定） */
+function findDrug(name){ return DATA.drugs.find(d=> d.name === name); }
+/* 取得某藥品「在特定儲位」的包裝設定：優先找 pack[loc]（不同儲位可以有不同包裝），
+   找不到就退回 pack.parts（單一儲位共用同一種包裝的舊格式） */
+function packFor(d, loc){
+  if(!d || !d.pack) return null;
+  if(d.pack[loc]) return d.pack[loc];
+  if(d.pack.parts) return d.pack;
+  return null;
+}
+
+/* 位值輸入（盒／個位…）：即時換算成總量寫回 state，並更新「＝總和」欄位顯示 */
+function updatePackTotal(loc, drug){
+  const d = findDrug(drug);
+  if(!packFor(d, loc)) return;
+  const inputs = document.querySelectorAll(`input.n[data-part][data-loc="${CSS.escape(loc)}"][data-drug="${CSS.escape(drug)}"]`);
+  let any = false, total = 0;
+  inputs.forEach(inp=>{
+    if(inp.value !== ''){ any = true; total += Number(inp.value) * Number(inp.dataset.mult); }
+    inp.classList.toggle('filled', inp.value !== '');
+  });
+  const val = any ? total : null;
+  state[currentShift][loc][drug] = val;
+  const sumEl = document.querySelector(`input.sum[data-total-loc="${CSS.escape(loc)}"][data-total-drug="${CSS.escape(drug)}"]`);
+  if(sumEl){ sumEl.value = any ? total : ''; sumEl.classList.toggle('on', any); }
+  const miss = document.querySelector(`.miss[data-loc="${CSS.escape(loc)}"][data-drug="${CSS.escape(drug)}"]`);
+  if(miss) miss.hidden = val != null;
+  updateMismatch(currentShift, loc, drug);
+  markDirty(currentShift, loc);
+  refreshBadges();
+}
+
+/* 找出目前輸入的數字是否跟前一班不同，更新提示文字與框線顏色（一般數量輸入與盒＋零散輸入都適用） */
+function updateMismatch(shift, loc, drug){
+  if(shift !== currentShift) return;
+  const hint = document.querySelector(`.prevhint[data-loc="${CSS.escape(loc)}"][data-drug="${CSS.escape(drug)}"]`);
+  if(!hint) return;
+  const soloInp = document.querySelector(`input.solo[data-loc="${CSS.escape(loc)}"][data-drug="${CSS.escape(drug)}"]`);
+  const sumInp = document.querySelector(`input.sum[data-total-loc="${CSS.escape(loc)}"][data-total-drug="${CSS.escape(drug)}"]`);
+  const prev = getPrevValue(shift, loc, drug);
+  const cur = state[shift][loc][drug];
+  if(prev == null){
+    hint.textContent = ''; hint.classList.remove('mismatch');
+    if(soloInp) soloInp.classList.remove('mismatch');
+    if(sumInp) sumInp.classList.remove('mismatch');
+    return;
+  }
+  const diff = cur != null && cur !== prev;
+  hint.textContent = `前一班：${prev}`;
+  hint.classList.toggle('mismatch', diff);
+  if(soloInp) soloInp.classList.toggle('mismatch', diff);
+  if(sumInp) sumInp.classList.toggle('mismatch', diff);
+}
+/* 本班是否所有儲位、所有藥品都已盤點填寫 */
+function shiftFullyCounted(shift){
+  return DATA.locations.every(loc=>
+    DATA.drugs.filter(d=> d.locs.includes(loc)).every(d=> state[shift][loc][d.name] != null)
+  );
+}
+
+function paintConfirmRow(){
+  const row = $('#confirmrow'), hc = $('#hc-confirm');
+  if(!row || !hc) return;
+  /* 已勾選後又把數量清空 → 自動取消確認，避免留下未完成卻已核章的紀錄 */
+  if(handover[currentShift].confirmed && !shiftFullyCounted(currentShift)){
+    handover[currentShift].confirmed = false;
+  }
+  const ready = shiftFullyCounted(currentShift) &&
+                !!(handover[currentShift].to && handover[currentShift].to.trim());
+  hc.checked = !!handover[currentShift].confirmed;
+  hc.disabled = !ready && !hc.checked;
+  row.classList.toggle('warn', !hc.checked);
+  row.classList.toggle('locked', hc.disabled);
+  row.title = hc.disabled ? '需填寫接班藥師姓名，並完成所有藥品盤點後才能勾選' : '';
+}
+
+function paintInputs(){
+  document.querySelectorAll('input.solo').forEach(inp=>{
+    const { loc, drug } = inp.dataset;
+    const v = state[currentShift][loc][drug];
+    inp.value = v == null ? '' : v;
+    inp.classList.toggle('filled', v != null);
+    updateMismatch(currentShift, loc, drug);
+  });
+  document.querySelectorAll('.row.pack').forEach(row=>{
+    const { loc, drug } = row.dataset;
+    const d = findDrug(drug);
+    const v = state[currentShift][loc][drug];
+    const p = packFor(d, loc);
+    if(p){
+      let remaining = v;
+      p.parts.forEach(part=>{
+        const inp = row.querySelector(`input.n[data-part="${part}"]`);
+        if(!inp) return;
+        if(remaining == null){ inp.value = ''; inp.classList.remove('filled'); return; }
+        const mult = p[part];
+        const val = Math.floor(remaining / mult);
+        remaining -= val * mult;
+        inp.value = val;
+        inp.classList.add('filled');
+      });
+    }
+    const sumEl = row.querySelector('input.sum');
+    if(sumEl){ sumEl.value = v == null ? '' : v; sumEl.classList.toggle('on', v != null); }
+    updateMismatch(currentShift, loc, drug);
+  });
+  document.querySelectorAll('.miss').forEach(miss=>{
+    const { loc, drug } = miss.dataset;
+    miss.hidden = state[currentShift][loc][drug] != null;
+  });
+  paintConfirmRow();
+  const hf = $('#hf'), ht = $('#ht');
+  if(hf) hf.value = handover[currentShift].from || '';
+  if(ht) ht.value = handover[currentShift].to || '';
+}
+
+function markDirty(shift, loc){
+  dirty = true;
+  dirtySet.add(shift + '||' + loc);
+  $('#b-save').classList.add('dirty');
+  refreshMeta();
+  saveDraftLocal();
+}
+
+/* ---------- 瀏覽器本機暫存草稿（避免斷線或關閉分頁時遺失尚未儲存的輸入） ---------- */
+const DRAFT_KEY = 'pharmacy13_draft_v1';
+function saveDraftLocal(){
+  try{
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      date: $('#d-date').value,
+      state, handover,
+      savedAt: Date.now()
+    }));
+  }catch(_){ /* 儲存空間不足或無法使用時，靜默忽略，不影響正常操作 */ }
+}
+function clearDraftLocal(){
+  try{ localStorage.removeItem(DRAFT_KEY); }catch(_){}
+}
+function readDraftLocal(){
+  try{
+    const raw = localStorage.getItem(DRAFT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(_){ return null; }
+}
+/* 把草稿內容套用回目前的 state／handover，並標記為尚未儲存 */
+function applyDraft(draft){
+  SHIFTS.forEach(s=>{
+    handover[s] = { confirmed:false, ...(draft.handover && draft.handover[s] || {}) };
+    DATA.locations.forEach(l=>{
+      state[s][l] = { ...((draft.state && draft.state[s] && draft.state[s][l]) || {}) };
+      const hasData = Object.values(state[s][l]).some(v=> v != null);
+      const hasHand = (handover[s].from && handover[s].from.trim()) || (handover[s].to && handover[s].to.trim());
+      if(hasData || hasHand) markDirty(s, l);
+    });
+  });
+}
+/* 登入載入資料後，檢查本機是否有同一天尚未儲存的暫存草稿，有的話詢問是否要復原 */
+async function maybeRestoreDraft(){
+  const draft = readDraftLocal();
+  if(!draft || draft.date !== $('#d-date').value) return;
+  const same = JSON.stringify(draft.state) === JSON.stringify(state) &&
+               JSON.stringify(draft.handover) === JSON.stringify(handover);
+  if(same){ clearDraftLocal(); return; }
+  const when = draft.savedAt ? new Date(draft.savedAt).toLocaleString('zh-TW', {hour12:false}) : '未知時間';
+  const ok = await confirmBox('發現本機暫存資料',
+    `這台裝置在 ${when} 有尚未儲存成功的盤點內容（可能是斷線或關閉分頁前來不及存檔），要復原這份暫存資料嗎？`, false);
+  if(ok){
+    applyDraft(draft);
+    paintInputs(); refreshBadges();
+    toast('已復原本機暫存的盤點資料，請確認後記得按「儲存」');
+  }else{
+    clearDraftLocal();
+  }
+}
+
+function refreshMeta(){
+  DATA.locations.forEach(loc=>{
+    const el = document.querySelector(`[data-meta="${loc}"]`);
+    if(!el) return;
+    const key = currentShift + '||' + loc;
+    el.textContent = dirtySet.has(key) ? '尚未儲存' : '';
+    el.className = 'pmeta' + (dirtySet.has(key) ? ' unsaved' : '');
+  });
+}
+
+function refreshBadges(){
+  let doneTotal = 0, allTotal = 0;
+  DATA.locations.forEach(loc=>{
+    const drugs = DATA.drugs.filter(d=>d.locs.includes(loc));
+    const filled = drugs.filter(d=> state[currentShift][loc][d.name] != null).length;
+    const badge = document.querySelector(`[data-navcount="${loc}"]`);
+    if(badge) badge.textContent = `${filled}/${drugs.length}`;
+    const btn = document.getElementById('nav-' + loc);
+    if(btn){
+      btn.classList.remove('st0','stp','stf');
+      if(drugs.length){
+        const st = filled === 0 ? 'st0' : filled < drugs.length ? 'stp' : 'stf';
+        btn.classList.add(st);
+      }
+    }
+    const left = document.querySelector(`[data-left="${loc}"]`);
+    if(left){
+      const n = drugs.length - filled;
+      left.hidden = n <= 0;
+      left.textContent = `尚缺 ${n} 項`;
+    }
+    doneTotal += filled; allTotal += drugs.length;
+  });
+  $('#t-bar').style.width = allTotal ? Math.round(doneTotal/allTotal*100) + '%' : '0%';
+  refreshMeta();
+  paintConfirmRow();
+}
+
+/* ---------- 登入 ---------- */
+function paintGate(){
+  const h = new Date().getHours();
+  $('#g-hi').textContent = h < 5 ? '夜深了，辛苦了' : h < 11 ? '早安' : h < 14 ? '午安'
+                         : h < 18 ? '午後好' : h < 23 ? '晚安' : '夜深了，辛苦了';
+  $('#g-dots').innerHTML = SHIFTS.map((s,n)=>{
+    const [c] = SHIFT_HUE[s];
+    return `<i style="background:${c};animation-delay:${(n*0.18).toFixed(2)}s"></i>`;
+  }).join('');
+}
+const MAIL_DOMAIN = '@ms1.ylh.gov.tw';
+const normalizeId = raw => { const v = String(raw||'').replace(/\D/g,''); return v ? 'Y'+v.padStart(5,'0') : ''; };
+
+async function signIn(){
+  const id = normalizeId($('#g-id').value), pw = $('#g-pw').value;
+  if(!id || !pw){ $('#g-err').textContent = '請輸入員編與密碼'; return; }
+  const mail = id + MAIL_DOMAIN;
+  $('#g-err').className = 'err'; $('#g-err').textContent = '登入中…';
+  try{ await FB.signIn(mail, pw); }
+  catch(err){
+    const code = (err && err.code) || '';
+    $('#g-err').textContent =
+      /invalid-credential|wrong-password|user-not-found|invalid-email/.test(code) ? '員編或密碼錯誤'
+      : /too-many-requests/.test(code) ? '嘗試次數過多，請稍後再試'
+      : /network/.test(code) ? '無法連線，請確認網路'
+      : '登入失敗：' + code;
+    const g = $('#gate'); g.classList.remove('bad'); void g.offsetWidth; g.classList.add('bad');
+  }
+}
+
+async function applyConfig(){
+  try{
+    const cfg = await FB.readConfig();
+    if(cfg && Array.isArray(cfg.drugs) && cfg.drugs.length){
+      DATA.locations = cfg.locations || DATA.locations;
+      DATA.drugs = cfg.drugs;
+      DATA.drugs.forEach(d=>{ if(!d.locs || !d.locs.length) d.locs = [...DATA.locations]; });
+      SHIFTS.forEach(s=> DATA.locations.forEach(l=>{ if(!state[s][l]) state[s][l] = {}; }));
+      rebuild();
+    }
+  }catch(_){}
+}
+
+async function onSignedIn(u){
+  const id = u.email.split('@')[0].toUpperCase();
+  USER = { id, name: u.displayName || DISPLAY[id] || id, uid: u.uid };
+  $('#gate').classList.remove('bad');
+  $('#g-err').className = 'err'; $('#g-err').textContent = '';
+  $('#g-id').value = ''; $('#g-pw').value = '';
+  $('#b-logout').hidden = false;
+  $('#d-user').textContent = '－' + USER.name + (isAdmin() ? '（管理者）' : '');
+  ['#b-csv','#b-hist','#b-admin'].forEach(sel=>{ const el = $(sel); if(el) el.hidden = !isAdmin(); });
+  $('#gate').hidden = true;
+  $('#d-date').value = todayStr();
+  await applyConfig();
+  await load();
+  watchRemote();
+  if(isAdmin()) FB.purgeHistory().catch(()=>{});
+}
+
+let unwatch = null;
+function watchRemote(){
+  if(unwatch) unwatch();
+  unwatch = FB.listen(o=>{
+    if(dirty){ toast('其他裝置已更新資料，儲存後將重新載入'); return; }
+    applyRemote(o); paintInputs(); refreshBadges();
+    toast('已同步其他裝置的更新');
+  });
+}
+
+async function signOut(){
+  if(dirtySet.size){
+    const ok = await confirmBox('尚有未儲存的點交資料', '登出後這些變更將會遺失，確定要登出嗎？', true);
+    if(!ok) return;
+  }
+  if(unwatch) unwatch();
+  await FB.signOut();
+  location.reload();
+}
+
+function onSignedOut(){
+  $('#gate').hidden = false;
+  $('#b-logout').hidden = true;
+  ['#b-csv','#b-hist','#b-admin'].forEach(sel=>{ const el = $(sel); if(el) el.hidden = true; });
+}
+
+/* ---------- 讀取 / 套用遠端資料 ---------- */
+function applyRemote(o){
+  if(!o || o.date !== $('#d-date').value){
+    SHIFTS.forEach(s=>{ handover[s] = { from:'', to:'', confirmed:false }; DATA.locations.forEach(l=> state[s][l] = {}); });
+    return;
+  }
+  SHIFTS.forEach(s=>{
+    const src = (o.shifts && o.shifts[s]) || {};
+    handover[s] = src.handover ? { confirmed:false, ...src.handover } : { from:'', to:'', confirmed:false };
+    DATA.locations.forEach(l=>{ state[s][l] = (src.locations && src.locations[l]) ? { ...src.locations[l] } : {}; });
+  });
+  dirtySet.clear(); dirty = false; $('#b-save').classList.remove('dirty');
+}
+
+async function load(){
+  try{
+    const o = await FB.read();
+    applyRemote(o);
+    loadPrevDayNight();
+    paintInputs(); refreshBadges();
+    await maybeRestoreDraft();
+  }
+  catch(_){ toast('讀取失敗，將以空白表單開始'); }
+}
+
+/* ---------- 儲存 ---------- */
+function buildPayload(){
+  const shifts = {};
+  SHIFTS.forEach(s=>{
+    shifts[s] = { handover: { ...handover[s] }, locations: {} };
+    DATA.locations.forEach(l=> shifts[s].locations[l] = { ...state[s][l] });
+  });
+  return { date: $('#d-date').value, shifts, savedBy: USER ? `${USER.name}(${USER.id})` : '' };
+}
+
+/* 必填規則：
+   1. 交班藥師／接班藥師　擇一必填（只要有其中一個名字就算通過）
+   2. 有異動（本次登入後填過）的儲位，裡面每一項管制藥數量都要填，不能留空
+   3. 只要「接班藥師」有填名字，就代表要進行覆核，這時「已核對數量無誤」勾選框就變成必填 */
+function incompleteShifts(){
+  return SHIFTS.map(s=>{
+    const touchedLocs = DATA.locations.filter(loc=> dirtySet.has(s+'||'+loc));
+    if(!touchedLocs.length) return null;
+    const h = handover[s];
+    const hasFrom = !!(h.from && h.from.trim());
+    const hasTo = !!(h.to && h.to.trim());
+    const missing = [];
+    if(!hasFrom && !hasTo) missing.push('交班藥師或接班藥師（擇一必填）');
+    if(hasTo && !h.confirmed) missing.push('已核對數量無誤勾選（填了接班藥師就需要勾選）');
+    touchedLocs.forEach(loc=>{
+      const emptyDrugs = DATA.drugs.filter(d=>d.locs.includes(loc)).filter(d=> state[s][loc][d.name] == null);
+      if(emptyDrugs.length) missing.push(`${loc}尚有 ${emptyDrugs.length} 項未填`);
+    });
+    return missing.length ? { shift:s, missing } : null;
+  }).filter(Boolean);
+}
+/* 已經有點交資料、但接班人員還沒填名字覆核的班別（僅提示，不會擋存檔，因為接班人員可能還沒到） */
+function pendingReviewShifts(){
+  return SHIFTS.filter(s=>{
+    const touched = DATA.locations.some(loc=> dirtySet.has(s+'||'+loc));
+    return touched && !(handover[s].to && handover[s].to.trim());
+  });
+}
+function mismatchList(){
+  const out = [];
+  SHIFTS.forEach(s=> DATA.locations.forEach(loc=>{
+    if(!dirtySet.has(s+'||'+loc)) return;
+    DATA.drugs.filter(d=>d.locs.includes(loc)).forEach(d=>{
+      const cur = state[s][loc][d.name];
+      const prev = getPrevValue(s, loc, d.name);
+      if(cur != null && prev != null && cur !== prev){
+        out.push(`　・${s}・${loc}・${d.name}　目前 ${cur}　前一班 ${prev}`);
+      }
+    });
+  }));
+  return out;
+}
+
+function openSaveDialog(){
+  $('#sv-date').textContent = $('#d-date').value;
+  $('#sv-shift').textContent = currentShift;
+  const list = [...dirtySet].map(k=>{
+    const [s, l] = k.split('||');
+    const drugs = DATA.drugs.filter(d=>d.locs.includes(l));
+    const filled = drugs.filter(d=> state[s][l][d.name] != null).length;
+    return `<li>${s}・${l}<em>已填 ${filled}/${drugs.length} 項</em></li>`;
+  }).join('');
+  $('#sv-list').innerHTML = list || '<li>目前沒有異動的儲位／班別</li>';
+  $('#sv-warn').hidden = true;
+
+  const mm = mismatchList();
+  const mmEl = $('#sv-mismatch');
+  if(mm.length){
+    mmEl.hidden = false;
+    mmEl.innerHTML = '<b>⚠ 與前一班數量不同：</b>' + mm.map(m=>`<div>${m}</div>`).join('');
+  }else mmEl.hidden = true;
+
+  const unconfirmed = incompleteShifts();
+  const cfEl = $('#sv-confirm');
+  if(unconfirmed.length){
+    cfEl.hidden = false;
+    cfEl.innerHTML = '<b>⚠ 尚未完成必填欄位：</b>' +
+      unconfirmed.map(u=>`<div>　・${u.shift}　缺：${u.missing.join('、')}</div>`).join('');
+  }else cfEl.hidden = true;
+
+  const pending = pendingReviewShifts();
+  const pdEl = $('#sv-pending');
+  if(pending.length){
+    pdEl.hidden = false;
+    pdEl.className = 'svwarn info';
+    pdEl.innerHTML = `尚未由接班人員覆核確認：${pending.join('、')}（可先儲存本班點交，之後接班人員再來勾選確認即可）`;
+  }else pdEl.hidden = true;
+
+  $('#savedlg').hidden = false;
+}
+
+async function doSave(){
+  $('#savedlg').hidden = true;
+  try{
+    await FB.write(buildPayload());
+    dirtySet.clear(); dirty = false;
+    $('#b-save').classList.remove('dirty');
+    refreshMeta();
+    clearDraftLocal();
+    toast('已儲存　' + $('#d-date').value + '　' + currentShift);
+  }catch(err){ toast('儲存失敗：' + (err && err.message ? err.message : err)); }
+}
+
+/* ---------- 小工具：置中確認視窗 ---------- */
+function confirmBox(title, msg, danger){
+  return new Promise(resolve=>{
+    $('#ak-top').textContent = title;
+    $('#ak-msg').textContent = msg;
+    $('#ak-list').innerHTML = '';
+    $('#askdlg').className = 'alertbox' + (danger ? '' : ' safe');
+    $('#askdlg').hidden = false;
+    const yes = $('#ak-yes'), no = $('#ak-no');
+    const cleanup = v => { $('#askdlg').hidden = true; yes.onclick = null; no.onclick = null; resolve(v); };
+    yes.onclick = ()=> cleanup(true);
+    no.onclick  = ()=> cleanup(false);
+  });
+}
+
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(()=> t.classList.remove('show'), 2600);
+}
+
+/* ---------- CSV 匯出（今日） ---------- */
+function buildRows(){
+  const L = [];
+  L.push(`點交日期,${$('#d-date').value}`);
+  L.push(`匯出人員,"${USER ? USER.name : ''}",員工編號,${USER ? USER.id : ''}`);
+  L.push('');
+  SHIFTS.forEach(s=>{
+    L.push(`班別,${s}`);
+    L.push(`交班藥師,"${handover[s].from||''}",接班藥師,"${handover[s].to||''}",已核對確認,${handover[s].confirmed?'是':'否'}`);
+    L.push(['儲位','藥品名稱','數量'].join(','));
+    DATA.locations.forEach(loc=>{
+      DATA.drugs.filter(d=>d.locs.includes(loc)).forEach(d=>{
+        const v = state[s][loc][d.name];
+        L.push([loc, `"${d.name}"`, v==null?'':v].join(','));
+      });
+    });
+    L.push('');
+  });
+  return L;
+}
+const csvName = () => `管制藥品1-3級點交_${$('#d-date').value}.csv`;
+const csvBlob = () => new Blob(['\ufeff' + buildRows().join('\r\n')], {type:'text/csv;charset=utf-8'});
+function download(blob, name){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(()=> URL.revokeObjectURL(a.href), 4000);
+}
+function csv(){ download(csvBlob(), csvName()); toast('今日點交 CSV 已下載'); }
+
+/* ---------- 歷史紀錄匯出 ---------- */
+function bindHist(){
+  $('#b-hist').addEventListener('click', ()=>{
+    $('#h-from').value = todayStr(); $('#h-to').value = todayStr(); $('#h-msg').textContent = '';
+    $('#hist').hidden = false;
+  });
+  $('#h-close').addEventListener('click', ()=> $('#hist').hidden = true);
+  document.querySelectorAll('.hquick button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const days = Number(b.dataset.days);
+      const to = new Date(), from = new Date(Date.now() - (days-1)*86400000);
+      $('#h-to').value = to.toISOString().slice(0,10);
+      $('#h-from').value = from.toISOString().slice(0,10);
+    });
+  });
+  $('#h-go').addEventListener('click', async ()=>{
+    const from = $('#h-from').value, to = $('#h-to').value;
+    if(!from || !to || from > to){ $('#h-msg').textContent = '請選擇正確的起訖日期'; return; }
+    $('#h-msg').textContent = '匯出中…';
+    try{
+      const rows = await FB.historyRange(from, to);
+      if(!rows.length){ $('#h-msg').textContent = '這段期間沒有任何儲存紀錄'; return; }
+      const L = ['日期,班別,儲位,藥品名稱,數量,交班藥師,接班藥師,已核對確認,儲存人員'];
+      rows.forEach(r=>{
+        SHIFTS.forEach(s=>{
+          const sh = (r.shifts && r.shifts[s]) || {};
+          const hf = sh.handover ? sh.handover.from||'' : '';
+          const ht = sh.handover ? sh.handover.to||'' : '';
+          const cf = sh.handover && sh.handover.confirmed ? '是' : '否';
+          DATA.locations.forEach(loc=>{
+            const locData = (sh.locations && sh.locations[loc]) || {};
+            Object.keys(locData).forEach(drug=>{
+              const v = locData[drug];
+              L.push([r.date, s, loc, `"${drug}"`, v==null?'':v, `"${hf}"`, `"${ht}"`, cf, `"${r.savedBy||''}"`].join(','));
+            });
+          });
+        });
+      });
+      download(new Blob(['\ufeff'+L.join('\r\n')], {type:'text/csv;charset=utf-8'}), `管制藥品1-3級點交歷史_${from}_${to}.csv`);
+      $('#h-msg').textContent = `已匯出 ${rows.length} 筆儲存紀錄`;
+    }catch(err){ $('#h-msg').textContent = '匯出失敗：' + (err && err.message ? err.message : err); }
+  });
+  $('#h-pdf').addEventListener('click', async ()=>{
+    const from = $('#h-from').value, to = $('#h-to').value;
+    if(!from || !to || from > to){ $('#h-msg').textContent = '請選擇正確的起訖日期'; return; }
+    $('#h-msg').textContent = '整理中…';
+    try{
+      const rows = await FB.historyRange(from, to);
+      if(!rows.length){ $('#h-msg').textContent = '這段期間沒有任何儲存紀錄'; return; }
+      /* 同一天可能存過很多次，只取每天最後一次的紀錄，一天一頁 */
+      const byDate = {};
+      rows.forEach(r=>{ if(r.date) byDate[r.date] = r; });
+      const days = Object.keys(byDate).sort().map(d=> byDate[d]);
+      $('#hist').hidden = true;
+      $('#h-msg').textContent = '';
+      printDays(days, `匯出期間：${from} ～ ${to}（共 ${days.length} 天）`);
+    }catch(err){ $('#h-msg').textContent = '整理失敗：' + (err && err.message ? err.message : err); }
+  });
+}
+
+/* ---------- 藥品與儲位管理 ---------- */
+function bindAdmin(){
+  $('#b-admin').addEventListener('click', ()=>{ paintAdmin(); $('#admin').hidden = false; });
+  $('#a-close').addEventListener('click', ()=> $('#admin').hidden = true);
+  $('#a-add').addEventListener('click', ()=>{
+    DATA.drugs.push({ name:'新藥品', locs:[...DATA.locations] });
+    paintAdmin();
+  });
+  $('#a-reset').addEventListener('click', async ()=>{
+    const ok = await confirmBox('還原預設清單', '會把目前畫面上的藥品／儲位設定，換回系統內建的預設清單（尚未按「儲存設定」前不會影響雲端資料），確定要還原嗎？', true);
+    if(!ok) return;
+    DATA.drugs = JSON.parse(JSON.stringify(DEFAULT_DRUGS));
+    paintAdmin();
+    toast('已還原為預設清單，記得按「儲存設定」才會生效');
+  });
+  $('#a-save').addEventListener('click', async ()=>{
+    DATA.drugs = DATA.drugs.filter(d=> d.name && d.name.trim());
+    try{
+      await FB.writeConfig({ locations: DATA.locations, drugs: DATA.drugs });
+      await FB.audit({ type:'config', by: USER ? `${USER.name}(${USER.id})` : '', summary:'更新藥品與儲位設定' });
+      SHIFTS.forEach(s=> DATA.locations.forEach(l=>{ if(!state[s][l]) state[s][l] = {}; }));
+      rebuild();
+      $('#admin').hidden = true;
+      toast('設定已儲存');
+    }catch(err){ toast('儲存設定失敗：' + (err && err.message ? err.message : err)); }
+  });
+}
+/* 把舊格式（單一 pack 共用於所有儲位）換成「每個儲位各自一份設定」，方便下面的編輯介面統一處理 */
+function normalizePackToLoc(d){
+  if(d.pack && d.pack.parts){
+    const flat = d.pack;
+    d.pack = {};
+    d.locs.forEach(l=> d.pack[l] = { ...flat });
+  }
+  if(!d.pack) d.pack = {};
+}
+
+function paintAdmin(){
+  DATA.drugs.forEach(normalizePackToLoc);
+  const body = $('#a-body');
+  body.innerHTML = DATA.drugs.map((d, idx)=>{
+    const locBoxes = DATA.locations.map(l=>{
+      const on = d.locs.includes(l);
+      return `<label class="${on?'on':''}"><input type="checkbox" data-idx="${idx}" data-loc="${l}" ${on?'checked':''}>${l}</label>`;
+    }).join('');
+    const packRows = d.locs.map(loc=>{
+      const p = d.pack[loc] || {};
+      const parts = p.parts || [];
+      const hasA = parts.includes('a');
+      /* b 若倍數是1，代表它其實是「散裝個位」那一層，不是真正的中包裝 */
+      const bIsUnit = parts.includes('b') && p.b === 1;
+      const hasB = parts.includes('b') && !bIsUnit;
+      const hasC = parts.includes('c') || bIsUnit;
+      const unitMatch = /^\s*\d+\s*([^\/]+?)\s*\//.exec(p.la || '');
+      const unit = unitMatch ? unitMatch[1].trim() : '';
+      const contA = (p.la || '').includes('/') ? p.la.split('/').pop().trim() : '';
+      const contB = hasB && p.lb ? p.lb.split('/').pop().trim() : '';
+      return `<div class="packrow" data-idx="${idx}" data-loc="${loc}">
+        <span class="packloc">${loc}</span>
+        <span class="pklabel">單位</span><input class="pk-unit" data-f="unit" value="${esc(unit)}" placeholder="粒/支/片">
+        <span class="pklabel">大包裝</span><input class="pk-num" data-f="a" type="number" min="1" value="${hasA ? p.a : ''}" placeholder="數量">
+        <input class="pk-txt" data-f="conta" value="${esc(contA)}" placeholder="盒/瓶/束">
+        <span class="pklabel">中包裝(可留空)</span><input class="pk-num" data-f="b" type="number" min="1" value="${hasB ? p.b : ''}" placeholder="數量">
+        <input class="pk-txt" data-f="contb" value="${esc(contB)}" placeholder="排/片/捆">
+        <label class="packc"><input type="checkbox" data-f="c" ${hasC ? 'checked' : ''}> 含散裝個位</label>
+      </div>`;
+    }).join('');
+    return `<div class="arow">
+      <div class="top">
+        <input class="nm" data-nm="${idx}" value="${d.name.replace(/"/g,'&quot;')}">
+        <button type="button" class="del" data-del="${idx}">刪除</button>
+      </div>
+      <div class="locs">${locBoxes}</div>
+      ${d.locs.length ? '<p class="packnote">包裝設定（留空＝該儲位用單純數字輸入，不換算）</p>' : ''}
+      <div class="packwrap" data-packwrap="${idx}">${packRows}</div>
+    </div>`;
+  }).join('') || '<p class="empty">尚無藥品，請按下方「＋ 新增藥品」開始設定</p>';
+
+  body.querySelectorAll('[data-nm]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ DATA.drugs[Number(inp.dataset.nm)].name = inp.value; });
+  });
+  body.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ DATA.drugs.splice(Number(btn.dataset.del),1); paintAdmin(); });
+  });
+  body.querySelectorAll('[data-idx][data-loc]').forEach(chk=>{
+    chk.addEventListener('change', ()=>{
+      const idx = Number(chk.dataset.idx), loc = chk.dataset.loc;
+      const d = DATA.drugs[idx];
+      if(chk.checked){ if(!d.locs.includes(loc)) d.locs.push(loc); }
+      else{ d.locs = d.locs.filter(l=> l !== loc); delete d.pack[loc]; }
+      chk.closest('label').classList.toggle('on', chk.checked);
+      paintAdmin();
+    });
+  });
+  body.querySelectorAll('.packrow').forEach(row=>{
+    const idx = Number(row.dataset.idx), loc = row.dataset.loc;
+    const rebuild = ()=>{
+      const d = DATA.drugs[idx];
+      const unit = row.querySelector('[data-f="unit"]').value.trim();
+      const aVal = row.querySelector('[data-f="a"]').value;
+      const contA = row.querySelector('[data-f="conta"]').value.trim();
+      const bVal = row.querySelector('[data-f="b"]').value;
+      const contB = row.querySelector('[data-f="contb"]').value.trim();
+      const useC = row.querySelector('[data-f="c"]').checked;
+      if(!aVal || !unit || !contA){ delete d.pack[loc]; return; }
+      const parts = ['a'];
+      const obj = { a: Number(aVal), la: `${aVal} ${unit}/${contA}` };
+      if(bVal && contB){ parts.push('b'); obj.b = Number(bVal); obj.lb = `${bVal} ${unit}/${contB}`; }
+      if(useC){ parts.push('c'); obj.c = 1; obj.lc = '個位'; }
+      obj.parts = parts;
+      d.pack[loc] = obj;
+    };
+    row.querySelectorAll('input').forEach(inp=> inp.addEventListener('input', rebuild));
+  });
+}
+
+/* ---------- sticky offset ---------- */
+function syncHeader(){
+  const h = document.querySelector('header').getBoundingClientRect().height;
+  document.documentElement.style.setProperty('--hh', Math.round(h) + 'px');
+}
+
+/* ---------- init ---------- */
+buildShiftSel();
+build();
+bindAdmin();
+bindHist();
+show(currentLoc);
+syncHeader();
+addEventListener('resize', syncHeader);
+addEventListener('orientationchange', syncHeader);
+if(window.ResizeObserver) new ResizeObserver(syncHeader).observe(document.querySelector('header'));
+$('#d-date').value = todayStr();
+$('#d-date').addEventListener('change', ()=>{
+  toast('本次儲存將標記為 ' + $('#d-date').value);
+  prevDayNightDate = null;
+  loadPrevDayNight();
+});
+
+$('#g-go').addEventListener('click', signIn);
+let pwSubmitTimer = null;
+['#g-id','#g-pw'].forEach(sel=>{
+  $(sel).addEventListener('keydown', e=>{
+    if(e.key !== 'Enter') return;
+    clearTimeout(pwSubmitTimer);
+    if(sel === '#g-id') $('#g-pw').focus(); else signIn();
+  });
+  $(sel).addEventListener('input', e=>{
+    if(sel === '#g-pw') e.target.value = e.target.value.replace(/\D/g,'');
+    if(sel === '#g-id'){
+      e.target.value = e.target.value.replace(/\D/g,'').slice(0,5);
+      if(e.target.value.length === 5) $('#g-pw').focus();
+    }
+    $('#gate').classList.remove('bad');
+    if($('#g-err').textContent) $('#g-err').textContent = '';
+    /* 密碼輸入完停頓一下就自動送出登入，不用再按登入鈕 */
+    clearTimeout(pwSubmitTimer);
+    if(sel === '#g-pw' && e.target.value.length > 0 && $('#g-id').value.length === 5){
+      pwSubmitTimer = setTimeout(()=> signIn(), 500);
+    }
+  });
+});
+$('#b-logout').addEventListener('click', signOut);
+$('#b-save').addEventListener('click', openSaveDialog);
+$('#hc-confirm').addEventListener('change', function(){
+  if(this.checked){
+    const h = handover[currentShift];
+    if(!h.to || !h.to.trim()){
+      this.checked = false;
+      toast('請先填寫「接班藥師」姓名，才能勾選確認接班');
+      return;
+    }
+    /* 必須所有儲位的每一項藥品都已盤點填寫，才能勾選確認 */
+    const unfilled = [];
+    DATA.locations.forEach(loc=>{
+      const n = DATA.drugs.filter(d=> d.locs.includes(loc))
+        .filter(d=> state[currentShift][loc][d.name] == null).length;
+      if(n) unfilled.push(`${loc} ${n} 項`);
+    });
+    if(unfilled.length){
+      this.checked = false;
+      toast(`尚未完成盤點，無法確認接班：${unfilled.join('、')}未填`);
+      return;
+    }
+  }
+  handover[currentShift].confirmed = this.checked;
+  DATA.locations.forEach(loc=> markDirty(currentShift, loc));
+  paintConfirmRow();
+});
+$('#sv-no').addEventListener('click', ()=> $('#savedlg').hidden = true);
+$('#sv-yes').addEventListener('click', ()=>{
+  const unconfirmed = incompleteShifts();
+  if(unconfirmed.length){
+    const msg = unconfirmed.map(u=> `${u.shift}（缺：${u.missing.join('、')}）`).join('、');
+    toast(`尚有必填欄位未完成，無法儲存：${msg}`);
+    return;
+  }
+  doSave();
+});
+/* ---------- 列印 / 匯出 PDF：一天一頁，含三班數量與加總 ---------- */
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>]/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+/* 由一筆紀錄（{date, shifts}）產生「一天一頁」的報表 HTML */
+/* 依紙本交班表格式產生「一天一頁」報表：品項為欄、三班為列，數量為該藥品在所有儲位的加總 */
+const PRPT_COLS = 10;   // 每個表格區塊最多幾個品項（欄位太多會印不下）
+
+function buildDayPage(rec){
+  const date = rec.date || '';
+  const shifts = rec.shifts || {};
+  const LOC_ABBR = { 'UD鐵櫃':'鐵', 'Pandora':'P', '智慧調劑臺':'智', '冰箱':'冰' };
+  const abbr = loc => LOC_ABBR[loc] || loc.slice(0,1);
+
+  /* 取某藥品在某班別、某儲位的數量；null 代表該儲位沒填 */
+  function locVal(shift, loc, drugName){
+    const sh = shifts[shift] || {};
+    const v = (sh.locations && sh.locations[loc]) ? sh.locations[loc][drugName] : undefined;
+    return v == null ? null : v;
+  }
+  /* 儲位在同一欄裡用「／」分隔各儲位數量，只有一個儲位就直接顯示數字 */
+  function drugCell(shift, d){
+    if(d.locs.length <= 1) return locVal(shift, d.locs[0], d.name);
+    const vals = d.locs.map(loc=> locVal(shift, loc, d.name));
+    if(vals.every(v=> v == null)) return null;
+    return vals.map(v=> v == null ? '—' : v).join('／');
+  }
+
+  /* 有設定儲位的藥品才列入報表，依儲位順序排列、同一藥品只出現一次 */
+  const seen = new Set(), drugs = [];
+  DATA.locations.forEach(loc=>{
+    DATA.drugs.filter(d=> d.locs.includes(loc))
+      .sort((a,b)=> (a.order && a.order[loc] != null ? a.order[loc] : 999) - (b.order && b.order[loc] != null ? b.order[loc] : 999))
+      .forEach(d=>{ if(!seen.has(d.name)){ seen.add(d.name); drugs.push(d); } });
+  });
+
+  const blocks = [];
+  for(let i = 0; i < drugs.length; i += PRPT_COLS){
+    const group = drugs.slice(i, i + PRPT_COLS);
+    const head = group.map(d=>{
+      const note = d.locs.length > 1 ? `<br><span class="locnote">(${d.locs.map(abbr).join('／')})</span>` : '';
+      return `<th>${esc(d.name)}${note}</th>`;
+    }).join('');
+    const rows = SHIFTS.map(s=>{
+      const tds = group.map(d=>{
+        const v = drugCell(s, d);
+        return `<td>${v == null ? '' : v}</td>`;
+      }).join('');
+      return `<tr><th class="rowh">${s}<br><span>數量</span></th>${tds}</tr>`;
+    }).join('');
+    blocks.push(`<table class="prpt">
+      <thead><tr><th class="rowh">品項</th>${head}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`);
+  }
+
+  const signs = SHIFTS.map(s=>{
+    const h = (shifts[s] && shifts[s].handover) || {};
+    return `<span>${s}　交班藥師：${esc(h.from) || '＿＿＿'}　接班藥師：${esc(h.to) || '＿＿＿'}${h.confirmed ? '　✔已核對' : ''}</span>`;
+  }).join('');
+
+  return `<section class="pday">
+    <h2 class="ptitle">管制藥品(1-3級)三班點交表</h2>
+    <p class="psub">臺大醫院雲林分院藥劑部－斗六院區　｜　點班日期：${esc(date)}</p>
+    ${blocks.join('')}
+    <div class="psign">${signs}</div>
+    <p class="pnote">品項存放於多個儲位者，欄位標題會標示對應儲位縮寫，同一格內數量依序以「／」分隔（鐵＝UD鐵櫃、P＝Pandora、智＝智慧調劑臺、冰＝冰箱）；「—」表示該儲位未填寫，空白欄表示整個品項該班都未填寫。</p>
+  </section>`;
+}
+
+/* 目前畫面上的資料（尚未儲存的內容也會一併列印） */
+function currentRecord(){
+  const shifts = {};
+  SHIFTS.forEach(s=>{
+    shifts[s] = { handover: { ...handover[s] }, locations: {} };
+    DATA.locations.forEach(l=> shifts[s].locations[l] = { ...state[s][l] });
+  });
+  return { date: $('#d-date').value, shifts };
+}
+
+function printDays(records, label){
+  const box = $('#printreport');
+  box.innerHTML = records.map(buildDayPage).join('');
+  toast('請在列印視窗選擇「另存為 PDF」');
+  setTimeout(()=> window.print(), 200);
+}
+
+$('#b-csv').addEventListener('click', csv);
+$('#b-pdf').addEventListener('click', ()=>{
+  printDays([currentRecord()], `匯出日期：${$('#d-date').value}（共 1 天）`);
+});
+
+addEventListener('beforeunload', e=>{ if(dirty){ e.preventDefault(); e.returnValue = ''; } });
+
+paintGate();
+function boot(){ FB.watch(onSignedIn, onSignedOut); }
+window.FB && window.FB.ready ? boot() : addEventListener('fb-ready', boot);
+</script>
