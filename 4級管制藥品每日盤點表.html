@@ -347,6 +347,8 @@
   .admin{position:fixed;inset:0;z-index:80;background:rgba(16,24,40,.55);display:flex;
          align-items:flex-end;justify-content:center;padding:0}
   .admin[hidden]{display:none}
+  #why{z-index:110}
+  #hist{z-index:90}
   .panel{width:100%;max-width:900px;max-height:92vh;background:#fff;border-radius:18px 18px 0 0;
          display:flex;flex-direction:column;overflow:hidden}
   .ahead{display:flex;align-items:center;justify-content:space-between;gap:10px;
@@ -401,6 +403,7 @@
   .afoot button{flex:1;min-height:52px;border:1.5px solid var(--line);background:#fff;border-radius:13px;
                 font-size:16px;font-weight:700;cursor:pointer;font-family:var(--sans)}
   .afoot button.k{background:linear-gradient(120deg,#4f46e5,#0ea5e9);border-color:transparent;color:#fff}
+  .afoot button.k.dirty{background:linear-gradient(120deg,#e11d48,#f97316);box-shadow:0 4px 14px rgba(225,29,72,.35)}
 
   /* ---------- 底部工具列 ---------- */
   .bar{
@@ -418,7 +421,7 @@
   .bar button.k.dirty{background:linear-gradient(120deg,#e11d48,#f97316);box-shadow:0 3px 12px rgba(225,29,72,.38)}
   .bar button:active{transform:translateY(1px)}
   .toast{
-    position:fixed;left:50%;transform:translateX(-50%);bottom:86px;z-index:40;
+    position:fixed;left:50%;transform:translateX(-50%);bottom:86px;z-index:130;
     background:#141c2b;color:#fff;padding:13px 22px;border-radius:26px;font-size:15.5px;font-weight:700;
     box-shadow:0 6px 20px rgba(26,34,48,.3);opacity:0;pointer-events:none;transition:opacity .2s;
   }
@@ -543,6 +546,24 @@ window.FB = {
   async readConfig(){
     const snap = await getDoc(CONFIG);
     return snap.exists() ? snap.data() : null;
+  },
+  listenConfig(cb){
+    return onSnapshot(CONFIG, snap=>{
+      if(snap.exists() && !snap.metadata.hasPendingWrites) cb(snap.data());
+    });
+  },
+  /* 藥品設定變更後，移除已不存在的「藥品｜儲位」格子；其他資料不動 */
+  async pruneCells(validPairs){
+    await runTransaction(db, async tx=>{
+      const snap = await tx.get(SHEET);
+      if(!snap.exists()) return;
+      const cur = snap.data(), cells = { ...(cur.cells || {}) };
+      Object.keys(cells).forEach(k=>{
+        const [name, loc] = k.split('|');
+        if(!validPairs.has(name + '|' + loc)) delete cells[k];
+      });
+      tx.set(SHEET, { ...cur, cells, updatedAt: serverTimestamp() });
+    });
   },
   async writeConfig(cfg){
     await setDoc(CONFIG, { ...cfg, updatedAt: serverTimestamp() }, { merge: false });
@@ -1064,16 +1085,31 @@ async function signIn(){
 }
 
 /* Firebase 回報登入狀態後才進入主畫面 */
+function useConfig(cfg){
+  if(!(cfg && Array.isArray(cfg.drugs) && cfg.drugs.length)) return false;
+  DATA.locations = cfg.locations || DATA.locations;
+  DATA.drugs = cfg.drugs;
+  if(cfg.pack) PACK = cfg.pack;
+  rebuild();
+  return true;
+}
+
+let unwatchCfg = null;
 async function applyConfig(){
   try{
-    const cfg = await FB.readConfig();
-    if(cfg && Array.isArray(cfg.drugs) && cfg.drugs.length){
-      DATA.locations = cfg.locations || DATA.locations;
-      DATA.drugs = cfg.drugs;
-      if(cfg.pack) PACK = cfg.pack;
-      rebuild();
-    }
-  }catch(_){}
+    useConfig(await FB.readConfig());
+  }catch(err){
+    const code = (err && err.code) || '';
+    toast(/permission/.test(code)
+      ? '無法讀取藥品設定（權限不足），目前顯示預設清單'
+      : '無法讀取藥品設定，目前顯示預設清單');
+  }
+  /* 其他裝置修改設定時即時套用 */
+  if(unwatchCfg) unwatchCfg();
+  unwatchCfg = FB.listenConfig(cfg=>{
+    if(dirty){ toast('藥品設定已更新，儲存後請重新整理'); return; }
+    if(useConfig(cfg)){ paintInputs(); refresh(); toast('藥品設定已更新'); }
+  });
 }
 
 async function onSignedIn(u){
@@ -1128,6 +1164,7 @@ async function signOut(){
 
 function onSignedOut(){
   if(unwatch){ unwatch(); unwatch = null; }
+  if(unwatchCfg){ unwatchCfg(); unwatchCfg = null; }
   USER = null;
   $('#g-pw').value = '';
   $('#g-id').value = '';
@@ -1805,6 +1842,26 @@ function openAdmin(){
                                 pack: PACK[d.name] ? `${PACK[d.name].a}/${PACK[d.name].b}` : '預設' }));
   renderAdmin();
   $('#admin').hidden = false;
+  markAdmin();
+}
+
+function adminChanged(){
+  if(!draft || !before) return false;
+  const now = draft.map(d => d.name.trim() + '#' + d.locs.slice().sort().join(',') + '#' +
+                             (d.pack ? d.pack.a + '/' + d.pack.b : ''));
+  const old = before.map(b => {
+    const d = DATA.drugs.find(x => x.name === b.name);
+    const pk = PACK[b.name];
+    return b.name + '#' + Object.keys(d ? d.cells : {}).sort().join(',') + '#' +
+           (pk ? pk.a + '/' + pk.b : '');
+  });
+  return now.length !== old.length || now.some((x, i) => x !== old[i]);
+}
+function markAdmin(){
+  const b = $('#a-save');
+  const ch = adminChanged();
+  b.textContent = ch ? '儲存設定 •（尚未儲存）' : '儲存設定';
+  b.classList.toggle('dirty', ch);
 }
 
 function renderAdmin(){
@@ -1844,7 +1901,8 @@ function bindAdmin(){
     if(e.target.matches('input.pa') || e.target.matches('input.pb')){
       e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
       const pa = +row.querySelector('.pa').value, pb = +row.querySelector('.pb').value;
-      draft[i].pack = (pa > 0 && pb > 0) ? {a:pa, b:pb} : null;
+      const old = draft[i].pack || {};
+      draft[i].pack = (pa > 0 && pb > 0) ? { ...old, a:pa, b:pb } : null;
     }
     if(e.target.matches('input[type=checkbox]')){
       const loc = e.target.dataset.loc;
@@ -1866,7 +1924,18 @@ function bindAdmin(){
     const last = $('#a-body').lastElementChild;
     last && last.querySelector('input.nm').focus();
   });
-  $('#a-close').addEventListener('click', ()=>{ $('#admin').hidden = true; draft = null; });
+  $('#a-close').addEventListener('click', async ()=>{
+    if(adminChanged()){
+      const ok = await askConfirm('設定尚未儲存',
+        '您修改的藥品設定<b>還沒儲存</b>，<br>關閉後這些變更將會遺失。',
+        [], '放棄變更並關閉');
+      if(!ok) return;
+    }
+    $('#admin').hidden = true; draft = null;
+  });
+  $('#a-body').addEventListener('input', ()=> setTimeout(markAdmin, 0));
+  $('#a-body').addEventListener('click', ()=> setTimeout(markAdmin, 0));
+  $('#a-add').addEventListener('click', ()=> setTimeout(markAdmin, 0));
   $('#a-save').addEventListener('click', saveAdmin);
   $('#b-admin').addEventListener('click', openAdmin);
 }
@@ -1895,10 +1964,11 @@ async function saveAdmin(){
 
   if(!changes.length) return toast('設定沒有變更');
 
-  if(!confirm([`本次共 ${changes.length} 項變更：`, '',
-               ...changes.slice(0, 12).map(c => '　・' + c),
-               changes.length > 12 ? `　…等共 ${changes.length} 項` : '', '',
-               '確定要儲存嗎？'].filter(Boolean).join('\n'))) return;
+  const okCfg = await askConfirm(`藥品設定變更　共 ${changes.length} 項`,
+    '以下變更將同步到所有裝置：',
+    changes.slice(0, 12).concat(changes.length > 12 ? [`…等共 ${changes.length} 項`] : []),
+    '下一步：填寫原因', 'ok');
+  if(!okCfg) return;
 
   const why = await askReason(`共 ${changes.length} 項藥品設定變更，原因將永久留存。`);
   if(!why) return;
@@ -1927,11 +1997,17 @@ async function saveAdmin(){
     await FB.audit({ type:'藥品設定變更', reason: why, changes,
                      by: USER ? USER.name : '', staffId: USER ? USER.id : '' }).catch(()=>{});
     await FB.writeConfig(cfg);
-    await FB.write({ cells: keep, meta: META, by: USER.name });
+    const pairs = new Set();
+    cfg.drugs.forEach(d => Object.keys(d.cells).forEach(l => pairs.add(d.name + '|' + l)));
+    await FB.pruneCells(pairs);
     toast('設定已儲存，重新載入中…');
     setTimeout(()=>location.reload(), 900);
   }catch(err){
-    toast('儲存失敗，請確認網路');
+    const code = (err && err.code) || '';
+    toast(/permission/.test(code)
+      ? '儲存失敗：權限不足，請確認 Firestore 規則已發布且為管理者帳號'
+      : /unavailable|network/.test(code) ? '儲存失敗：無法連線，請確認網路'
+      : '儲存失敗：' + (code || (err && err.message) || '未知錯誤'));
   }
 }
 
