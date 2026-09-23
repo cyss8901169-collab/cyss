@@ -434,16 +434,17 @@ import { getFirestore, doc, collection, getDoc, getDocs, setDoc, addDoc,
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const app  = initializeApp({
-  apiKey: "AIzaSyAmO7j_GvnTu-oje0wBFDT940UwRSht6d4",
-  authDomain: "ntuh-yunlin-drug-count.firebaseapp.com",
-  projectId: "ntuh-yunlin-drug-count",
-  storageBucket: "ntuh-yunlin-drug-count.firebasestorage.app",
-  messagingSenderId: "53089383614",
-  appId: "1:53089383614:web:420b5c30e628fc40eb5aef"
+  apiKey: "AIzaSyCBVkk4MlZDzWiLupWD7FhzRt4G8yus578",
+  authDomain: "ntuh-yunlin-drug13.firebaseapp.com",
+  projectId: "ntuh-yunlin-drug13",
+  storageBucket: "ntuh-yunlin-drug13.firebasestorage.app",
+  messagingSenderId: "167631201656",
+  appId: "1:167631201656:web:05468bbee9bc4c3adb948d"
 });
 const auth = getAuth(app);
 const db   = getFirestore(app);
-/* 獨立於原「每日4級管制藥盤點」的集合/文件名稱，避免互相覆蓋 */
+/* 這個新專案（ntuh-yunlin-drug13）是 1-3級三班點交表獨立使用，不用再刻意跟其他系統的集合名稱錯開，
+   但沿用原本的命名習慣（sheets13/config13/...）方便閱讀，不影響任何功能 */
 const SHEET    = doc(db, "sheets13", "douliu");
 const CONFIG   = doc(db, "config13", "drugs");
 const EDITLOCK = doc(db, "config13", "editlock");
@@ -473,7 +474,7 @@ window.FB = {
     if(cur.exists() && cur.data().by === by) await deleteDoc(EDITLOCK);
   },
   async purgeHistory(){
-    const cut = new Date(Date.now() - 730*86400000).toISOString().slice(0,10);
+    const cut = new Date(Date.now() - 365*86400000).toISOString().slice(0,10);
     let n = 0;
     for(const col of [HISTORY, AUDIT]){
       const snap = await getDocs(query(col, where('date','<',cut), limit(300)));
@@ -603,7 +604,7 @@ window.ROSTER = {
   <div class="panel short">
     <div class="ahead"><b>匯出歷史紀錄</b><button type="button" id="h-close">關閉</button></div>
     <div class="abody">
-      <p class="hnote">選擇期間，匯出每次儲存的完整點交紀錄（保留兩年）。</p>
+      <p class="hnote">選擇期間，匯出每次儲存的完整點交紀錄（保留一年）。</p>
       <div class="hrow"><label>起<input type="date" id="h-from"></label><label>迄<input type="date" id="h-to"></label></div>
       <div class="hquick">
         <button type="button" data-days="7">近 7 天</button>
