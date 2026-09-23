@@ -52,11 +52,25 @@
     color:#fff;border-radius:13px;font-family:var(--sans);font-size:15.5px;font-weight:800;cursor:pointer;
   }
   .shiftsel button.on{background:#fff;color:#2f5f80;border-color:#fff}
+  .shiftsel button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:5px 4px}
+  .shiftsel button small{font-size:11.5px;font-weight:700;opacity:.85;line-height:1.3}
+  .shiftsel button small.todo{opacity:1;background:#6d4fc2;color:#fff;border-radius:8px;padding:1px 7px}
+  .shiftsel button small.done{opacity:1}
   .gatebanner{
     margin:0 0 10px;padding:10px 13px;background:#fdeaea;border:1.5px solid #d64545;border-radius:12px;
     color:#8a231c;font-size:13.5px;font-weight:800;line-height:1.5;
   }
   .gatebanner[hidden]{display:none}
+  .lockbanner{
+    display:flex;align-items:center;gap:10px;margin:0 0 10px;padding:9px 10px 9px 13px;background:#eef5f9;border:1.5px solid #9cc3dc;border-radius:12px;
+    color:#2f5f80;font-size:13.5px;font-weight:800;line-height:1.5;
+  }
+  .lockbanner[hidden]{display:none}
+  #app input:disabled,#app button:disabled{opacity:.6;cursor:not-allowed}
+  .lockbanner span{flex:1;min-width:0}
+  .lockbanner.blind{background:#f3effb;border-color:#b9a6e0;color:#4b3a7a}
+  .gatebanner button{display:block;margin-top:8px;border:1.5px solid #d64545;background:#fff;color:#8a231c;border-radius:10px;padding:8px 12px;font-size:14px;font-weight:800;cursor:pointer;font-family:var(--sans)}
+  .lockbanner button{flex:0 0 auto;border:1.5px solid #9cc3dc;background:#fff;color:#2f5f80;border-radius:10px;padding:8px 12px;font-size:14px;font-weight:800;cursor:pointer;font-family:var(--sans)}
   .lastsaved{margin:0 0 10px;font-size:12.5px;font-weight:700;color:rgba(255,255,255,.85);text-align:center}
   .lastsaved[hidden]{display:none}
   .lastsaved b{font-weight:800;color:#fff}
@@ -102,6 +116,18 @@
     font-size:14px;font-weight:800;color:var(--text);cursor:pointer;text-align:left;
   }
   .confirmrow input{width:19px;height:19px;flex:0 0 auto;accent-color:#4a90c2;margin:0}
+  .confirmrow{cursor:default;flex-wrap:wrap;justify-content:center}
+  .confirmrow.ok{background:#e8f5ee;border-color:#9fd0b3;color:#2f7a4f}
+  .confirmrow.blind{background:#f3effb;border-color:#b9a6e0;color:#4b3a7a}
+  .confirmrow button{border:0;border-radius:10px;padding:9px 14px;font-size:14.5px;font-weight:800;cursor:pointer;font-family:var(--sans);
+    background:linear-gradient(120deg,#6d4fc2,#9d86e0);color:#fff}
+  .confirmrow button:disabled{opacity:.45;cursor:not-allowed}
+  .confirmrow button.alt{background:#fff;color:#8a231c;border:1.5px solid #e2a3a3}
+  .confirmrow button[hidden]{display:none}
+  .cfbox{display:inline-flex;align-items:center;gap:9px;cursor:pointer}
+  .confirmrow.locked .cfbox,.confirmrow.ok .cfbox{cursor:not-allowed}
+  #cf-text{flex-basis:100%;text-align:center;font-size:12.5px;font-weight:700;opacity:.85}
+  input.n.vbad{border-color:#d64545!important;background:#fdeaea!important}
   .confirmrow.warn{background:#fff4e0;border-color:#e0a468;color:#7a4a10}
   .confirmrow.locked{background:#f0f2f4;border-color:#cfd8de;color:#8a97a1;cursor:not-allowed}
   .confirmrow.locked input{cursor:not-allowed}
@@ -190,6 +216,8 @@
   /* 盤點狀態徽章 */
   .nav button.st0{border-color:#b3543f}
   .nav button.st0 i{color:#b3543f}
+  .nav button.vwarn{border-color:#d64545;background:#fdeaea}
+  .nav button.vwarn i{color:#d64545}
   .nav button.st0::after{
     content:"未盤";font-size:11.5px;font-weight:900;color:#fff;background:#b3543f;
     border-radius:8px;padding:2px 7px;margin-left:2px;
@@ -301,6 +329,12 @@
   .svlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;text-align:left}
   .svlist li{background:#eaf3f8;border-radius:12px;padding:11px 13px;font-size:15.5px;font-weight:800;color:var(--text)}
   .svlist li em{display:block;margin-top:2px;font-style:normal;font-size:13px;font-weight:600;color:var(--muted)}
+  .svlist li.grp{padding:0;background:none}
+  .svlist li.grp details{background:#eaf3f8;border-radius:12px}
+  .svlist li.grp summary{padding:11px 13px;cursor:pointer;font-size:15.5px;font-weight:800}
+  .svlist li.grp .gi{padding:0 13px 10px;display:flex;flex-direction:column;gap:6px}
+  .svlist li.grp .gi div{font-size:13.5px;font-weight:700;color:var(--text);border-top:1px solid #d5e5ef;padding-top:6px}
+  .svlist li.grp .gi em{display:block;font-style:normal;font-size:12.5px;font-weight:600;color:var(--muted)}
   .svwarn{margin-top:14px;background:#fff4d6;border:2px solid #cbe6f5;border-radius:12px;padding:11px 13px;font-size:15px;font-weight:800;color:#92400e;text-align:left}
   .svwarn .mmup{background:#fdeaea;border:2px solid #d64545;border-radius:10px;padding:9px 11px;margin-bottom:8px;color:#a3241c}
   .svwarn .mmup div{font-weight:700;font-size:13.5px;margin-top:3px}
@@ -372,6 +406,15 @@
   .acitem .del{flex:0 0 auto;border:1px solid #f0c4c4;background:#fff5f5;color:var(--alert);border-radius:10px;padding:8px 13px;font-size:14.5px;font-weight:700;cursor:pointer;font-family:var(--sans)}
   .acitem.adm{background:#eef5f9}
   .acsub{font-size:14px;font-weight:800;color:var(--muted);margin:14px 2px 8px}
+  .acbulk{border:1px solid var(--line);border-radius:12px;margin-bottom:12px;background:#fff}
+  .acbulk summary{padding:12px;font-size:15px;font-weight:800;cursor:pointer;color:#2f5f80}
+  .acbulk .in{padding:0 12px 12px}
+  .acbulk textarea{width:100%;box-sizing:border-box;min-height:150px;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font-size:15px;font-family:var(--sans);line-height:1.6;resize:vertical}
+  .acbulk .hrow{margin:10px 0}
+  .acbulk .hrow input{min-width:0;width:100%;box-sizing:border-box}
+  #bk-msg{margin:10px 0 0;font-size:14px;font-weight:700;line-height:1.7;color:var(--muted);white-space:pre-line}
+  #bk-msg.bad{color:var(--alert)}
+  #bk-msg.ok{color:#2f7a4f}
 
   /* ---------- 底部工具列 ---------- */
   .bottompanel{
@@ -436,6 +479,8 @@
     </div>
     <div class="shiftsel" id="shiftsel"></div>
     <div class="gatebanner" id="gatebanner" hidden></div>
+    <div class="lockbanner blind" id="blindbanner" hidden><span>🔍 盲點覆核：請實際點數後輸入，畫面不會顯示交班藥師的數量。每輸入完一項會立即比對，不一致的品項和儲位會變紅。全部一致後，勾選下方「已核對數量與前一班相符，確認接班」。</span></div>
+    <div class="lockbanner" id="lockbanner" hidden><span id="lock-text"></span><button type="button" id="lock-edit">需要更正</button></div>
     <p class="lastsaved" id="lastsaved" hidden></p>
     <nav class="nav" id="nav"></nav>
     <div class="progress"><i id="t-bar"></i></div>
@@ -491,7 +536,12 @@ window.FB = {
   watch(onIn, onOut){ onAuthStateChanged(auth, u => u ? onIn(u) : onOut()); },
   async read(){ const s = await getDoc(SHEET); return s.exists() ? s.data() : null; },
   async write(payload){
-    await setDoc(SHEET, { ...payload, updatedAt: serverTimestamp() }, { merge: false });
+    /* 「目前表單」只保留最新日期；補登或修改過去日期時只寫入歷史紀錄，不覆蓋今天正在點交的表單 */
+    const cur = await getDoc(SHEET);
+    const curDate = cur.exists() ? (cur.data().date || '') : '';
+    if(!curDate || payload.date >= curDate){
+      await setDoc(SHEET, { ...payload, updatedAt: serverTimestamp() }, { merge: false });
+    }
     await addDoc(HISTORY, { ...payload, at: serverTimestamp() });
   },
   async audit(entry){ await addDoc(AUDIT, { ...entry, date: new Date().toISOString().slice(0,10), at: serverTimestamp() }); },
@@ -592,6 +642,16 @@ async function rosterMonth(monthKey){
 
 window.ROSTER = {
   /* 只讀，絕不呼叫任何寫入 API */
+  /* 依員編從班表系統的人員名冊找姓名（名冊的員編格式可能有無 Y、有無前導 0，都試一次） */
+  async nameOf(id){
+    if(rosterReady) { try{ await rosterReady; }catch(_){} }
+    const dir = await rosterDirectory();
+    const up = String(id).toUpperCase(), num = up.replace(/^Y/, '');
+    for(const k of [up, up.toLowerCase(), num, String(parseInt(num, 10))]){
+      if(dir[k]) return dir[k];
+    }
+    return '';
+  },
   async namesOnShift(dateStr, codes){
     if(rosterReady) { try{ await rosterReady; }catch(_){} }
     const [y, m, d] = dateStr.split('-');
@@ -705,6 +765,16 @@ window.ROSTER = {
         <button type="button" class="go" id="ac-go">加入名單</button>
         <p id="ac-msg"></p>
       </div>
+      <details class="acbulk" id="bk">
+        <summary>批次匯入（一次加入多人）</summary>
+        <div class="in">
+          <p class="hnote">每行一人：員編、姓名，可再加個人初始密碼，用空格、逗號或直接從 Excel 複製貼上都可以。</p>
+          <textarea id="bk-text" placeholder="06100 陳麗珺&#10;08215 王玟璇 246810&#10;00326,沈倩如"></textarea>
+          <div class="hrow"><label>統一初始密碼（該行沒填密碼時使用；留空＝只加入名單，帳號須已在後台建好）<input id="bk-pw" inputmode="numeric" autocomplete="new-password" placeholder="至少 6 位數字"></label></div>
+          <button type="button" class="go" id="bk-go">開始匯入</button>
+          <p id="bk-msg"></p>
+        </div>
+      </details>
       <p class="hnote">只有名單上的人可以登入使用。移除後對方就無法再進入系統，已存的點交紀錄不受影響。</p>
       <div id="ac-list" class="aclist"></div>
     </div>
@@ -715,10 +785,11 @@ window.ROSTER = {
 <div class="wrap" id="app"></div>
 
 <div class="bottompanel">
-  <label class="confirmrow" id="confirmrow">
-    <input type="checkbox" id="hc-confirm">
-    已核對數量與前一班相符，確認接班
-  </label>
+  <div class="confirmrow" id="confirmrow">
+    <label class="cfbox"><input type="checkbox" id="hc-confirm">已核對數量與前一班相符，確認接班</label>
+    <span id="cf-text"></span>
+    <button type="button" class="alt" id="vf-joint" hidden>雙方已共同重點，以覆核數量為準</button>
+  </div>
   <div class="bar">
     <button id="b-csv">匯出今日 CSV</button>
     <button id="b-pdf" title="用瀏覽器列印功能另存為 PDF">匯出 PDF</button>
@@ -849,6 +920,7 @@ async function loadPrevDayNight(){
 }
 /* 取得「前一班」在同一個儲位／藥品的數量，找不到回傳 null（白班會去比對前一天的大夜快照） */
 function getPrevValue(shift, loc, drug){
+  if(!shiftGateOk(shift)) return null;   /* 前一班還沒覆核確認前不顯示，避免盲點覆核時看到交班數量 */
   if(shift === '白班'){
     return (prevDayNight && prevDayNight[loc] && prevDayNight[loc][drug] != null) ? prevDayNight[loc][drug] : null;
   }
@@ -887,7 +959,7 @@ const todayStr = () => {
 /* ---------- 畫面建立 ---------- */
 function buildShiftSel(){
   const box = $('#shiftsel');
-  box.innerHTML = SHIFTS.map(s=>`<button type="button" data-shift="${s}">${s}</button>`).join('');
+  box.innerHTML = SHIFTS.map(s=>`<button type="button" data-shift="${s}"><span>${s}</span><small data-sub="${s}"></small></button>`).join('');
   box.querySelectorAll('button').forEach(b=>{
     b.addEventListener('click', ()=>{ currentShift = b.dataset.shift; paintShift(); });
   });
@@ -945,7 +1017,7 @@ function build(){
         </div>
       </div>
       <div class="handto">
-        <label>接班藥師（核對前一班數量）</label>
+        <label>接班藥師（盲點覆核人）</label>
         <div class="handrow">
           <input id="ht" data-hand="to" placeholder="請選擇下方來源，或直接輸入姓名">
           <button type="button" id="ht-roster" title="依班表查詢下一班人員">班表帶入</button>
@@ -1068,12 +1140,13 @@ function bindInputs(){
       inp.value = inp.value.replace(/[^0-9]/g,'').slice(0,6);
       const { loc, drug } = inp.dataset;
       const v = inp.value === '' ? null : Number(inp.value);
-      state[currentShift][loc][drug] = v;
+      tgt()[loc][drug] = v;
       inp.classList.toggle('filled', v != null);
+      inp.classList.remove('vbad');
       const miss = document.querySelector(`.miss[data-loc="${CSS.escape(loc)}"][data-drug="${CSS.escape(drug)}"]`);
       if(miss) miss.hidden = v != null;
       updateMismatch(currentShift, loc, drug);
-      markDirty(currentShift, loc);
+      touch(loc);
       refreshBadges();
     });
   });
@@ -1100,7 +1173,7 @@ function bindInputs(){
   });
   if(ht) ht.addEventListener('input', ()=>{
     handover[currentShift].to = ht.value;
-    DATA.locations.forEach(loc=> markDirty(currentShift, loc));
+    handToTouch();
     paintConfirmRow();
   });
   const hfRoster = $('#hf-roster');
@@ -1122,17 +1195,23 @@ function bindInputs(){
   if(htRoster) htRoster.addEventListener('click', async ()=>{
     htRoster.classList.add('loading'); htRoster.textContent = '查詢中…';
     await autofillIncoming(currentShift, true);
-    DATA.locations.forEach(loc=> markDirty(currentShift, loc));
+    handToTouch();
     htRoster.classList.remove('loading'); htRoster.textContent = '班表帶入';
   });
   const htSelf = $('#ht-self');
   if(htSelf) htSelf.addEventListener('click', ()=>{
     if(!USER){ toast('尚未登入'); return; }
     handover[currentShift].to = USER.name;
-    DATA.locations.forEach(loc=> markDirty(currentShift, loc));
+    handToTouch();
     paintInputs();
     toast('已帶入登入者姓名：' + USER.name);
   });
+}
+
+/* 接班藥師姓名：交班時可先預填；盲點覆核時由覆核人選擇（登入者或班表），只存在本機、覆核一致時才一起存檔 */
+function handToTouch(){
+  if(blindNow()) return;
+  DATA.locations.forEach(loc=> markDirty(currentShift, loc));
 }
 
 /* 依藥品名稱找回完整定義（含 pack 包裝設定） */
@@ -1157,25 +1236,30 @@ function updatePackTotal(loc, drug){
     inp.classList.toggle('filled', inp.value !== '');
   });
   const val = any ? total : null;
-  state[currentShift][loc][drug] = val;
+  tgt()[loc][drug] = val;
   const sumEl = document.querySelector(`input.sum[data-total-loc="${CSS.escape(loc)}"][data-total-drug="${CSS.escape(drug)}"]`);
-  if(sumEl){ sumEl.value = any ? total : ''; sumEl.classList.toggle('on', any); }
+  if(sumEl){ sumEl.value = any ? total : ''; sumEl.classList.toggle('on', any); sumEl.classList.remove('vbad'); }
   const miss = document.querySelector(`.miss[data-loc="${CSS.escape(loc)}"][data-drug="${CSS.escape(drug)}"]`);
   if(miss) miss.hidden = val != null;
   updateMismatch(currentShift, loc, drug);
-  markDirty(currentShift, loc);
+  touch(loc);
   refreshBadges();
 }
 
 /* 不想拆算盒／個位時，直接在「總和」欄位輸入總數；系統會回推填回各個係數欄位，畫面仍保持一致 */
+/* 輸入後的共用處理：一般點數標記為「尚未儲存」；盲點覆核只存在本機、不寫入交班數量 */
+function touch(loc){
+  if(blindNow()) saveVerifyLocal();
+  else markDirty(currentShift, loc);
+}
 function setTotalDirectly(loc, drug, val){
-  state[currentShift][loc][drug] = val;
+  tgt()[loc][drug] = val;
   const sumEl = document.querySelector(`input.sum[data-total-loc="${CSS.escape(loc)}"][data-total-drug="${CSS.escape(drug)}"]`);
-  if(sumEl) sumEl.classList.toggle('on', val != null);
+  if(sumEl){ sumEl.classList.toggle('on', val != null); sumEl.classList.remove('vbad'); }
   const miss = document.querySelector(`.miss[data-loc="${CSS.escape(loc)}"][data-drug="${CSS.escape(drug)}"]`);
   if(miss) miss.hidden = val != null;
   updateMismatch(currentShift, loc, drug);
-  markDirty(currentShift, loc);
+  touch(loc);
   refreshBadges();
 }
 
@@ -1185,9 +1269,11 @@ function updateMismatch(shift, loc, drug){
   if(shift !== currentShift) return;
   const hint = document.querySelector(`.prevhint[data-loc="${CSS.escape(loc)}"][data-drug="${CSS.escape(drug)}"]`);
   if(!hint) return;
+  const blind = blindNow();
+  if(blind) itemInputs(loc, drug).forEach(el=> el.classList.remove('vbad'));
   const soloInp = document.querySelector(`input.solo[data-loc="${CSS.escape(loc)}"][data-drug="${CSS.escape(drug)}"]`);
   const sumInp = document.querySelector(`input.sum[data-total-loc="${CSS.escape(loc)}"][data-total-drug="${CSS.escape(drug)}"]`);
-  const prev = getPrevValue(shift, loc, drug);
+  const prev = blind ? null : getPrevValue(shift, loc, drug);
   const cur = state[shift][loc][drug];
   if(prev == null){
     hint.textContent = ''; hint.classList.remove('mismatch','mismatch-up');
@@ -1205,14 +1291,37 @@ function updateMismatch(shift, loc, drug){
     el.classList.toggle('mismatch', diff && !up);
     el.classList.toggle('mismatch-up', up);
   });
-  /* 跟前一班不同（不管增加或減少），停頓約 1.5 秒後即時跳提醒 */
-  clearTimeout(mismatchToastTimer);
-  if(diff){
-    mismatchToastTimer = setTimeout(()=>{
-      toast(`⚠ ${drug}（${loc}）數量與前一班不同，請確認：目前 ${cur}，前一班 ${prev}`);
-    }, 1500);
-  }
+  /* 跳出提醒改在「離開這一項」時才判斷（見下方 focusout），避免盒數／個數還沒輸入完就用半途的數字提醒 */
 }
+/* 游標離開某一個品項（盒＋個數等欄位全部輸入完、跳到下一項）時，才比對前一班數量並提醒 */
+document.addEventListener('focusout', e=>{
+  const el = e.target;
+  if(!el.matches || !el.matches('input.n')) return;
+  const row = el.closest('.row');
+  setTimeout(()=>{
+    const act = document.activeElement;
+    if(act && row && act.closest && act.closest('.row') === row) return;   /* 還在同一項的其他欄位 */
+    const loc = el.dataset.loc || el.dataset.totalLoc, drug = el.dataset.drug || el.dataset.totalDrug;
+    if(!loc || !drug) return;
+    /* 盲點覆核：每輸入完一項就跟交班數量比對，不一致立刻標紅提醒（不顯示交班數字） */
+    if(blindNow()){
+      const sh = currentShift; ensureVerify(sh);
+      const v = verify[sh][loc][drug], a = state[sh][loc][drug];
+      if(v == null) return;
+      if(v !== a){
+        itemInputs(loc, drug).forEach(x=> x.classList.add('vbad'));
+        vLog[sh].push({ loc, drug, a, v });
+        toast(`⚠ ${drug}（${loc}）與交班藥師的數量不一致，請重新點數`);
+      }
+      refreshBadges();
+      return;
+    }
+    const prev = getPrevValue(currentShift, loc, drug), cur = state[currentShift][loc][drug];
+    if(prev != null && cur != null && cur !== prev){
+      toast(`⚠ ${drug}（${loc}）數量與前一班不同，請確認：目前 ${cur}，前一班 ${prev}`);
+    }
+  }, 0);
+});
 /* 本班是否所有儲位、所有藥品都已盤點填寫 */
 function shiftFullyCounted(shift){
   return DATA.locations.every(loc=>
@@ -1220,26 +1329,69 @@ function shiftFullyCounted(shift){
   );
 }
 
+function verifyFilledCount(sh){
+  ensureVerify(sh);
+  let n = 0, all = 0;
+  DATA.locations.forEach(loc=> DATA.drugs.filter(d=> d.locs.includes(loc)).forEach(d=>{ all++; if(verify[sh][loc][d.name] != null) n++; }));
+  return [n, all];
+}
+/* 班別按鈕下方的小字：這一班由誰覆核、目前進度；輪到登入者覆核的班別會用紫色標示 */
+const NEXT_SHIFT_LABEL = { '白班':'小夜', '小夜':'大夜', '大夜':'隔天白班' };
+function paintShiftSubs(){
+  SHIFTS.forEach(sh=>{
+    const el = document.querySelector(`[data-sub="${sh}"]`);
+    if(!el) return;
+    const c = cloudInfo[sh] || {}, mode = shiftMode(sh), nx = NEXT_SHIFT_LABEL[sh];
+    el.className = '';
+    if(mode === 'locked'){ el.textContent = '✔ 已覆核'; el.className = 'done'; }
+    else if(mode === 'blind'){ el.textContent = '請你盲點覆核'; el.className = 'todo'; }
+    else if(c.counted && c.fromId && !c.confirmed){ el.textContent = `待${nx}覆核`; }
+    else el.textContent = `由${nx}覆核`;
+  });
+}
 function paintConfirmRow(){
-  const row = $('#confirmrow'), hc = $('#hc-confirm');
-  if(!row || !hc) return;
-  /* 已勾選後又把數量清空 → 自動取消確認，避免留下未完成卻已核章的紀錄 */
-  if(handover[currentShift].confirmed && !shiftFullyCounted(currentShift)){
-    handover[currentShift].confirmed = false;
+  paintShiftSubs();
+  const row = $('#confirmrow');
+  if(!row) return;
+  const sh = currentShift, mode = shiftMode(sh), c = cloudInfo[sh] || {}, h = handover[sh];
+  const hc = $('#hc-confirm'), joint = $('#vf-joint'), txt = $('#cf-text');
+  row.className = 'confirmrow';
+  joint.hidden = true;
+  hc.checked = mode === 'locked';
+  hc.disabled = true;
+  if(mode === 'locked'){
+    row.classList.add('ok');
+    txt.textContent = `✔ 已由 ${h.to || '接班藥師'} 盲點覆核一致，確認接班`;
+  }else if(mode === 'blind'){
+    const [n, all] = verifyFilledCount(sh);
+    row.classList.add('blind');
+    txt.textContent = n < all ? `盲點覆核：已輸入 ${n}/${all} 項，全部點完後勾選即自動比對`
+                              : `盲點覆核：已輸入 ${n}/${all} 項，勾選後自動比對`;
+    hc.disabled = n < all || !shiftGateOk(sh);
+    joint.hidden = !verifyTried.has(sh);
+  }else{
+    /* 點數模式：交班藥師本人不能勾選，要存檔後換接班藥師的帳號登入 */
+    const who = h.to && h.to.trim() ? `接班藥師（${h.to.trim()}）` : '接班藥師';
+    const mineDirty = DATA.locations.some(loc=> dirtySet.has(sh + '||' + loc));
+    if(c.counted && c.fromId && !c.confirmed && !mineDirty){
+      row.classList.add('warn');
+      txt.textContent = `已交班。請登出，由${who}用自己的帳號登入，點數後才能勾選`;
+    }else{
+      row.classList.add('locked');
+      txt.textContent = mineDirty
+        ? `交班藥師不能自己勾選：請先按「儲存」交班，再由${who}用自己的帳號登入覆核`
+        : `點完所有數量並儲存後，由${who}用自己的帳號登入覆核`;
+    }
   }
-  const ready = shiftFullyCounted(currentShift) &&
-                !!(handover[currentShift].to && handover[currentShift].to.trim());
-  hc.checked = !!handover[currentShift].confirmed;
-  hc.disabled = !ready && !hc.checked;
-  row.classList.toggle('warn', !hc.checked);
-  row.classList.toggle('locked', hc.disabled);
-  row.title = hc.disabled ? '需填寫接班藥師姓名，並完成所有藥品盤點後才能勾選' : '';
 }
 
 function paintInputs(){
+  if(blindNow()) restoreVerifyLocal();
+  const T = tgt();
+  document.querySelectorAll('input.n').forEach(inp=> inp.classList.remove('vbad'));
   document.querySelectorAll('input.solo').forEach(inp=>{
     const { loc, drug } = inp.dataset;
-    const v = state[currentShift][loc][drug];
+    const v = T[loc][drug];
     inp.value = v == null ? '' : v;
     inp.classList.toggle('filled', v != null);
     updateMismatch(currentShift, loc, drug);
@@ -1247,7 +1399,7 @@ function paintInputs(){
   document.querySelectorAll('.row.pack').forEach(row=>{
     const { loc, drug } = row.dataset;
     const d = findDrug(drug);
-    const v = state[currentShift][loc][drug];
+    const v = T[loc][drug];
     const p = packFor(d, loc);
     if(p){
       let remaining = v;
@@ -1268,8 +1420,9 @@ function paintInputs(){
   });
   document.querySelectorAll('.miss').forEach(miss=>{
     const { loc, drug } = miss.dataset;
-    miss.hidden = state[currentShift][loc][drug] != null;
+    miss.hidden = T[loc][drug] != null;
   });
+  if(blindNow()) markVerifyBad(blindBadItems(currentShift));
   paintConfirmRow();
   const hf = $('#hf'), ht = $('#ht');
   if(hf) hf.value = handover[currentShift].from || '';
@@ -1278,27 +1431,134 @@ function paintInputs(){
 }
 
 /* 上一班（白班會往前跨到「前一天的大夜」）尚未「確認接班」前，鎖住本班的所有輸入，避免忙碌時忘記先確認就開始點交 */
+/* 已「確認接班」並存到雲端的班別：數量保留顯示，但鎖住不能改，避免之後誤觸 */
+/* ===== 盲點覆核 =====
+   每一班的狀態（依雲端存檔判斷）：
+   count  ：交班藥師點數、填寫中（或自己剛存完，等待覆核）
+   blind  ：交班藥師已存完整數量、尚未覆核，且目前登入者「不是」交班藥師 → 畫面隱藏交班數量，由接班藥師自己點數輸入
+   locked ：已盲點覆核一致並存檔，鎖定不能改 */
+const cloudInfo = {};                 // s -> { fromId, confirmed, counted }
+const unlockedShifts = new Set();     // 本次操作中經確認後暫時解鎖更正的班別
+const verify = {};                    // verify[s][loc][drug]：接班藥師盲點輸入的數量（只在本機，比對一致才確認）
+const verifyTried = new Set();        // 已比對過但不一致的班別（顯示「以覆核數量為準」選項）
+SHIFTS.forEach(s=>{ verify[s] = {}; });
+const vLog = {};                      // vLog[s]：盲點輸入過程中出現過的不一致（覆核完成時一併記錄）
+SHIFTS.forEach(s=>{ vLog[s] = []; });
+function itemInputs(loc, drug){
+  return document.querySelectorAll(`input.n[data-loc="${CSS.escape(loc)}"][data-drug="${CSS.escape(drug)}"]`);
+}
+/* 盲點模式：已輸入的品項中，跟交班數量不一致的清單（只用來標紅，不顯示交班數字） */
+function blindBadItems(sh, loc){
+  ensureVerify(sh);
+  const out = [];
+  (loc ? [loc] : DATA.locations).forEach(l=> DATA.drugs.filter(d=> d.locs.includes(l)).forEach(d=>{
+    const v = verify[sh][l][d.name];
+    if(v != null && v !== state[sh][l][d.name]) out.push({ loc: l, drug: d.name });
+  }));
+  return out;
+}
+function ensureVerify(s){ DATA.locations.forEach(l=>{ if(!verify[s][l]) verify[s][l] = {}; }); }
+function resetVerify(s){ (s ? [s] : SHIFTS).forEach(x=>{ verify[x] = {}; verifyTried.delete(x); vLog[x] = []; }); }
+function shiftMode(s){
+  const c = cloudInfo[s] || {};
+  if(c.confirmed && !unlockedShifts.has(s)) return 'locked';
+  if(!c.confirmed && c.counted && c.fromId && USER && c.fromId !== USER.id) return 'blind';
+  return 'count';
+}
+const isShiftLocked = s => shiftMode(s) === 'locked';
+const blindNow = () => shiftMode(currentShift) === 'blind';
+function tgt(){ if(blindNow()){ ensureVerify(currentShift); return verify[currentShift]; } return state[currentShift]; }
+const anyBlind = () => SHIFTS.some(s=> shiftMode(s) === 'blind');
+function syncLocksFrom(o){
+  SHIFTS.forEach(s=>{
+    const sh = o && o.shifts && o.shifts[s];
+    const h = (sh && sh.handover) || {};
+    const counted = !!sh && DATA.locations.every(loc=>
+      DATA.drugs.filter(d=> d.locs.includes(loc)).every(d=> sh.locations && sh.locations[loc] && sh.locations[loc][d.name] != null));
+    cloudInfo[s] = { fromId: h.fromId || '', confirmed: !!h.confirmed, counted };
+  });
+}
+/* 盲點輸入暫存在本機，避免重新整理或閒置登出後要重點 */
+const VERIFY_KEY = 'pharmacy13_verify_v1';
+function saveVerifyLocal(){
+  try{ localStorage.setItem(VERIFY_KEY, JSON.stringify({ date: $('#d-date').value, shift: currentShift, uid: USER && USER.id, data: verify[currentShift] })); }catch(_){}
+}
+function restoreVerifyLocal(){
+  try{
+    const v = JSON.parse(localStorage.getItem(VERIFY_KEY) || 'null');
+    if(v && v.date === $('#d-date').value && v.shift === currentShift && USER && v.uid === USER.id && v.data){
+      const empty = !Object.values(verify[currentShift]).some(o=> o && Object.keys(o).length);
+      if(empty) verify[currentShift] = v.data;
+    }
+  }catch(_){}
+}
+function clearVerifyLocal(){ try{ localStorage.removeItem(VERIFY_KEY); }catch(_){} }
 function shiftGateOk(shift){
   if(shift === '白班') return prevDayNightConfirmed;
   return !!handover[PREV_SHIFT[shift]].confirmed;
 }
 function applyShiftGate(){
-  const ok = shiftGateOk(currentShift);
+  const gateOk = shiftGateOk(currentShift);
+  const locked = gateOk && isShiftLocked(currentShift);
+  const ok = gateOk && !locked;
+  const blind = gateOk && blindNow();
+  const bb = $('#blindbanner'); if(bb) bb.hidden = !blind;
+  const lb = $('#lockbanner');
+  if(lb){
+    lb.hidden = !locked;
+    if(locked){
+      const h = handover[currentShift];
+      $('#lock-text').textContent = `🔒「${currentShift}」已由 ${h.to || '接班藥師'} 確認接班並存檔，數量已鎖定。`;
+    }
+  }
   const banner = $('#gatebanner');
   if(banner){
-    banner.hidden = ok;
-    if(!ok){
+    banner.hidden = gateOk;
+    if(!gateOk){
       banner.textContent = currentShift === '白班'
-        ? `⚠ 前一天的「大夜」尚未完成「已核對數量無誤，確認接班」，請先請「白班」的接班藥師完成核對確認，才能開始填寫「白班」的點交資料。`
-        : `⚠ 「${PREV_SHIFT[currentShift]}」尚未完成「已核對數量無誤，確認接班」，請先請 ${PREV_SHIFT[currentShift]} 的接班藥師完成核對確認，才能開始填寫「${currentShift}」的點交資料。`;
+        ? `⚠ 前一天的「大夜」尚未完成盲點覆核確認，請先完成覆核，才能開始填寫「白班」的點交資料。`
+        : `⚠ 「${PREV_SHIFT[currentShift]}」尚未完成盲點覆核確認，請先到「${PREV_SHIFT[currentShift]}」分頁完成覆核，才能開始填寫「${currentShift}」的點交資料。`;
+      if(currentShift === '白班'){
+        const b = document.createElement('button');
+        b.type = 'button'; b.textContent = '前往覆核前一天的大夜';
+        b.addEventListener('click', goVerifyYesterdayNight);
+        banner.appendChild(b);
+      }
     }
   }
   document.querySelectorAll('input.n, input.solo').forEach(inp=> inp.disabled = !ok);
-  ['#hf','#ht','#hf-roster','#hf-self','#ht-roster','#ht-self'].forEach(sel=>{
-    const el = $(sel); if(el) el.disabled = !ok;
-  });
-  const hc = $('#hc-confirm');
-  if(hc) hc.disabled = hc.disabled || !ok;
+  /* 交班藥師欄：只有點數中可以改；接班藥師欄：點數中或盲點覆核中都可以用登入者／班表帶入／手動輸入 */
+  ['#hf','#hf-roster','#hf-self'].forEach(sel=>{ const el = $(sel); if(el) el.disabled = !ok || blind; });
+  ['#ht','#ht-roster','#ht-self'].forEach(sel=>{ const el = $(sel); if(el) el.disabled = !ok; });
+}
+/* 登入後自動帶到「輪到我覆核」的地方：今天有待我覆核的班別就切過去；
+   今天白班被前一天大夜擋住、而前一天大夜是別人點的，就詢問要不要直接前往覆核 */
+async function autoRoute(){
+  if(dirtySet.size || $('#d-date').value !== todayStr() || !USER) return;
+  const mine = SHIFTS.find(sh=> shiftMode(sh) === 'blind');
+  if(mine){
+    currentShift = mine; paintShift();
+    toast(`「${mine}」已由 ${handover[mine].from || '交班藥師'} 交班，請在這裡盲點覆核`);
+    return;
+  }
+  const yest = addDays(todayStr(), -1);
+  let rec = null;
+  try{ rec = await FB.latestForDate(yest); }catch(_){}
+  const n = rec && rec.shifts && rec.shifts['大夜'];
+  const h = (n && n.handover) || {};
+  if(n && h.fromId && !h.confirmed && h.fromId !== USER.id){
+    const ok = await confirmBox('前一天的大夜等待覆核',
+      `${yest} 的「大夜」已由 ${h.from || '交班藥師'} 交班，尚未覆核。今天的白班要等這個覆核完成才能開始填寫，要現在前往覆核嗎？`, false);
+    if(ok) await goVerifyYesterdayNight();
+  }
+}
+async function goVerifyYesterdayNight(){
+  if(dirtySet.size){ toast('目前有尚未儲存的變更，請先儲存再切換日期'); return; }
+  const yest = addDays($('#d-date').value, -1);
+  await loadDateSnapshot(yest);
+  currentShift = '大夜';
+  paintShift();
+  toast(`已切換到 ${yest} 大夜，覆核完成後請把日期改回今天`);
 }
 
 function markDirty(shift, loc){
@@ -1343,14 +1603,18 @@ function applyDraft(draft){
 }
 /* 登入載入資料後，檢查本機是否有同一天尚未儲存的暫存草稿，有的話詢問是否要復原 */
 /* 切換到指定日期，並用該日期在雲端最後一次的存檔紀錄當作基準（找不到就是空白） */
+let shownDate = null;                 /* 畫面上資料實際所屬的日期，改日期被取消時用來還原 */
 async function loadDateSnapshot(dateStr){
   $('#d-date').value = dateStr;
-  try{
-    const rec = await FB.latestForDate(dateStr);
-    applyRemote(rec || null);
-  }catch(_){ applyRemote(null); }
+  shownDate = dateStr;
+  unlockedShifts.clear();
+  resetVerify();
+  let rec = null;
+  try{ rec = await FB.latestForDate(dateStr); }catch(_){}
+  applyRemote(rec || null);
   prevDayNightDate = null;
   await loadPrevDayNight();
+  return !!rec;
 }
 
 async function maybeRestoreDraft(){
@@ -1402,11 +1666,13 @@ function refreshBadges(){
   let doneTotal = 0, allTotal = 0;
   DATA.locations.forEach(loc=>{
     const drugs = DATA.drugs.filter(d=>d.locs.includes(loc));
-    const filled = drugs.filter(d=> state[currentShift][loc][d.name] != null).length;
+    const T = tgt();
+    const filled = drugs.filter(d=> T[loc][d.name] != null).length;
     const badge = document.querySelector(`[data-navcount="${loc}"]`);
     if(badge) badge.textContent = `${filled}/${drugs.length}`;
     const btn = document.getElementById('nav-' + loc);
     if(btn){
+      btn.classList.toggle('vwarn', blindNow() && blindBadItems(currentShift, loc).length > 0);
       btn.classList.remove('st0','stp','stf');
       if(drugs.length){
         const st = filled === 0 ? 'st0' : filled < drugs.length ? 'stp' : 'stf';
@@ -1471,29 +1737,25 @@ async function applyConfig(){
 
 async function onSignedIn(u){
   const id = u.email.split('@')[0].toUpperCase();
-  /* 非管理者必須在「帳號管理」名單上才能使用；名單上的姓名優先顯示 */
-  let member = null;
-  try{ member = await FB.readMember(id); }catch(_){}
-  if(!member && !ADMINS.includes(id)){
-    try{ await FB.signOut(); }catch(_){}
-    $('#g-err').className = 'err';
-    $('#g-err').textContent = '此帳號尚未加入名單，請聯絡管理者';
-    const g = $('#gate'); g.classList.remove('bad'); void g.offsetWidth; g.classList.add('bad');
-    return;
+  /* 帳號統一在 Firebase 後台管理；姓名依序取：Firebase 顯示名稱 → 管理者名單 → 班表系統人員名冊 → 員編 */
+  let rosterName = '';
+  if(!u.displayName && !DISPLAY[id] && window.ROSTER && ROSTER.nameOf){
+    try{ rosterName = await ROSTER.nameOf(id); }catch(_){}
   }
-  USER = { id, name: (member && member.name) || u.displayName || DISPLAY[id] || id, uid: u.uid };
+  USER = { id, name: u.displayName || DISPLAY[id] || rosterName || id, uid: u.uid };
   $('#gate').classList.remove('bad');
   $('#g-err').className = 'err'; $('#g-err').textContent = '';
   $('#g-id').value = ''; $('#g-pw').value = '';
   $('#b-logout').hidden = false;
   $('#d-user').textContent = '－' + USER.name + (isAdmin() ? '（管理者）' : '');
-  ['#b-csv','#b-hist','#b-admin','#b-acct'].forEach(sel=>{ const el = $(sel); if(el) el.hidden = !isAdmin(); });
+  ['#b-csv','#b-hist','#b-admin'].forEach(sel=>{ const el = $(sel); if(el) el.hidden = !isAdmin(); });
   $('#gate').hidden = true;
   $('#d-date').value = todayStr();
   await applyConfig();
   await load();
   watchRemote();
   resetIdleTimer();
+  autoRoute();
   if(isAdmin()) FB.purgeHistory().catch(()=>{});
 }
 
@@ -1501,6 +1763,7 @@ let unwatch = null;
 function watchRemote(){
   if(unwatch) unwatch();
   unwatch = FB.listen(o=>{
+    if(!o || o.date !== $('#d-date').value) return;   /* 正在看其他日期時，不被今天的即時更新蓋掉 */
     if(dirty){ toast('其他裝置已更新資料，儲存後將重新載入'); return; }
     applyRemote(o); paintInputs(); refreshBadges();
     toast('已同步其他裝置的更新');
@@ -1543,7 +1806,7 @@ function onSignedOut(){
   clearTimeout(idleTimer);
   $('#gate').hidden = false;
   $('#b-logout').hidden = true;
-  ['#b-csv','#b-hist','#b-admin','#b-acct'].forEach(sel=>{ const el = $(sel); if(el) el.hidden = true; });
+  ['#b-csv','#b-hist','#b-admin'].forEach(sel=>{ const el = $(sel); if(el) el.hidden = true; });
 }
 
 /* ---------- 讀取 / 套用遠端資料 ---------- */
@@ -1570,8 +1833,10 @@ function applyRemote(o){
   paintLastSaved(o && o.date === $('#d-date').value ? o : null);
   if(!o || o.date !== $('#d-date').value){
     SHIFTS.forEach(s=>{ handover[s] = { from:'', to:'', confirmed:false }; DATA.locations.forEach(l=> state[s][l] = {}); });
+    syncLocksFrom(null);
     return;
   }
+  syncLocksFrom(o);
   SHIFTS.forEach(s=>{
     const src = (o.shifts && o.shifts[s]) || {};
     handover[s] = src.handover ? { confirmed:false, ...src.handover } : { from:'', to:'', confirmed:false };
@@ -1607,14 +1872,10 @@ function buildPayload(){
    3. 只要「接班藥師」有填名字，就代表要進行覆核，這時「已核對數量無誤」勾選框就變成必填 */
 function incompleteShifts(){
   return SHIFTS.map(s=>{
-    const touchedLocs = DATA.locations.filter(loc=> dirtySet.has(s+'||'+loc));
-    if(!touchedLocs.length) return null;
-    const h = handover[s];
-    const hasFrom = !!(h.from && h.from.trim());
-    const hasTo = !!(h.to && h.to.trim());
+    const touched = DATA.locations.some(loc=> dirtySet.has(s+'||'+loc));
+    if(!touched) return null;
+    const touchedLocs = DATA.locations;   /* 這一班只要有動到，所有儲位都要填完，不能只存其中一個儲位 */
     const missing = [];
-    if(!hasFrom && !hasTo) missing.push('交班藥師或接班藥師（擇一必填）');
-    if(hasTo && !h.confirmed) missing.push('已核對數量無誤勾選（填了接班藥師就需要勾選）');
     touchedLocs.forEach(loc=>{
       const emptyDrugs = DATA.drugs.filter(d=>d.locs.includes(loc)).filter(d=> state[s][loc][d.name] == null);
       if(emptyDrugs.length) missing.push(`${loc}尚有 ${emptyDrugs.length} 項未填`);
@@ -1646,6 +1907,10 @@ function mismatchList(){
 }
 
 function openSaveDialog(){
+  if(!dirtySet.size){
+    toast('目前沒有任何輸入或變更，不需要儲存');
+    return;
+  }
   $('#sv-date').textContent = $('#d-date').value;
   $('#sv-shift').textContent = currentShift;
   const lastEl = $('#sv-last');
@@ -1661,21 +1926,8 @@ function openSaveDialog(){
   $('#sv-list').innerHTML = list || '<li>目前沒有異動的儲位／班別</li>';
   $('#sv-warn').hidden = true;
 
-  const mm = mismatchList();
-  const mmEl = $('#sv-mismatch');
-  if(mm.up.length || mm.down.length){
-    mmEl.hidden = false;
-    let html = '';
-    if(mm.up.length){
-      html += `<div class="mmup"><b>⚠ 比前一班「增加」，請務必確認（共 ${mm.up.length} 項）：</b>` +
-        mm.up.map(m=>`<div>${m}</div>`).join('') + `</div>`;
-    }
-    if(mm.down.length){
-      html += `<details class="mmdown"><summary>與前一班數量不同（減少，可能為當班耗用，共 ${mm.down.length} 項，點擊展開）</summary>` +
-        mm.down.map(m=>`<div>${m}</div>`).join('') + `</details>`;
-    }
-    mmEl.innerHTML = html;
-  }else mmEl.hidden = true;
+  /* 數量差異在輸入當下已經即時提醒過，儲存確認視窗不再重複列出 */
+  $('#sv-mismatch').hidden = true;
 
   const unconfirmed = incompleteShifts();
   const cfEl = $('#sv-confirm');
@@ -1690,22 +1942,34 @@ function openSaveDialog(){
   if(pending.length){
     pdEl.hidden = false;
     pdEl.className = 'svwarn info';
-    pdEl.innerHTML = `尚未由接班人員覆核確認：${pending.join('、')}（可先儲存本班點交，之後接班人員再來勾選確認即可）`;
+    pdEl.innerHTML = `儲存後請接班藥師用自己的帳號登入，到「${pending.join('、')}」分頁進行盲點覆核。`;
   }else pdEl.hidden = true;
 
   $('#savedlg').hidden = false;
 }
 
-async function doSave(){
+async function doSave(opts){
+  opts = opts || {};
   $('#savedlg').hidden = true;
+  /* 交班藥師點數後存檔：記錄點數人帳號，並清除舊的覆核結果（數量有改就必須重新盲點覆核） */
+  SHIFTS.forEach(s=>{
+    if(s === opts.verified) return;
+    if(!DATA.locations.some(loc=> dirtySet.has(s + '||' + loc))) return;
+    const h = handover[s];
+    if(!h.from || !h.from.trim()) h.from = USER ? USER.name : '';
+    h.fromId = USER ? USER.id : '';
+    h.toId = ''; h.confirmed = false;   /* 接班姓名保留（交班時可先預填），但覆核結果要重新做 */
+  });
   try{
     const payload = buildPayload();
     await FB.write(payload);
+    syncLocksFrom(payload); unlockedShifts.clear();
     dirtySet.clear(); dirty = false;
     $('#b-save').classList.remove('dirty');
     refreshMeta();
     clearDraftLocal();
     paintLastSaved({ ...payload, updatedAt: { toDate: () => new Date() } });
+    paintInputs();
     toast('已儲存　' + $('#d-date').value + '　' + currentShift);
   }catch(err){ toast('儲存失敗：' + (err && err.message ? err.message : err)); }
 }
@@ -1757,7 +2021,7 @@ function download(blob, name){
   a.href = URL.createObjectURL(blob); a.download = name; a.click();
   setTimeout(()=> URL.revokeObjectURL(a.href), 4000);
 }
-function csv(){ download(csvBlob(), csvName()); toast('今日點交 CSV 已下載'); }
+function csv(){ if(anyBlind()){ toast('有班別尚未完成盲點覆核，覆核完成前無法匯出'); return; } download(csvBlob(), csvName()); toast('今日點交 CSV 已下載'); }
 
 /* ---------- 帳號管理 ---------- */
 function acMsg(text, kind){ const m = $('#ac-msg'); m.textContent = text; m.className = kind || ''; }
@@ -1794,6 +2058,48 @@ function bindAcct(){
   $('#b-acct').addEventListener('click', ()=>{ acMsg(''); $('#acct').hidden = false; paintAcct(); });
   $('#ac-close').addEventListener('click', ()=> $('#acct').hidden = true);
   ['#ac-id','#ac-pw'].forEach(sel=> $(sel).addEventListener('input', e=>{ e.target.value = e.target.value.replace(/\D/g,''); }));
+  $('#bk-pw').addEventListener('input', e=>{ e.target.value = e.target.value.replace(/\D/g,''); });
+  $('#bk-go').addEventListener('click', async ()=>{
+    const msg = (t, k)=>{ const m = $('#bk-msg'); m.textContent = t; m.className = k || ''; };
+    const common = $('#bk-pw').value;
+    if(common && common.length < 6){ msg('統一初始密碼至少要 6 位數字', 'bad'); return; }
+    const rows = [], bad = [];
+    $('#bk-text').value.split(/\r?\n/).forEach((line, i)=>{
+      const t = line.trim(); if(!t) return;
+      const parts = t.split(/[\s,，、\t]+/).filter(Boolean);
+      const idRaw = parts[0] || '', name = parts[1] || '', pw = parts[2] || '';
+      if(!/^[Yy]?\d{1,5}$/.test(idRaw)){ bad.push(`第 ${i+1} 行：員編格式不對（${t}）`); return; }
+      if(!name){ bad.push(`第 ${i+1} 行：缺少姓名（${t}）`); return; }
+      if(pw && !/^\d{6,}$/.test(pw)){ bad.push(`第 ${i+1} 行：密碼要 6 位以上數字（${t}）`); return; }
+      rows.push({ id: normalizeId(idRaw), name, pw: pw || common });
+    });
+    if(bad.length){ msg('請先修正以下內容，沒有匯入任何人：\n' + bad.join('\n'), 'bad'); return; }
+    if(!rows.length){ msg('請貼上要匯入的名單', 'bad'); return; }
+    const noPw = rows.filter(r=> !r.pw).length;
+    const ok = await confirmBox(`批次匯入 ${rows.length} 人`,
+      noPw ? `其中 ${noPw} 人沒有密碼，只會加入名單（帳號須已在 Firebase 後台建好）。確定開始匯入嗎？`
+           : `將為這些人建立帳號並加入名單，請記得把初始密碼告知本人。確定開始匯入嗎？`, false);
+    if(!ok) return;
+    const go = $('#bk-go'); go.disabled = true;
+    const by = `${USER.name}(${USER.id})`;
+    let created = 0, listed = 0; const fail = [];
+    for(let i = 0; i < rows.length; i++){
+      const r = rows[i];
+      msg(`匯入中… ${i+1}/${rows.length}　${r.id} ${r.name}`);
+      try{
+        if(await FB.addMember(r.id, r.name, r.pw, by)) created++; else listed++;
+      }catch(err){
+        const code = (err && err.code) || '';
+        fail.push(`${r.id} ${r.name}：` + (/too-many-requests/.test(code) ? '建立太頻繁，請稍後再匯入這幾位'
+          : /weak-password/.test(code) ? '密碼太簡單' : /permission-denied/.test(code) ? '沒有權限（請確認安全規則）' : (code || '失敗')));
+      }
+    }
+    FB.audit({ type:'member-bulk', by, summary:`批次匯入 ${rows.length} 人：新建 ${created}、加入名單 ${listed}、失敗 ${fail.length}` }).catch(()=>{});
+    go.disabled = false;
+    msg(`完成：新建帳號 ${created} 人、加入名單 ${listed} 人` + (fail.length ? `、失敗 ${fail.length} 人\n` + fail.join('\n') : ''), fail.length ? 'bad' : 'ok');
+    if(!fail.length) $('#bk-text').value = '';
+    paintAcct();
+  });
   $('#ac-go').addEventListener('click', async ()=>{
     const id = normalizeId($('#ac-id').value), name = $('#ac-name').value.trim(), pw = $('#ac-pw').value;
     if(!id || $('#ac-id').value.length > 5){ acMsg('請輸入員編（最多 5 位數字）', 'bad'); return; }
@@ -1838,6 +2144,7 @@ function bindHist(){
     if(!from || !to || from > to){ $('#h-msg').textContent = '請選擇正確的起訖日期'; return; }
     $('#h-msg').textContent = '匯出中…';
     try{
+      if(anyBlind()){ $('#h-msg').textContent = '有班別尚未完成盲點覆核，覆核完成前無法匯出'; return; }
       const rows = await FB.historyRange(from, to);
       if(!rows.length){ $('#h-msg').textContent = '這段期間沒有任何儲存紀錄'; return; }
       const L = ['日期,班別,儲位,藥品名稱,數量,交班藥師,接班藥師,已核對確認,儲存人員'];
@@ -1865,6 +2172,7 @@ function bindHist(){
     if(!from || !to || from > to){ $('#h-msg').textContent = '請選擇正確的起訖日期'; return; }
     $('#h-msg').textContent = '整理中…';
     try{
+      if(anyBlind()){ $('#h-msg').textContent = '有班別尚未完成盲點覆核，覆核完成前無法匯出'; return; }
       const rows = await FB.historyRange(from, to);
       if(!rows.length){ $('#h-msg').textContent = '這段期間沒有任何儲存紀錄'; return; }
       /* 同一天可能存過很多次，只取每天最後一次的紀錄，一天一頁 */
@@ -2041,10 +2349,23 @@ addEventListener('resize', syncHeader);
 addEventListener('orientationchange', syncHeader);
 if(window.ResizeObserver) new ResizeObserver(syncHeader).observe(document.querySelector('header'));
 $('#d-date').value = todayStr();
-$('#d-date').addEventListener('change', ()=>{
-  toast('本次儲存將標記為 ' + $('#d-date').value);
-  prevDayNightDate = null;
-  loadPrevDayNight();
+/* 改日期＝切換到那一天：載入該日在雲端最後一次的存檔，畫面、PDF、CSV、儲存都以該日資料為準 */
+$('#d-date').addEventListener('change', async ()=>{
+  const el = $('#d-date'), to = el.value, from = shownDate || todayStr();
+  if(!to){ el.value = from; return; }
+  if(to === from) return;
+  if(dirtySet.size){
+    const ok = await confirmBox('尚有未儲存的點交資料',
+      `「${from}」有尚未儲存的變更，切換到「${to}」後這些變更會遺失。確定要切換嗎？`, true);
+    if(!ok){ el.value = from; return; }
+    dirtySet.clear(); dirty = false; $('#b-save').classList.remove('dirty');
+    clearDraftLocal();
+  }
+  toast('讀取 ' + to + ' 的點交資料…');
+  const found = await loadDateSnapshot(to);
+  paintInputs(); refreshBadges(); refreshMeta();
+  toast(found ? `已切換到 ${to}，顯示當天最後一次的存檔`
+              : `${to} 沒有存檔紀錄，畫面為空白`);
 });
 
 $('#g-go').addEventListener('click', signIn);
@@ -2072,32 +2393,102 @@ let pwSubmitTimer = null;
 });
 $('#b-logout').addEventListener('click', signOut);
 $('#b-save').addEventListener('click', openSaveDialog);
-$('#hc-confirm').addEventListener('change', function(){
-  if(this.checked){
-    const h = handover[currentShift];
-    if(!h.to || !h.to.trim()){
-      this.checked = false;
-      toast('請先填寫「接班藥師」姓名，才能勾選確認接班');
-      return;
-    }
-    /* 必須所有儲位的每一項藥品都已盤點填寫，才能勾選確認 */
-    const unfilled = [];
-    DATA.locations.forEach(loc=>{
-      const n = DATA.drugs.filter(d=> d.locs.includes(loc))
-        .filter(d=> state[currentShift][loc][d.name] == null).length;
-      if(n) unfilled.push(`${loc} ${n} 項`);
-    });
-    if(unfilled.length){
-      this.checked = false;
-      toast(`尚未完成盤點，無法確認接班：${unfilled.join('、')}未填`);
-      return;
-    }
+/* ---------- 盲點覆核：比對 ---------- */
+function verifyDiff(sh){
+  ensureVerify(sh);
+  const bad = [];
+  DATA.locations.forEach(loc=> DATA.drugs.filter(d=> d.locs.includes(loc)).forEach(d=>{
+    const v = verify[sh][loc][d.name], a = state[sh][loc][d.name];
+    if(v !== a) bad.push({ loc, drug: d.name, v, a });
+  }));
+  return bad;
+}
+/* 不一致清單依「管1／管2／管3」分組收合，點開才顯示品項，避免清單太長 */
+function groupedBadList(bad, withNums){
+  const cls = d=>{ const m = /[(（]管\s*([123])[)）]/.exec(d); return m ? '管' + m[1] : '其他'; };
+  const order = ['管1','管2','管3','其他'], groups = {};
+  bad.forEach(b=>{ (groups[cls(b.drug)] = groups[cls(b.drug)] || []).push(b); });
+  return order.filter(k=> groups[k]).map(k=>
+    `<li class="grp"><details><summary>${k}　${groups[k].length} 項</summary><div class="gi">` +
+    groups[k].map(b=>`<div>${esc(b.loc)}・${esc(b.drug)}${withNums ? `<em>${b.a == null ? '—' : b.a} → ${b.v}</em>` : ''}</div>`).join('') +
+    `</div></details></li>`).join('');
+}
+function markVerifyBad(bad){
+  bad.forEach(b=>{
+    itemInputs(b.loc, b.drug).forEach(el=> el.classList.add('vbad'));
+  });
+}
+async function finishVerify(sh, how){
+  const h = handover[sh];
+  h.to = (h.to && h.to.trim()) || USER.name; h.toId = USER.id; h.confirmed = true;   /* 姓名依選擇；帳號一律記錄實際覆核的登入者 */
+  DATA.locations.forEach(loc=> markDirty(sh, loc));
+  await doSave({ verified: sh });
+  if(!(cloudInfo[sh] && cloudInfo[sh].confirmed)) return;   /* 儲存失敗 */
+  const log = vLog[sh] || [];
+  FB.audit({ type:'verify-ok', by: `${USER.name}(${USER.id})`,
+    summary: `${$('#d-date').value} ${sh} 盲點覆核確認（${how}）` + (log.length
+      ? `；輸入過程曾不一致 ${log.length} 次：` + log.map(b=>`${b.loc}/${b.drug} 交班${b.a} 覆核${b.v}`).join('；') : '') }).catch(()=>{});
+  resetVerify(sh); clearVerifyLocal();
+  paintInputs(); refreshBadges();
+  toast(`✔ ${sh} 盲點覆核一致，已確認接班`);
+  /* 覆核的是前一天的大夜 → 自動回到今天的白班繼續點班 */
+  const today = todayStr();
+  if(sh === '大夜' && $('#d-date').value === addDays(today, -1)){
+    await loadDateSnapshot(today);
+    currentShift = '白班'; paintShift();
+    toast(`✔ 前一天大夜已覆核，已回到 ${today} 白班`);
   }
-  handover[currentShift].confirmed = this.checked;
-  DATA.locations.forEach(loc=> markDirty(currentShift, loc));
+}
+$('#hc-confirm').addEventListener('change', async function(){
+  const sh = currentShift;
+  if(!this.checked || shiftMode(sh) !== 'blind'){ paintConfirmRow(); return; }
+  this.checked = false;   /* 比對一致、存檔成功後才會顯示為已勾選 */
+  if(dirtySet.size){ toast('其他班別有尚未儲存的變更，請先儲存後再比對'); return; }
+  const [n, all] = verifyFilledCount(sh);
+  if(n < all){ toast(`尚有 ${all - n} 項未輸入，全部點完才能比對`); return; }
+  const bad = verifyDiff(sh);
+  if(!bad.length){ await finishVerify(sh, '一次一致'); return; }
+  verifyTried.add(sh);
+  const by = `${USER.name}(${USER.id})`;
+  FB.audit({ type:'verify-mismatch', by,
+    summary: `${$('#d-date').value} ${sh} 盲點覆核不一致 ${bad.length} 項：` + bad.map(b=>`${b.loc}/${b.drug} 交班${b.a} 覆核${b.v}`).join('；') }).catch(()=>{});
   paintConfirmRow();
+  markVerifyBad(bad);
+  const pr = confirmBox(`有 ${bad.length} 項與交班數量不一致`,
+    '畫面上紅色的品項和儲位需要重新點數，修改後再勾選一次確認接班；點下方分類可展開查看品項。如果重點後仍不一致，請與交班藥師一起確認實物。', false);
+  $('#ak-list').innerHTML = groupedBadList(bad, false);
+  $('#ak-no').hidden = true; $('#ak-yes').textContent = '重新點數';
+  await pr;
+  $('#ak-no').hidden = false; $('#ak-yes').textContent = '確定';
+});
+$('#vf-joint').addEventListener('click', async ()=>{
+  const sh = currentShift;
+  if(shiftMode(sh) !== 'blind') return;
+  if(dirtySet.size){ toast('其他班別有尚未儲存的變更，請先儲存後再確認'); return; }
+  const [n, all] = verifyFilledCount(sh);
+  if(n < all){ toast(`尚有 ${all - n} 項未輸入`); return; }
+  const bad = verifyDiff(sh);
+  if(!bad.length){ await finishVerify(sh, '一次一致'); return; }
+  const pr = confirmBox('以覆核數量為準',
+    `請確認交班藥師「${handover[sh].from || ''}」在場，兩人已一起重新點過實物，確認覆核數量才正確。下列品項的交班數量將更正為覆核數量，更正內容（含原數量）會留下紀錄。`, true);
+  $('#ak-list').innerHTML = groupedBadList(bad, true);
+  if(!await pr) return;
+  bad.forEach(b=>{ state[sh][b.loc][b.drug] = b.v; });
+  FB.audit({ type:'verify-joint', by: `${USER.name}(${USER.id})`,
+    summary: `${$('#d-date').value} ${sh} 雙方共同重點後以覆核數量為準（交班：${handover[sh].from || ''}）：` + bad.map(b=>`${b.loc}/${b.drug} ${b.a}→${b.v}`).join('；') }).catch(()=>{});
+  await finishVerify(sh, '雙方共同重點更正');
 });
 $('#sv-no').addEventListener('click', ()=> $('#savedlg').hidden = true);
+$('#lock-edit').addEventListener('click', async ()=>{
+  const s = currentShift, d = $('#d-date').value;
+  const ok = await confirmBox(`更正「${s}」的點交資料`,
+    `這一班已經完成盲點覆核。解除鎖定後可以修改數量，但修改後存檔，就必須由另一位藥師用自己的帳號重新盲點覆核；解除鎖定的人員與時間會留下紀錄。確定要解除鎖定嗎？`, true);
+  if(!ok) return;
+  unlockedShifts.add(s);
+  FB.audit({ type:'unlock', by: USER ? `${USER.name}(${USER.id})` : '', summary: `解除鎖定更正 ${d} ${s}` }).catch(()=>{});
+  paintInputs();
+  toast(`已解除「${s}」鎖定，修改完請記得儲存`);
+});
 $('#sv-yes').addEventListener('click', ()=>{
   const unconfirmed = incompleteShifts();
   if(unconfirmed.length){
@@ -2195,6 +2586,7 @@ function printDays(records, label){
 
 $('#b-csv').addEventListener('click', csv);
 $('#b-pdf').addEventListener('click', ()=>{
+  if(anyBlind()){ toast('有班別尚未完成盲點覆核，覆核完成前無法匯出'); return; }
   printDays([currentRecord()], `匯出日期：${$('#d-date').value}（共 1 天）`);
 });
 
