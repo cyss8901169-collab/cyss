@@ -355,6 +355,24 @@
   .afoot button{flex:1;min-height:52px;border:1.5px solid var(--line);background:#fff;border-radius:13px;font-size:16px;font-weight:700;cursor:pointer;font-family:var(--sans)}
   .afoot button.k{background:linear-gradient(120deg,#4a90c2,#8ec5e8);border-color:transparent;color:#fff}
 
+  /* ---------- 帳號管理 ---------- */
+  .acform{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px;background:#f7fafc}
+  .acform .hrow{margin-bottom:10px}
+  .acform .hrow input{min-width:0;width:100%;box-sizing:border-box}
+  .acform .go{width:100%;min-height:50px;border:0;border-radius:12px;background:linear-gradient(120deg,#4a90c2,#8ec5e8);color:#fff;font-size:16px;font-weight:800;cursor:pointer;font-family:var(--sans)}
+  .acform .go:disabled{opacity:.55;cursor:wait}
+  #ac-msg{margin:10px 0 0;font-size:14.5px;font-weight:700;line-height:1.6;color:var(--muted)}
+  #ac-msg.bad{color:var(--alert)}
+  #ac-msg.ok{color:#2f7a4f}
+  .aclist{display:flex;flex-direction:column;gap:7px}
+  .acitem{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:11px;padding:9px 12px}
+  .acitem .who{flex:1;min-width:0}
+  .acitem .who b{font-size:16px}
+  .acitem .who small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+  .acitem .del{flex:0 0 auto;border:1px solid #f0c4c4;background:#fff5f5;color:var(--alert);border-radius:10px;padding:8px 13px;font-size:14.5px;font-weight:700;cursor:pointer;font-family:var(--sans)}
+  .acitem.adm{background:#eef5f9}
+  .acsub{font-size:14px;font-weight:800;color:var(--muted);margin:14px 2px 8px}
+
   /* ---------- 底部工具列 ---------- */
   .bottompanel{
     position:fixed;left:0;right:0;bottom:0;z-index:30;
@@ -427,20 +445,22 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut as fbSignOut,
-         onAuthStateChanged, setPersistence, browserSessionPersistence, signInAnonymously }
+         onAuthStateChanged, setPersistence, browserSessionPersistence, signInAnonymously,
+         createUserWithEmailAndPassword, updateProfile, inMemoryPersistence }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, doc, collection, getDoc, getDocs, setDoc, addDoc,
          deleteDoc, onSnapshot, serverTimestamp, query, where, orderBy, limit }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const app  = initializeApp({
+const FB_CONFIG = {
   apiKey: "AIzaSyCBVkk4MlZDzWiLupWD7FhzRt4G8yus578",
   authDomain: "ntuh-yunlin-drug13.firebaseapp.com",
   projectId: "ntuh-yunlin-drug13",
   storageBucket: "ntuh-yunlin-drug13.firebasestorage.app",
   messagingSenderId: "167631201656",
   appId: "1:167631201656:web:05468bbee9bc4c3adb948d"
-});
+};
+const app  = initializeApp(FB_CONFIG);
 const auth = getAuth(app);
 const db   = getFirestore(app);
 /* 這個新專案（ntuh-yunlin-drug13）是 1-3級三班點交表獨立使用，不用再刻意跟其他系統的集合名稱錯開，
@@ -450,6 +470,17 @@ const CONFIG   = doc(db, "config13", "drugs");
 const EDITLOCK = doc(db, "config13", "editlock");
 const HISTORY  = collection(db, "history13");
 const AUDIT    = collection(db, "audit13");
+const USERS    = collection(db, "users13");      // 帳號名單：文件 ID 為小寫員編（例 y01643），不在名單上的非管理者無法使用系統
+const memberRef = id => doc(db, "users13", String(id).toLowerCase());
+
+/* 建立帳號用的「第二個」Firebase 連線：在這裡建新帳號，不會把目前登入的管理者登出 */
+let _acctAuth = null;
+async function acctAuth(){
+  if(_acctAuth) return _acctAuth;
+  const a = getAuth(initializeApp(FB_CONFIG, "acctApp"));
+  await setPersistence(a, inMemoryPersistence);
+  return (_acctAuth = a);
+}
 
 setPersistence(auth, browserSessionPersistence).catch(()=>{});
 
@@ -494,6 +525,31 @@ window.FB = {
     const snap = await getDocs(q);
     return snap.empty ? null : snap.docs[0].data();
   },
+  /* ---- 帳號名單 ---- */
+  async readMember(id){ const s = await getDoc(memberRef(id)); return s.exists() ? s.data() : null; },
+  async listMembers(){
+    const snap = await getDocs(USERS);
+    return snap.docs.map(d=>({ id: d.id.toUpperCase(), ...d.data() }));
+  },
+  /* 有給密碼就同時建立登入帳號；帳號已存在（例如已在 Firebase 後台建好）則只加入名單 */
+  async addMember(id, name, pw, by){
+    let created = false;
+    if(pw){
+      const a = await acctAuth();
+      try{
+        const cred = await createUserWithEmailAndPassword(a, id.toLowerCase() + "@ms1.ylh.gov.tw", pw);
+        await updateProfile(cred.user, { displayName: name }).catch(()=>{});
+        created = true;
+      }catch(err){
+        if(!/email-already-in-use/.test((err && err.code) || '')) throw err;
+      }finally{
+        await fbSignOut(a).catch(()=>{});
+      }
+    }
+    await setDoc(memberRef(id), { name, by, at: serverTimestamp() }, { merge:false });
+    return created;
+  },
+  async removeMember(id){ await deleteDoc(memberRef(id)); },
   listen(cb){ return onSnapshot(SHEET, snap=>{ if(snap.exists() && !snap.metadata.hasPendingWrites) cb(snap.data()); }); }
 };
 window.dispatchEvent(new Event("fb-ready"));
@@ -634,6 +690,27 @@ window.ROSTER = {
   </div>
 </div>
 
+<div class="admin" id="acct" hidden>
+  <div class="panel">
+    <div class="ahead"><b>帳號管理</b><button type="button" id="ac-close">關閉</button></div>
+    <div class="abody">
+      <div class="acform">
+        <div class="hrow">
+          <label>員編<input id="ac-id" inputmode="numeric" maxlength="5" placeholder="例：06100" autocomplete="off"></label>
+          <label>姓名<input id="ac-name" placeholder="例：陳麗珺" autocomplete="off"></label>
+        </div>
+        <div class="hrow">
+          <label>初始密碼（至少 6 位數字）<input id="ac-pw" inputmode="numeric" placeholder="已在後台建好帳號就留空" autocomplete="new-password"></label>
+        </div>
+        <button type="button" class="go" id="ac-go">加入名單</button>
+        <p id="ac-msg"></p>
+      </div>
+      <p class="hnote">只有名單上的人可以登入使用。移除後對方就無法再進入系統，已存的點交紀錄不受影響。</p>
+      <div id="ac-list" class="aclist"></div>
+    </div>
+  </div>
+</div>
+
 <div id="printreport"></div>
 <div class="wrap" id="app"></div>
 
@@ -647,6 +724,7 @@ window.ROSTER = {
     <button id="b-pdf" title="用瀏覽器列印功能另存為 PDF">匯出 PDF</button>
     <button id="b-hist" title="匯出歷史紀錄" hidden>歷史</button>
     <button id="b-admin" title="管理藥品與儲位" hidden>管理</button>
+    <button id="b-acct" title="新增或移除可登入的人員" hidden>帳號</button>
     <button class="k" id="b-save">儲存</button>
   </div>
 </div>
@@ -1393,13 +1471,23 @@ async function applyConfig(){
 
 async function onSignedIn(u){
   const id = u.email.split('@')[0].toUpperCase();
-  USER = { id, name: u.displayName || DISPLAY[id] || id, uid: u.uid };
+  /* 非管理者必須在「帳號管理」名單上才能使用；名單上的姓名優先顯示 */
+  let member = null;
+  try{ member = await FB.readMember(id); }catch(_){}
+  if(!member && !ADMINS.includes(id)){
+    try{ await FB.signOut(); }catch(_){}
+    $('#g-err').className = 'err';
+    $('#g-err').textContent = '此帳號尚未加入名單，請聯絡管理者';
+    const g = $('#gate'); g.classList.remove('bad'); void g.offsetWidth; g.classList.add('bad');
+    return;
+  }
+  USER = { id, name: (member && member.name) || u.displayName || DISPLAY[id] || id, uid: u.uid };
   $('#gate').classList.remove('bad');
   $('#g-err').className = 'err'; $('#g-err').textContent = '';
   $('#g-id').value = ''; $('#g-pw').value = '';
   $('#b-logout').hidden = false;
   $('#d-user').textContent = '－' + USER.name + (isAdmin() ? '（管理者）' : '');
-  ['#b-csv','#b-hist','#b-admin'].forEach(sel=>{ const el = $(sel); if(el) el.hidden = !isAdmin(); });
+  ['#b-csv','#b-hist','#b-admin','#b-acct'].forEach(sel=>{ const el = $(sel); if(el) el.hidden = !isAdmin(); });
   $('#gate').hidden = true;
   $('#d-date').value = todayStr();
   await applyConfig();
@@ -1455,7 +1543,7 @@ function onSignedOut(){
   clearTimeout(idleTimer);
   $('#gate').hidden = false;
   $('#b-logout').hidden = true;
-  ['#b-csv','#b-hist','#b-admin'].forEach(sel=>{ const el = $(sel); if(el) el.hidden = true; });
+  ['#b-csv','#b-hist','#b-admin','#b-acct'].forEach(sel=>{ const el = $(sel); if(el) el.hidden = true; });
 }
 
 /* ---------- 讀取 / 套用遠端資料 ---------- */
@@ -1670,6 +1758,65 @@ function download(blob, name){
   setTimeout(()=> URL.revokeObjectURL(a.href), 4000);
 }
 function csv(){ download(csvBlob(), csvName()); toast('今日點交 CSV 已下載'); }
+
+/* ---------- 帳號管理 ---------- */
+function acMsg(text, kind){ const m = $('#ac-msg'); m.textContent = text; m.className = kind || ''; }
+async function paintAcct(){
+  const box = $('#ac-list');
+  box.innerHTML = '<p class="hnote">讀取中…</p>';
+  let rows = [];
+  try{ rows = await FB.listMembers(); }
+  catch(err){ box.innerHTML = '<p class="hnote">名單讀取失敗：' + ((err && err.code) || '請確認 Firestore 安全規則') + '</p>'; return; }
+  rows.sort((a,b)=> a.id.localeCompare(b.id));
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const admins = ADMINS.map(id=>{
+    const r = rows.find(x=>x.id === id);
+    return `<div class="acitem adm"><div class="who"><b>${esc((r && r.name) || DISPLAY[id] || id)}</b><small>${id}．管理者，不需加入名單</small></div></div>`;
+  }).join('');
+  const others = rows.filter(r=> !ADMINS.includes(r.id));
+  const list = others.length ? others.map(r=>
+    `<div class="acitem"><div class="who"><b>${esc(r.name || r.id)}</b><small>${r.id}${r.by ? '．由 ' + esc(r.by) + ' 加入' : ''}</small></div>`
+    + `<button type="button" class="del" data-id="${r.id}" data-name="${esc(r.name || r.id)}">移除</button></div>`
+  ).join('') : '<p class="hnote">還沒有其他人員，用上方表單加入。</p>';
+  box.innerHTML = `<p class="acsub">一般人員（${others.length}）</p>${list}<p class="acsub">管理者（${ADMINS.length}）</p>${admins}`;
+  box.querySelectorAll('.del').forEach(btn=> btn.addEventListener('click', async ()=>{
+    const ok = await confirmBox('移除 ' + btn.dataset.name, '移除後 ' + btn.dataset.id + ' 將無法再登入系統，確定要移除嗎？', true);
+    if(!ok) return;
+    try{
+      await FB.removeMember(btn.dataset.id);
+      FB.audit({ type:'member-remove', by: `${USER.name}(${USER.id})`, summary:'移除帳號 ' + btn.dataset.id }).catch(()=>{});
+      toast('已移除 ' + btn.dataset.name);
+      paintAcct();
+    }catch(err){ toast('移除失敗：' + ((err && err.code) || '')); }
+  }));
+}
+function bindAcct(){
+  $('#b-acct').addEventListener('click', ()=>{ acMsg(''); $('#acct').hidden = false; paintAcct(); });
+  $('#ac-close').addEventListener('click', ()=> $('#acct').hidden = true);
+  ['#ac-id','#ac-pw'].forEach(sel=> $(sel).addEventListener('input', e=>{ e.target.value = e.target.value.replace(/\D/g,''); }));
+  $('#ac-go').addEventListener('click', async ()=>{
+    const id = normalizeId($('#ac-id').value), name = $('#ac-name').value.trim(), pw = $('#ac-pw').value;
+    if(!id || $('#ac-id').value.length > 5){ acMsg('請輸入員編（最多 5 位數字）', 'bad'); return; }
+    if(!name){ acMsg('請輸入姓名', 'bad'); return; }
+    if(pw && pw.length < 6){ acMsg('初始密碼至少要 6 位數字', 'bad'); return; }
+    const go = $('#ac-go'); go.disabled = true; acMsg('處理中…');
+    try{
+      const created = await FB.addMember(id, name, pw, `${USER.name}(${USER.id})`);
+      FB.audit({ type:'member-add', by: `${USER.name}(${USER.id})`, summary:'加入帳號 ' + id + ' ' + name }).catch(()=>{});
+      acMsg(created ? `已建立 ${name}（${id}）的帳號並加入名單，請將初始密碼告知本人。`
+                    : pw ? `${id} 的帳號原本就存在，已加入名單；密碼沿用原本的，不是剛剛輸入的。`
+                         : `已將 ${name}（${id}）加入名單。請確認 Firebase 後台已經建好這個帳號。`, 'ok');
+      $('#ac-id').value = ''; $('#ac-name').value = ''; $('#ac-pw').value = '';
+      paintAcct();
+    }catch(err){
+      const code = (err && err.code) || '';
+      acMsg(/weak-password/.test(code) ? '密碼太簡單，請改用至少 6 位數字'
+          : /permission-denied/.test(code) ? '沒有權限：請確認 Firestore 安全規則已更新並發布'
+          : /operation-not-allowed|admin-restricted/.test(code) ? 'Firebase 目前不允許建立帳號：請到 Authentication → 設定 → 使用者動作，打開「啟用建立（註冊）」'
+          : '失敗：' + code, 'bad');
+    }finally{ go.disabled = false; }
+  });
+}
 
 /* ---------- 歷史紀錄匯出 ---------- */
 function bindHist(){
@@ -1887,6 +2034,7 @@ buildShiftSel();
 build();
 bindAdmin();
 bindHist();
+bindAcct();
 show(currentLoc);
 syncHeader();
 addEventListener('resize', syncHeader);
