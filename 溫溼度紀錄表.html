@@ -561,6 +561,66 @@
     border-radius: 12px; padding: 2px 10px; font-size: 11px; font-weight: 700;
   }
 
+  /* ══════════ 系統管理頁面 ══════════ */
+  #adminPage { display:none; }
+  #adminPage.active { display:block; }
+  .adm-wrap { max-width: 1000px; margin: 0 auto; padding: 16px 16px calc(40px + env(safe-area-inset-bottom)); }
+  .adm-topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+  .adm-topbar h2 { font-size:20px; color:var(--gray-900); }
+  .adm-topbar p { font-size:12px; color:var(--gray-500); margin-top:2px; }
+  .adm-back { padding:8px 16px; border-radius:8px; border:1.5px solid var(--teal); background:white; color:var(--teal);
+    font-weight:700; font-size:13px; cursor:pointer; font-family:inherit; }
+  .adm-back:hover { background:var(--teal-light); }
+  .adm-section { background:white; border:1px solid var(--gray-200); border-radius:14px; padding:18px 18px 16px; margin-bottom:14px; box-shadow:var(--shadow); }
+  .adm-section h3 { font-size:16px; color:var(--gray-900); margin-bottom:4px; }
+  .adm-desc { font-size:12px; color:var(--gray-500); margin-bottom:12px; line-height:1.6; }
+  .adm-chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+  .adm-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:8px;
+    background:var(--teal-light); border:1px solid #b7e0d7; font-size:13px; color:var(--gray-900); }
+  .adm-chip .cid { font-weight:700; color:var(--teal); font-variant-numeric:tabular-nums; }
+  .adm-chip button { border:none; background:none; color:var(--gray-500); cursor:pointer; font-size:14px; padding:0 2px; line-height:1; }
+  .adm-chip button:hover { color:var(--red); }
+  .adm-chip .self { font-size:11px; color:var(--gray-500); }
+  .adm-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .adm-input, .adm-select { padding:9px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:14px; font-family:inherit; background:white; color:var(--gray-900); min-width:0; }
+  .adm-input:focus, .adm-select:focus { outline:none; border-color:var(--teal-mid); box-shadow:0 0 0 3px rgba(46,168,150,.15); }
+  .adm-btn { padding:9px 16px; border-radius:8px; border:none; background:var(--teal); color:white; font-weight:700; font-size:13px; cursor:pointer; font-family:inherit; white-space:nowrap; }
+  .adm-btn:hover { background:#156a5c; }
+  .adm-btn:disabled { opacity:.5; cursor:not-allowed; }
+  .adm-btn.ghost { background:white; color:var(--gray-700); border:1.5px solid var(--gray-200); }
+  .adm-btn.ghost:hover { background:var(--gray-50); }
+  .adm-btn.danger { background:white; color:var(--red); border:1.5px solid #fecaca; padding:6px 12px; }
+  .adm-btn.danger:hover { background:var(--red-light); }
+  .adm-btn.small { padding:6px 12px; font-size:12px; }
+  .adm-count { font-size:12px; color:var(--gray-500); margin:12px 0 6px; }
+  .adm-table-wrap { border:1px solid var(--gray-200); border-radius:10px; overflow:auto; max-height:480px; }
+  .adm-table { width:100%; border-collapse:collapse; font-size:13px; min-width:560px; }
+  .adm-table th { position:sticky; top:0; background:var(--gray-50); text-align:left; padding:9px 12px; font-size:12px; color:var(--gray-500); font-weight:700; border-bottom:1px solid var(--gray-200); z-index:1; }
+  .adm-table td { padding:8px 12px; border-bottom:1px solid var(--gray-100); vertical-align:middle; }
+  .adm-table tr:last-child td { border-bottom:none; }
+  #adminPage .adm-table th, #adminPage .adm-table td { text-align:left; height:auto; }
+  .adm-table .cid { font-weight:700; font-variant-numeric:tabular-nums; }
+  .adm-badge { display:inline-block; padding:2px 9px; border-radius:10px; font-size:12px; font-weight:700; }
+  .adm-badge.douliu { background:#e0f2fe; color:#075985; }
+  .adm-badge.huwei  { background:#dcfce7; color:#166534; }
+  .adm-badge.store  { background:#fef3c7; color:#92400e; }
+  .adm-tag { display:inline-block; margin-left:4px; padding:1px 6px; border-radius:6px; font-size:11px; background:var(--gray-100); color:var(--gray-700); }
+  .adm-ops { display:flex; gap:6px; align-items:center; }
+  .adm-ops .adm-select { padding:5px 8px; font-size:12px; }
+  .adm-pending { border:1.5px solid #fdba74; background:#fff7ed; }
+  .adm-pending-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:8px 0; border-bottom:1px dashed #fed7aa; font-size:13px; }
+  .adm-pending-row:last-child { border-bottom:none; }
+  .adm-pending-row .who { flex:1; min-width:140px; }
+  .adm-empty { font-size:13px; color:var(--gray-500); padding:6px 0; }
+  .adm-log { font-size:12px; color:var(--gray-700); line-height:1.5; max-height:260px; overflow:auto; }
+  .adm-log div { padding:5px 0; border-bottom:1px solid var(--gray-100); }
+  .adm-log time { color:var(--gray-500); margin-right:8px; font-variant-numeric:tabular-nums; }
+  .adm-details summary { cursor:pointer; font-size:12px; color:var(--gray-500); margin-top:8px; }
+  @media (max-width: 600px) {
+    .adm-row > .adm-input, .adm-row > .adm-select { flex:1 1 100%; }
+    .adm-row > .adm-btn { flex:1 1 auto; }
+  }
+
   /* Toast */
   .toast {
     position: fixed; top: 50%; left: 50%;
@@ -737,6 +797,23 @@
     const entries = await window.fetchScheduleMonth(monthKey);
     return entries[employeeId]?.[dayKey] ?? null;
   };
+
+  // 讀取全院「員編→姓名」對照表（唯讀），只用來更新姓名，不會動到院區分類設定
+  let directoryCache = null;
+  window.fetchEmployeeDirectory = async function() {
+    if(directoryCache) return directoryCache;
+    try {
+      await signInAnonymously(scheduleAuth);
+      const ref = doc(scheduleDb, "artifacts", "pharmacy-system-v1-8", "public", "data", "roster", "directory");
+      const snap = await getDoc(ref);
+      directoryCache = snap.exists() ? (snap.data().entries || {}) : {};
+      return directoryCache;
+    } catch(e) {
+      console.error('員工姓名目錄讀取失敗（將沿用本機備用姓名，不影響登記功能）：', e);
+      directoryCache = {};
+      return {};
+    }
+  };
 </script>
 <script type="module">
   // ══════════ 溫溼度登記系統自己的雲端資料庫（讀寫，取代瀏覽器本機儲存）══════════
@@ -799,6 +876,7 @@
   <div class="header-user" id="headerUser" style="display:none">
     <div class="avatar" id="headerAvatar" style="display:none"></div>
     <span id="headerName"></span>
+    <button class="logout-btn" id="adminBtn" style="display:none" onclick="openAdminPage()">⚙️ 系統管理</button>
     <button class="logout-btn" onclick="logout()">登出</button>
   </div>
 </header>
@@ -893,6 +971,9 @@
 
       <!-- 依班表顯示今日應登記人員（唯讀查詢班表系統 Firestore） -->
       <div id="onDutyStaffBox" style="display:none;margin-bottom:8px;padding:8px 12px;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:8px;font-size:12px;color:#1e40af;"></div>
+
+      <!-- 新進人員提醒：班表上有應登記班別、但尚未加入本系統名單的人（只顯示給管理人／組長） -->
+      <div id="newStaffAlertBox" style="display:none;margin-bottom:8px;padding:8px 12px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:8px;font-size:12px;color:#9a3412;line-height:1.6;"></div>
 
       <div id="stickyFields" style="display:none;padding:6px 0 4px;border-top:1px solid var(--gray-100);margin-top:2px;"></div>
 
@@ -1002,6 +1083,80 @@
       <button class="modal-close" onclick="closeAbnormalModal()">✕</button>
     </div>
     <div id="abnormalModalBody"></div>
+  </div>
+</div>
+
+<!-- ══════════ 系統管理（只有管理員看得到）══════════ -->
+<div id="adminPage">
+  <div class="adm-wrap">
+    <div class="adm-topbar">
+      <div>
+        <h2>⚙️ 系統管理</h2>
+        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。</p>
+      </div>
+      <button class="adm-back" onclick="closeAdminPage()">← 返回登記</button>
+    </div>
+
+    <!-- 待處理的新進人員 -->
+    <div class="adm-section adm-pending" id="admPendingSection" style="display:none">
+      <h3>🔔 待處理的新進人員</h3>
+      <div class="adm-desc">本月班表上有應登記班別（B8／SD／HD），但還不在員工名單裡的人。選好院區按「加入」；確定不需要登記的人按「不需加入」，之後就不會再提醒。</div>
+      <div id="admPendingList"></div>
+    </div>
+
+    <!-- 管理員 -->
+    <div class="adm-section">
+      <h3>🔐 管理員</h3>
+      <div class="adm-desc">管理員可以進入這個頁面管理名單，也可以解除自己院區已鎖定的週核定／月底核定。為避免沒人能管理，不能移除自己，也不能移除最後一位管理員。</div>
+      <div class="adm-chips" id="admAdminChips"></div>
+      <div class="adm-row">
+        <input class="adm-input" id="admAdminInput" placeholder="輸入員編新增管理員（如 Y12345）" style="flex:1 1 220px"
+          onkeydown="if(event.key==='Enter') adminAddAdmin()">
+        <button class="adm-btn" onclick="adminAddAdmin()">＋ 新增管理員</button>
+      </div>
+    </div>
+
+    <!-- 員工名單 -->
+    <div class="adm-section">
+      <h3>👥 員工名單</h3>
+      <div class="adm-desc">名單上的人才能登入，登入後只能登記所屬院區。輸入員編後會自動從班表帶入姓名。</div>
+      <div class="adm-row">
+        <input class="adm-input" id="admNewId" placeholder="員工編號（如 Y12345）" maxlength="6" style="flex:1 1 150px"
+          oninput="this.value=this.value.toUpperCase();adminAutofillName()">
+        <input class="adm-input" id="admNewName" placeholder="姓名" style="flex:1 1 120px">
+        <select class="adm-select" id="admNewCampus" style="flex:0 1 130px">
+          <option value="">選擇院區</option>
+          <option value="douliu">斗六</option>
+          <option value="huwei">虎尾</option>
+          <option value="store">藥庫</option>
+        </select>
+        <button class="adm-btn" onclick="adminAddStaff()">＋ 新增員工</button>
+      </div>
+      <div class="adm-row" style="margin-top:10px">
+        <input class="adm-input" id="admSearch" placeholder="搜尋員編或姓名" style="flex:1" oninput="renderAdminStaffTable()">
+        <select class="adm-select" id="admFilterCampus" onchange="renderAdminStaffTable()">
+          <option value="">全部院區</option>
+          <option value="douliu">斗六</option>
+          <option value="huwei">虎尾</option>
+          <option value="store">藥庫</option>
+        </select>
+      </div>
+      <div class="adm-count" id="admStaffCount"></div>
+      <div class="adm-table-wrap">
+        <table class="adm-table">
+          <thead><tr><th>員工編號</th><th>姓名</th><th>院區</th><th>操作</th></tr></thead>
+          <tbody id="admStaffBody"></tbody>
+        </table>
+      </div>
+      <div class="adm-desc" style="margin-top:10px;margin-bottom:0">組長、週檢核者的指定目前仍由系統維護者設定，在這裡改院區或刪除他們時會先提醒。</div>
+    </div>
+
+    <!-- 異動紀錄 -->
+    <div class="adm-section">
+      <h3>📝 異動紀錄</h3>
+      <div class="adm-desc">最近的名單異動，記錄是誰在什麼時間做了什麼。</div>
+      <div class="adm-log" id="admLog"></div>
+    </div>
   </div>
 </div>
 
@@ -1155,22 +1310,64 @@ const CAMPUS_ROLES = {
   huwei:  { supervisorId:'Y00230', supervisorName:'陳宜屏', checkerId:'Y01644', checkerName:'林家薐' },
   store:  { supervisorId:'Y00287', supervisorName:'吳秋宜', checkerId:'Y00955', checkerName:'陳盈君' },
 };
-// 各院區管理人：可跨越週/月鎖定，緊急解鎖該院區的資料（不需要是本人組長/週檢核者）
-const CAMPUS_ADMINS = {
-  douliu: ['Y01643', 'Y06100', 'Y00326'], // 謝姍珊、陳麗珺、沈倩如
-  huwei:  [],
-  store:  [],
-};
+// ══════════ 系統管理設定（管理員、員工名單；存在雲端 templog 集合的 config_* 文件）══════════
+// 程式碼裡的 STAFF 只是「雲端還沒有設定時」的初始名單；管理員第一次在系統管理頁面修改後，
+// 之後一律以雲端的 config_staff 為準。
+const STAFF_DEFAULT = STAFF.map(s => ({ id:s.id, name:s.name, campus:s.campus }));
+const ADMIN_DEFAULT_IDS = ['Y01643', 'Y06100', 'Y00326']; // 謝姍珊、陳麗珺、沈倩如（雲端尚無設定時使用）
+let ADMIN_IDS = ADMIN_DEFAULT_IDS.slice();
+let STAFF_IGNORE_IDS = [];   // 確定不需加入的員編（不再出現在新進人員提醒）
+const CFG_STAFF_DOC = 'config_staff';
+const CFG_ADMIN_DOC = 'config_admins';
+const CFG_AUDIT_DOC = 'config_audit';
+let cloudConfigPromise = null;
+
+function applyStaffConfig(data) {
+  if(!data || !Array.isArray(data.list)) return;
+  STAFF.splice(0, STAFF.length, ...data.list.map(s => ({ id:s.id, name:s.name, campus:s.campus })));
+  STAFF_IGNORE_IDS = Array.isArray(data.ignoreIds) ? data.ignoreIds.slice() : [];
+}
+function applyAdminConfig(data) {
+  if(data && Array.isArray(data.ids) && data.ids.length) ADMIN_IDS = data.ids.slice();
+}
+
+// 從雲端讀取最新的員工名單與管理員設定（有逾時上限；讀不到就沿用目前的名單）
+async function loadCloudConfig() {
+  if(!window._templogGet) return false;
+  const timeout = new Promise(resolve => setTimeout(() => resolve('timeout'), 8000));
+  try {
+    const res = await Promise.race([
+      Promise.all([window._templogGet(CFG_STAFF_DOC), window._templogGet(CFG_ADMIN_DOC)]),
+      timeout
+    ]);
+    if(res === 'timeout') throw new Error('讀取逾時');
+    const [staffCfg, adminCfg] = res;
+    if(staffCfg) applyStaffConfig(staffCfg);
+    applyAdminConfig(adminCfg);
+    await syncStaffNamesFromSchedule();
+    return true;
+  } catch(e) {
+    console.error('系統管理設定讀取失敗（暫時沿用目前名單）：', e);
+    return false;
+  }
+}
+// 開機時只讀一次；失敗的話下次登入會再試
+function ensureCloudConfig() {
+  if(!cloudConfigPromise) {
+    cloudConfigPromise = loadCloudConfig().then(ok => { if(!ok) cloudConfigPromise = null; return ok; });
+  }
+  return cloudConfigPromise;
+}
 function getCampusRoles(campus) {
   campus = campus || (currentArea ? currentArea.split('_')[0] : 'douliu');
   return CAMPUS_ROLES[campus] || CAMPUS_ROLES.douliu;
 }
 function isSupervisor(id, campus) { return !!id && id === getCampusRoles(campus).supervisorId; }
 function isChecker(id, campus)    { return !!id && id === getCampusRoles(campus).checkerId; }
+// 管理員是全系統共用的名單；因為每個人只看得到自己院區的表單，解鎖權限自然只作用在自己院區
 function isAdmin(id, campus) {
   if(!id) return false;
-  campus = campus || (currentArea ? currentArea.split('_')[0] : 'douliu');
-  return (CAMPUS_ADMINS[campus] || []).includes(id);
+  return ADMIN_IDS.includes(id);
 }
 
 // ══════════ STATE ══════════
@@ -1331,30 +1528,15 @@ function renderSupervisor() {
     return;
   }
 
-  // 檢查全月是否完整登記（只檢查到今天或月底，未來日期不計）
-  const days = daysInMonth(currentMonth);
-  const data = logData[currentMonth] || {};
-  const now = new Date();
-  const nowYM = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-  const isCurrentMonth = currentMonth === nowYM;
-  const checkUpTo = isCurrentMonth ? now.getDate() : days;
-  const missing = [];
-  for(let d = 1; d <= checkUpTo; d++) {
-    const am = data[d]?.AM;
-    const pm = data[d]?.PM;
-    if(!am?.signedBy) missing.push(`${String(d).padStart(2,'0')}日上午`);
-    if(!pm?.signedBy) missing.push(`${String(d).padStart(2,'0')}日下午`);
-  }
-
-  if(missing.length > 0) {
+  // 月底核定的開放條件：當月已結束、全院區每個部門資料填齊、每一週都已完成週檢核
+  const block = getSupervisorBlock();
+  if(block) {
     body.innerHTML = `
       <div class="supervisor-status-unsigned">
         <span style="font-size:22px">🔒</span>
         <div style="flex:1">
           <div style="font-size:14px;font-weight:600;color:var(--gray-500)">尚未開放核定</div>
-          <div style="font-size:12px;color:var(--gray-400);margin-top:4px">
-            本月尚有 <strong style="color:var(--red)">${missing.length}</strong> 個時段未完成登記，全部完成後才能核定
-          </div>
+          <div style="font-size:12px;color:var(--gray-400);margin-top:4px;line-height:1.7">${block.html}</div>
         </div>
       </div>`;
   } else {
@@ -1382,12 +1564,69 @@ function renderSupervisor() {
       </div>`;
   }
 }
+// ══════════ 月底核定開放條件 ══════════
+// 1. 當月已結束  2. 同院區每個部門整月上下午都已登記  3. 同院區每個部門每一週都已完成週檢核
+// 4. 本月每一筆異常（溫度／最高溫度 >25℃ 或溼度 ≥66%）都已由組長確認
+// 回傳 null 代表可以核定；否則回傳 { msg（提示用）, html（畫面用）}
+function getSupervisorBlock() {
+  const campus = currentArea.split('_')[0];
+  const depts = CAMPUS_DEPTS[campus] || [];
+  const days = daysInMonth(currentMonth);
+  const weeks = Math.ceil(days / 7);
+  const now = new Date();
+  const nowYM = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  const monthEnded = currentMonth < nowYM;
+  const checkUpTo = currentMonth === nowYM ? now.getDate() : days;
+
+  let missingSlots = 0;
+  const unsignedWeeks = [];
+  const unconfirmedAbn = [];
+  depts.forEach(dept => {
+    const area = campus + '_' + dept.key;
+    let log = {}, ck = {};
+    try { const r = LS.getItem('templog_' + area + '_' + currentMonth); if(r) log = JSON.parse(r); } catch(e) {}
+    try { const r = LS.getItem('checker_' + area + '_' + currentMonth); if(r) ck = JSON.parse(r); } catch(e) {}
+    for(let d = 1; d <= checkUpTo; d++) {
+      if(!log[d]?.AM?.signedBy) missingSlots++;
+      if(!log[d]?.PM?.signedBy) missingSlots++;
+    }
+    Object.keys(log).sort((a,b)=>Number(a)-Number(b)).forEach(d => {
+      ['AM','PM'].forEach(s => {
+        const e = log[d]?.[s];
+        if(!e) return;
+        const abn = (e.temp && parseFloat(e.temp) > 25) || (e.maxTemp && parseFloat(e.maxTemp) > 25) || (e.humid && parseFloat(e.humid) >= 66);
+        if(abn && !e.confirmedBy) unconfirmedAbn.push(`${dept.label} ${String(d).padStart(2,'0')}日${s==='AM'?'上午':'下午'}`);
+      });
+    });
+    const lastWeek = monthEnded ? weeks : Math.floor(checkUpTo / 7); // 當月只列出已經結束的週
+    const miss = [];
+    for(let w = 1; w <= Math.min(lastWeek, weeks); w++) if(!ck[w]) miss.push(w);
+    if(miss.length) unsignedWeeks.push(`${dept.label} 第 ${miss.join('、')} 週`);
+  });
+
+  const reasons = [];
+  if(!monthEnded) reasons.push('本月尚未結束，需等月底過後（下個月起）才能核定');
+  if(missingSlots > 0) reasons.push(`尚有 <strong style="color:var(--red)">${missingSlots}</strong> 個時段未完成登記`);
+  if(unconfirmedAbn.length) {
+    const shown = unconfirmedAbn.slice(0, 6).join('、') + (unconfirmedAbn.length > 6 ? ` 等 ${unconfirmedAbn.length} 筆` : '');
+    reasons.push(`尚有 <strong style="color:var(--red)">${unconfirmedAbn.length}</strong> 筆異常未經組長確認：${shown}（請在下方「異常處理記錄」按「確認」）`);
+  }
+  if(unsignedWeeks.length) reasons.push(`尚未完成週檢核：<strong style="color:var(--red)">${unsignedWeeks.join('；')}</strong>`);
+  if(!reasons.length) return null;
+  return {
+    msg: reasons.map(r => r.replace(/<[^>]+>/g, '')).join('；'),
+    html: reasons.map(r => '・' + r).join('<br>') + '<br>以上全部完成後，組長才能進行月底核定'
+  };
+}
+
 function signSupervisor() {
   if(!isSupervisor(currentUser?.id)) {
     const roles = getCampusRoles();
     showToast(`僅組長（${roles.supervisorName}）可進行核定`, 'error');
     return;
   }
+  const block = getSupervisorBlock();
+  if(block) { showToast('尚未開放核定：' + block.msg, 'warn'); renderSupervisor(); return; }
   const now = new Date();
   const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   const comment = (document.getElementById('supervisorComment')?.value || '').trim();
@@ -1487,6 +1726,17 @@ function clearChecker(week, areaKey) {
     loadData(currentMonth);
     return;
   }
+  // 月底已核定時，不能單獨解除週檢核（否則會出現「月已核定、週卻沒核定」的矛盾）
+  const svCampus = currentArea.split('_')[0];
+  const svFirstDept = (CAMPUS_DEPTS[svCampus] || [])[0];
+  let monthSigned = false;
+  try { monthSigned = !!(svFirstDept && LS.getItem('supervisor_' + svCampus + '_' + svFirstDept.key + '_' + currentMonth)); } catch(e) {}
+  if(monthSigned) {
+    currentArea = savedArea;
+    loadData(currentMonth);
+    showToast('本月已完成月底核定，請先由組長或管理員按「重新核定」解除月底核定，再重簽週檢核', 'warn');
+    return;
+  }
   if(!checkerData[currentMonth]) { currentArea = savedArea; loadData(currentMonth); return; }
   delete checkerData[currentMonth][week];
   saveCheckers();
@@ -1545,6 +1795,9 @@ window.onload = function() {
   // 每次打開系統都從登入畫面開始，不會自動沿用上次的登入狀態
   try { LS.removeItem('templog_session'); } catch(e) {}
   document.getElementById('loginIdInput').focus();
+
+  // 背景讀取雲端員工名單／管理員設定，接著同步班表系統最新姓名（不卡登入畫面，失敗也不影響登記）
+  ensureCloudConfig().then(ok => { if(!ok) syncStaffNamesFromSchedule(); });
 };
 
 // Live lookup as user types employee ID
@@ -1584,13 +1837,19 @@ async function doLogin() {
   const raw = document.getElementById('loginIdInput').value.trim();
   const id = ('Y' + raw).toUpperCase();
   const err = document.getElementById('loginError');
-  const s = STAFF.find(x => x.id === id);
-  if(!s) { err.style.display='block'; document.getElementById('loginIdInput').focus(); return; }
-  err.style.display='none';
-
   const loginBtn = document.querySelector('.login-btn');
   const originalBtnText = loginBtn ? loginBtn.textContent : '';
   if(loginBtn) { loginBtn.textContent = '同步雲端資料中...'; loginBtn.disabled = true; }
+
+  // 每次登入都重新讀取雲端最新的員工名單（其他管理員可能剛新增／刪除人員），再判斷這個員編能不能登入
+  cloudConfigPromise = null;
+  await ensureCloudConfig();
+  const s = STAFF.find(x => x.id === id);
+  if(!s) {
+    if(loginBtn) { loginBtn.textContent = originalBtnText; loginBtn.disabled = false; }
+    err.style.display='block'; document.getElementById('loginIdInput').focus(); return;
+  }
+  err.style.display='none';
 
   await initCloudCache();
 
@@ -1609,6 +1868,12 @@ function logout() {
   document.getElementById('loginWrap').style.display='flex';
   document.getElementById('appPage').classList.remove('active');
   document.getElementById('headerUser').style.display='none';
+  const adminPageEl = document.getElementById('adminPage');
+  if(adminPageEl) adminPageEl.classList.remove('active');
+  const adminBtnEl = document.getElementById('adminBtn');
+  if(adminBtnEl) adminBtnEl.style.display = 'none';
+  const fixedBarEl = document.getElementById('fixedSubmitBar');
+  if(fixedBarEl) fixedBarEl.style.display = 'none';
   // 完全清除上一位使用者殘留的資訊，避免看得到員編／姓名／登入院區
   document.getElementById('headerSub').textContent = '國立臺灣大學醫學院附設醫院雲林分院－藥劑部';
   const idInput = document.getElementById('loginIdInput');
@@ -1647,330 +1912,11 @@ function showApp() {
   document.getElementById('headerAvatar').textContent = currentUser.name[0];
   document.getElementById('headerName').textContent = currentUser.name + ' (' + currentUser.id + ')';
   document.getElementById('headerSub').textContent = '國立臺灣大學醫學院附設醫院雲林分院－藥劑部【斗六 門診藥局】';
+  const adminBtnEl = document.getElementById('adminBtn');
+  if(adminBtnEl) adminBtnEl.style.display = isAdmin(currentUser.id) ? '' : 'none';
+  const adminPageEl = document.getElementById('adminPage');
+  if(adminPageEl) adminPageEl.classList.remove('active');
 
-  // ── 示範資料自動產生機制：正式接上真正的雲端資料庫後，已永久停用 ──
-  // 原本這段會在「版本號變動」時，整批清除 templog_/checker_/supervisor_ 開頭的資料、
-  // 重新產生一批測試用的示範資料。這在本機測試階段很方便，但正式接上真實資料庫後，
-  // 這個機制本身就是風險（未來只要改一次版本號，就會把藥師登記的真實資料整批清除）。
-  // 依你的要求，資料庫從空白開始，之後每一筆都只會是藥師實際登記的資料，
-  // 所以這裡永遠不會觸發，下面 if(needsDemoRegen) 整段都不會執行。
-  const needsDemoRegen = false;
-
-  // submit-row 已整合進 todayCard，不需額外控制
-
-  if(needsDemoRegen) {
-  function buildDemo(seed, days, campus) {
-    days = days || 30;
-    const pool = STAFF.filter(s => s.campus === campus).map(s => s.name);
-    const signers = pool.length ? pool : ['謝姍珊','林家薐','林淑貞','陳麗珺','李凱芸','黃詩婷','蔡孟夏','王貞予','林亭君','吳采芳'];
-    const demo = {};
-    for(let d=1; d<=days; d++) {
-      const amTemp  = (22 + ((d*seed)%18)/10).toFixed(1);
-      const amMax   = (parseFloat(amTemp) + 0.3 + (d%3)*0.2).toFixed(1);
-      const amH = String(7+(d%2)).padStart(2,'0'), amM = String((d*3)%60).padStart(2,'0');
-      const pmTemp  = (22.5 + ((d*seed+5)%16)/10).toFixed(1);
-      const pmMax   = (parseFloat(pmTemp) + 0.3 + (d%2)*0.2).toFixed(1);
-      const pmH = String(12+(d%3)).padStart(2,'0'), pmM = String((d*7)%60).padStart(2,'0');
-      const amHumid = 55 + ((d+seed)%9);
-      const pmHumid = 56 + ((d+seed+2)%9);
-      demo[d] = {
-        AM:{temp:amTemp,maxTemp:amMax,humid:String(amHumid),
-            signedBy:signers[(d+seed)%signers.length],signedId:'',time:`${amH}:${amM}`,
-            reason:'',resolved:'',handling:'',recovery:''},
-        PM:{temp:pmTemp,maxTemp:pmMax,humid:String(pmHumid),
-            signedBy:signers[(d+seed+4)%signers.length],signedId:'',time:`${pmH}:${pmM}`,
-            reason:'',resolved:'',handling:'',recovery:''}
-      };
-    }
-    return demo;
-  }
-
-  // 各院區示範資料共用的簽名圖產生器（依姓氏顯示，較有真實感）
-  function makeSignaturePhoto(text) {
-    const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="80" style="background:#fff;border:1px solid #ccc;border-radius:4px"><text x="10" y="55" font-family="serif" font-size="36" fill="#1a3a2e" transform="rotate(-5,100,40)">${text}</text></svg>`;
-    return 'data:image/svg+xml;base64,' + btoa(svgStr);
-  }
-
-  // ── 2026-06 示範資料（強制重建，含週檢核＋組長核定；依各院區實際組長／週檢核者設定）──
-  const cfmBy6 = {
-    douliu: {name:'陳麗珺', id:'Y06100', time:'2026-06-30'},
-    huwei:  {name:'陳宜屏', id:'Y00230', time:'2026-06-30'},
-    store:  {name:'吳秋宜', id:'Y00287', time:'2026-06-30'},
-  };
-  const chkBy6 = {
-    douliu: {name:'沈倩如', id:'Y00326', time:'2026-06-30'},
-    huwei:  {name:'林家薐', id:'Y01644', time:'2026-06-30'},
-    store:  {name:'陳盈君', id:'Y00955', time:'2026-06-30'},
-  };
-  const svBy6 = {
-    douliu: {name:'陳麗珺', id:'Y06100', time:'2026-06-30', comment:'本月溫溼度管控正常，異常均已妥善處理。'},
-    huwei:  {name:'陳宜屏', id:'Y00230', time:'2026-06-30', comment:'本月溫溼度管控正常，異常均已妥善處理。'},
-    store:  {name:'吳秋宜', id:'Y00287', time:'2026-06-30', comment:'本月溫溼度管控正常，異常均已妥善處理。'},
-  };
-
-  const areas06 = [
-    { key:'templog_douliu_OPD_2026-06',   ck:'checker_douliu_OPD_2026-06',   sv:'supervisor_douliu_OPD_2026-06', campus:'douliu',
-      build: () => {
-        const d = buildDemo(1, 30, 'douliu');
-        d[12].AM.temp='26.2'; d[12].AM.maxTemp='26.8';
-        d[12].AM.reason='空調濾網阻塞，冷房效果下降';
-        d[12].AM.resolved='Y'; d[12].AM.handling='清潔空調濾網，補充冷媒';
-        d[12].AM.recovery='24.9'; d[12].AM.confirmedBy=cfmBy6.douliu;
-        return d;
-      }
-    },
-    { key:'templog_douliu_IPD_2026-06',   ck:'checker_douliu_IPD_2026-06',   sv:'supervisor_douliu_IPD_2026-06', campus:'douliu',
-      build: () => {
-        const d = buildDemo(3, 30, 'douliu');
-        d[18].AM.humid='68';
-        d[18].AM.reason='連日梅雨，外部溼度偏高影響室內';
-        d[18].AM.resolved='Y'; d[18].AM.handling='開啟除濕機持續運轉2小時';
-        d[18].AM.recovery='62'; d[18].AM.confirmedBy=cfmBy6.douliu;
-        return d;
-      }
-    },
-    { key:'templog_store_STORAGE_2026-06', ck:'checker_store_STORAGE_2026-06', sv:'supervisor_store_STORAGE_2026-06', campus:'store',
-      build: () => {
-        const d = buildDemo(2, 30, 'store');
-        d[7].PM.temp='26.0'; d[7].PM.maxTemp='26.3';
-        d[7].PM.reason='西曬導致藥庫溫度上升';
-        d[7].PM.resolved='Y'; d[7].PM.handling='加裝遮光簾，開啟備用冷氣';
-        d[7].PM.recovery='24.8'; d[7].PM.confirmedBy=cfmBy6.store;
-        return d;
-      }
-    },
-    { key:'templog_store_TRIAL_2026-06', ck:'checker_store_TRIAL_2026-06', sv:'supervisor_store_TRIAL_2026-06', campus:'store',
-      build: () => {
-        const d = buildDemo(6, 30, 'store');
-        d[16].AM.humid='67';
-        d[16].AM.reason='試驗用藥區除濕設備異常';
-        d[16].AM.resolved='Y'; d[16].AM.handling='更換除濕機備品，加強監控';
-        d[16].AM.recovery='63'; d[16].AM.confirmedBy=cfmBy6.store;
-        return d;
-      }
-    },
-    { key:'templog_huwei_OPD_2026-06',    ck:'checker_huwei_OPD_2026-06',    sv:'supervisor_huwei_OPD_2026-06', campus:'huwei',
-      build: () => {
-        const d = buildDemo(5, 30, 'huwei');
-        d[24].PM.humid='67';
-        d[24].PM.reason='午後雷陣雨，外部溼度急升';
-        d[24].PM.resolved='Y'; d[24].PM.handling='關閉通風口，啟動除濕機';
-        d[24].PM.recovery='63'; d[24].PM.confirmedBy=cfmBy6.huwei;
-        return d;
-      }
-    },
-    { key:'templog_huwei_IPD_2026-06',    ck:'checker_huwei_IPD_2026-06',    sv:'supervisor_huwei_IPD_2026-06', campus:'huwei',
-      build: () => {
-        const d = buildDemo(4, 30, 'huwei');
-        d[15].AM.temp='26.1'; d[15].AM.maxTemp='26.4';
-        d[15].AM.reason='假日空調排程未啟動，室溫偏高';
-        d[15].AM.resolved='Y'; d[15].AM.handling='手動啟動空調，設定22℃';
-        d[15].AM.recovery='24.8'; d[15].AM.confirmedBy=cfmBy6.huwei;
-        return d;
-      }
-    },
-  ];
-  areas06.forEach(({key, ck, sv, campus, build}) => {
-    try { LS.removeItem(key); LS.removeItem(ck); LS.removeItem(sv); } catch(e){}
-    try { LS.setItem(key, JSON.stringify(build())); } catch(e){}
-    try { LS.setItem(ck, JSON.stringify({1:chkBy6[campus],2:chkBy6[campus],3:chkBy6[campus],4:chkBy6[campus],5:chkBy6[campus]})); } catch(e){}
-    try { LS.setItem(sv, JSON.stringify(svBy6[campus])); } catch(e){}
-  });
-
-  // ── 2026-05（民國115年5月）全區域示範資料（依各院區實際組長／週檢核者設定）──
-  const cfmBy5 = {
-    douliu: {name:'陳麗珺', id:'Y06100', time:'2026-05-31'},
-    huwei:  {name:'陳宜屏', id:'Y00230', time:'2026-05-31'},
-    store:  {name:'吳秋宜', id:'Y00287', time:'2026-05-31'},
-  };
-  const chkBy5 = {
-    douliu: {name:'沈倩如', id:'Y00326', time:'2026-05-31'},
-    huwei:  {name:'林家薐', id:'Y01644', time:'2026-05-31'},
-    store:  {name:'陳盈君', id:'Y00955', time:'2026-05-31'},
-  };
-  const svBy5 = {
-    douliu: {name:'陳麗珺', id:'Y06100', time:'2026-05-31', comment:'本月溫溼度管控正常，異常均已妥善處理。'},
-    huwei:  {name:'陳宜屏', id:'Y00230', time:'2026-05-31', comment:'本月溫溼度管控正常，異常均已妥善處理。'},
-    store:  {name:'吳秋宜', id:'Y00287', time:'2026-05-31', comment:'本月溫溼度管控正常，異常均已妥善處理。'},
-  };
-
-  const areas05 = [
-    { key:'templog_douliu_OPD_2026-05', ck:'checker_douliu_OPD_2026-05', sv:'supervisor_douliu_OPD_2026-05', campus:'douliu',
-      build: () => {
-        const d = buildDemo(7, 31, 'douliu');
-        // 溫度異常（4筆，皆已確認）
-        d[7].AM.temp='25.6'; d[7].AM.maxTemp='25.8';
-        d[7].AM.reason='空調壞掉';
-        d[7].AM.resolved='Y'; d[7].AM.handling='請廠商維修空調，清潔濾網';
-        d[7].AM.recovery='24.8'; d[7].AM.confirmedBy=cfmBy5.douliu;
-        d[10].AM.temp='25.6'; d[10].AM.maxTemp='25.8';
-        d[10].AM.reason='外氣溫度偏高，冷房效果不足';
-        d[10].AM.resolved='Y'; d[10].AM.handling='調低空調設定溫度至20℃';
-        d[10].AM.recovery='24.9'; d[10].AM.confirmedBy=cfmBy5.douliu;
-        d[17].AM.temp='25.6'; d[17].AM.maxTemp='25.8';
-        d[17].AM.reason='天氣太熱 空調不冷';
-        d[17].AM.resolved='Y'; d[17].AM.handling='調降空調溫度設定，加強通風';
-        d[17].AM.recovery='24.7'; d[17].AM.confirmedBy=cfmBy5.douliu;
-        d[21].AM.temp='25.6'; d[21].AM.maxTemp='25.8';
-        d[21].AM.reason='午間人員進出頻繁，冷氣流失';
-        d[21].AM.resolved='Y'; d[21].AM.handling='關閉通道門扉，提高冷氣效率';
-        d[21].AM.recovery='24.8'; d[21].AM.confirmedBy=cfmBy5.douliu;
-        return d;
-      }
-    },
-    { key:'templog_douliu_IPD_2026-05', ck:'checker_douliu_IPD_2026-05', sv:'supervisor_douliu_IPD_2026-05', campus:'douliu',
-      build: () => {
-        const d = buildDemo(9, 31, 'douliu');
-        // 溼度異常（已確認）
-        d[14].PM.humid='69';
-        d[14].PM.reason='連日降雨，外部溼度偏高';
-        d[14].PM.resolved='Y'; d[14].PM.handling='開啟除濕機，加強通風2小時';
-        d[14].PM.recovery='63'; d[14].PM.confirmedBy=cfmBy5.douliu;
-        return d;
-      }
-    },
-    { key:'templog_store_STORAGE_2026-05', ck:'checker_store_STORAGE_2026-05', sv:'supervisor_store_STORAGE_2026-05', campus:'store',
-      build: () => {
-        const d = buildDemo(11, 31, 'store');
-        // 溫度異常（已確認）
-        d[9].PM.temp='25.4'; d[9].PM.maxTemp='25.7';
-        d[9].PM.reason='西曬導致藥庫溫度上升';
-        d[9].PM.resolved='Y'; d[9].PM.handling='加裝遮光簾，開啟備用冷氣';
-        d[9].PM.recovery='24.6'; d[9].PM.confirmedBy=cfmBy5.store;
-        return d;
-      }
-    },
-    { key:'templog_store_TRIAL_2026-05', ck:'checker_store_TRIAL_2026-05', sv:'supervisor_store_TRIAL_2026-05', campus:'store',
-      build: () => {
-        const d = buildDemo(17, 31, 'store');
-        // 溼度異常（已確認）
-        d[23].AM.humid='68';
-        d[23].AM.reason='試驗用藥區溼度偏高，影響藥品保存條件';
-        d[23].AM.resolved='Y'; d[23].AM.handling='開啟除濕機，加強巡檢頻率';
-        d[23].AM.recovery='63'; d[23].AM.confirmedBy=cfmBy5.store;
-        return d;
-      }
-    },
-    { key:'templog_huwei_OPD_2026-05', ck:'checker_huwei_OPD_2026-05', sv:'supervisor_huwei_OPD_2026-05', campus:'huwei',
-      build: () => {
-        const d = buildDemo(13, 31, 'huwei');
-        // 溼度異常（已確認）
-        d[20].AM.humid='67';
-        d[20].AM.reason='空調除濕功能異常';
-        d[20].AM.resolved='Y'; d[20].AM.handling='請廠商檢修除濕系統';
-        d[20].AM.recovery='64'; d[20].AM.confirmedBy=cfmBy5.huwei;
-        return d;
-      }
-    },
-    { key:'templog_huwei_IPD_2026-05', ck:'checker_huwei_IPD_2026-05', sv:'supervisor_huwei_IPD_2026-05', campus:'huwei',
-      build: () => {
-        const d = buildDemo(15, 31, 'huwei');
-        // 溫度異常（尚未確認，測試「待組長確認」狀態）
-        d[25].PM.temp='25.5'; d[25].PM.maxTemp='25.9';
-        d[25].PM.reason='空調濾網阻塞';
-        d[25].PM.resolved='Y'; d[25].PM.handling='已排定廠商清潔濾網';
-        d[25].PM.recovery='24.9';
-        return d;
-      }
-    },
-  ];
-  areas05.forEach(({key, ck, sv, campus, build}) => {
-    try { LS.removeItem(key); LS.removeItem(ck); LS.removeItem(sv); } catch(e){}
-    try { LS.setItem(key, JSON.stringify(build())); } catch(e){}
-    try { LS.setItem(ck, JSON.stringify({1:chkBy5[campus],2:chkBy5[campus],3:chkBy5[campus],4:chkBy5[campus],5:chkBy5[campus]})); } catch(e){}
-    try { LS.setItem(sv, JSON.stringify(svBy5[campus])); } catch(e){}
-  });
-
-  // ── 2026-07（民國115年7月）全區域示範資料（依各院區實際組長／週檢核者設定）──
-  const cfmBy7 = {
-    douliu: {name:'陳麗珺', id:'Y06100', time:'2026-07-03'},
-    huwei:  {name:'陳宜屏', id:'Y00230', time:'2026-07-03'},
-    store:  {name:'吳秋宜', id:'Y00287', time:'2026-07-03'},
-  };
-  const chkBy7 = {
-    douliu: {name:'沈倩如', id:'Y00326', time:'2026-07-03'},
-    huwei:  {name:'林家薐', id:'Y01644', time:'2026-07-03'},
-    store:  {name:'陳盈君', id:'Y00955', time:'2026-07-03'},
-  };
-  // 範例簽名圖（依各院區組長姓氏產生，較有真實感）
-  const svBy7 = {
-    douliu: {name:'陳麗珺', id:'Y06100', time:'2026-07-03', comment:'本月溫溼度管控正常，異常均已妥善處理。', photo: makeSignaturePhoto('Chen')},
-    huwei:  {name:'陳宜屏', id:'Y00230', time:'2026-07-03', comment:'本月溫溼度管控正常，異常均已妥善處理。', photo: makeSignaturePhoto('Chen')},
-    store:  {name:'吳秋宜', id:'Y00287', time:'2026-07-03', comment:'本月溫溼度管控正常，異常均已妥善處理。', photo: makeSignaturePhoto('Wu')},
-  };
-
-  const areas07 = [
-    { key:'templog_douliu_OPD_2026-07',   ck:'checker_douliu_OPD_2026-07',   sv:'supervisor_douliu_OPD_2026-07', campus:'douliu',
-      build: () => {
-        const d = buildDemo(2, 31, 'douliu');
-        // 溫度異常（已確認）
-        d[3].AM.temp='25.3'; d[3].AM.maxTemp='25.6';
-        d[3].AM.reason='空調設備故障';
-        d[3].AM.resolved='Y'; d[3].AM.handling='請廠商維修，開啟備援冷氣';
-        d[3].AM.recovery='24.8'; d[3].AM.confirmedBy=cfmBy7.douliu;
-        return d;
-      }
-    },
-    { key:'templog_douliu_IPD_2026-07',   ck:'checker_douliu_IPD_2026-07',   sv:'supervisor_douliu_IPD_2026-07', campus:'douliu',
-      build: () => {
-        const d = buildDemo(4, 31, 'douliu');
-        // 溼度異常（已確認）
-        d[11].PM.humid='67';
-        d[11].PM.reason='午後雷陣雨，外部溼度急升';
-        d[11].PM.resolved='Y'; d[11].PM.handling='關閉通風口，啟動除濕機';
-        d[11].PM.recovery='63'; d[11].PM.confirmedBy=cfmBy7.douliu;
-        return d;
-      }
-    },
-    { key:'templog_store_STORAGE_2026-07',   ck:'checker_store_STORAGE_2026-07',   sv:'supervisor_store_STORAGE_2026-07', campus:'store',
-      build: () => {
-        const d = buildDemo(6, 31, 'store');
-        // 溫度異常（已確認）
-        d[19].AM.temp='25.5'; d[19].AM.maxTemp='25.8';
-        d[19].AM.reason='冷氣壓縮機老化，冷房效率下降';
-        d[19].AM.resolved='Y'; d[19].AM.handling='安排廠商評估更換壓縮機';
-        d[19].AM.recovery='24.7'; d[19].AM.confirmedBy=cfmBy7.store;
-        return d;
-      }
-    },
-    { key:'templog_store_TRIAL_2026-07',   ck:'checker_store_TRIAL_2026-07',   sv:'supervisor_store_TRIAL_2026-07', campus:'store',
-      build: () => {
-        const d = buildDemo(12, 31, 'store');
-        // 溼度異常（已確認）
-        d[28].PM.humid='68';
-        d[28].PM.reason='梅雨季節，試驗用藥區溼度偏高';
-        d[28].PM.resolved='Y'; d[28].PM.handling='加開除濕機，調整通風排程';
-        d[28].PM.recovery='64'; d[28].PM.confirmedBy=cfmBy7.store;
-        return d;
-      }
-    },
-    { key:'templog_huwei_OPD_2026-07',    ck:'checker_huwei_OPD_2026-07',    sv:'supervisor_huwei_OPD_2026-07', campus:'huwei',
-      build: () => {
-        const d = buildDemo(8, 31, 'huwei');
-        // 溼度異常（尚未填寫處理紀錄，測試「⚠ 未填寫」狀態）
-        d[6].PM.humid='67';
-        return d;
-      }
-    },
-    { key:'templog_huwei_IPD_2026-07',    ck:'checker_huwei_IPD_2026-07',    sv:'supervisor_huwei_IPD_2026-07', campus:'huwei',
-      build: () => {
-        const d = buildDemo(10, 31, 'huwei');
-        // 溫度異常（已確認）
-        d[27].AM.temp='25.6'; d[27].AM.maxTemp='25.9';
-        d[27].AM.reason='假日空調排程未啟動，室溫偏高';
-        d[27].AM.resolved='Y'; d[27].AM.handling='手動啟動空調，設定22℃';
-        d[27].AM.recovery='24.8'; d[27].AM.confirmedBy=cfmBy7.huwei;
-        return d;
-      }
-    },
-  ];
-  areas07.forEach(({key, ck, sv, campus, build}) => {
-    try { LS.removeItem(key); LS.removeItem(ck); LS.removeItem(sv); } catch(e){}
-    try { LS.setItem(key, JSON.stringify(build())); } catch(e){}
-    try { LS.setItem(ck, JSON.stringify({})); } catch(e){} // 7月刻意不預先簽核，留給實際測試用
-    try { LS.setItem(sv, JSON.stringify(svBy7[campus])); } catch(e){}
-  });
-  } // end if(needsDemoRegen)
 
   // 設定 datePicker 預設為今天
   const fixedBarInit = document.getElementById('fixedSubmitBar');
@@ -2349,8 +2295,83 @@ function renderTodayView() {
   requestAnimationFrame(updateStickyFieldsTop);
 }
 
+// ══════════ 從班表系統同步最新姓名（唯讀，只更新姓名，院區分類仍由本系統手動維護）══════════
+// 失敗時完全不影響登入/登記功能，STAFF 陣列裡原有的姓名會繼續當作備用值使用
+async function syncStaffNamesFromSchedule() {
+  if(typeof window.fetchEmployeeDirectory !== 'function') return;
+  try {
+    const directory = await window.fetchEmployeeDirectory();
+    let updatedCount = 0;
+    STAFF.forEach(s => {
+      if(directory[s.id] && directory[s.id] !== s.name) {
+        s.name = directory[s.id];
+        updatedCount++;
+      }
+    });
+    if(updatedCount > 0) {
+      console.log(`已從班表系統同步更新 ${updatedCount} 筆員工姓名`);
+      // 如果同步完成時登入畫面還開著、剛好輸入了員編，重新觸發一次姓名顯示，確保是最新的
+      const idInput = document.getElementById('loginIdInput');
+      if(idInput && idInput.value && !currentUser) { onIdInput('Y' + idInput.value); }
+    }
+  } catch(e) {
+    console.error('同步員工姓名時發生例外（不影響系統其他功能）：', e);
+  }
+}
+
 // ══════════ 依班表顯示今日應登記人員（唯讀查詢班表系統，讀取失敗不影響本系統其他功能）══════════
+// ══════════ 新進人員提醒（唯讀比對班表，不會自動新增任何人員）══════════
+// 比對「本月班表上有 B8/SD/HD 班別的員編」與員工名單，找出班表上有班、但還沒加入名單的人。
+async function getRosterMissingStaff() {
+  if(typeof window.fetchScheduleMonth !== 'function') return [];
+  const now = new Date();
+  const monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  const entries = await window.fetchScheduleMonth(monthKey);
+  const knownIds = new Set(STAFF.map(s => s.id));
+  const codes = window.ON_DUTY_SHIFT_CODES || [];
+  const missingIds = Object.keys(entries || {}).filter(empId => {
+    if(knownIds.has(empId) || STAFF_IGNORE_IDS.includes(empId)) return false;
+    const days = entries[empId] || {};
+    return Object.values(days).some(code => codes.includes(code));
+  }).sort();
+  if(!missingIds.length) return [];
+  let directory = {};
+  if(typeof window.fetchEmployeeDirectory === 'function') {
+    try { directory = await window.fetchEmployeeDirectory(); } catch(e) {}
+  }
+  return missingIds.map(id => ({ id, name: directory[id] || '' }));
+}
+
+function canSeeNewStaffAlert(id) {
+  if(!id) return false;
+  return isAdmin(id) || Object.keys(CAMPUS_ROLES).some(c => isSupervisor(id, c));
+}
+
+async function renderNewStaffAlert() {
+  const box = document.getElementById('newStaffAlertBox');
+  if(!box) return;
+  box.style.display = 'none';
+  if(currentView !== 'today') return;
+  if(!currentUser || !canSeeNewStaffAlert(currentUser.id)) return;
+  try {
+    const missing = await getRosterMissingStaff();
+    if(!missing.length) return;
+    if(currentView !== 'today' || !currentUser) return; // 查詢期間可能已切換畫面或登出
+    const list = missing.map(m => `${escHtml(m.name || '（班表無姓名）')}（${m.id}）`).join('、');
+    const action = isAdmin(currentUser.id)
+      ? `<button class="adm-btn small" style="margin-top:6px" onclick="openAdminPage()">前往系統管理處理</button>`
+      : `<span style="color:#c2410c;">請通知管理員到「系統管理」確認院區後加入名單。</span>`;
+    box.innerHTML = `🔔 <strong>新進人員提醒</strong><br>`
+      + `以下人員本月班表上有應登記班別，但還不在員工名單裡，目前無法登入登記：<br>`
+      + `<strong>${list}</strong><br>${action}`;
+    box.style.display = 'block';
+  } catch(e) {
+    console.error('新進人員提醒比對失敗（不影響登記功能）：', e);
+  }
+}
+
 async function renderOnDutyStaff() {
+  renderNewStaffAlert();
   const box = document.getElementById('onDutyStaffBox');
   if(!box) return;
   if(currentView !== 'today') { box.style.display = 'none'; return; }
@@ -3787,6 +3808,322 @@ function submitModalSession() {
   setTimeout(()=>{ ss.textContent='資料即時儲存'; ss.className='save-status'; },4000);
   renderModalBody();
   showToast('登記完成（'+(currentSession==='AM'?'上午':'下午')+' '+timeStr+'）','success');
+}
+
+// ══════════ 系統管理頁面 ══════════
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function adminRoleTags(id) {
+  const tags = [];
+  Object.keys(CAMPUS_ROLES).forEach(c => {
+    const r = CAMPUS_ROLES[c];
+    if(r.supervisorId === id) tags.push(CAMPUS_LABEL[c] + '組長');
+    if(r.checkerId === id) tags.push(CAMPUS_LABEL[c] + '週檢核者');
+  });
+  return tags;
+}
+function adminCampusOptions(selected, withPlaceholder) {
+  return (withPlaceholder ? `<option value="">選擇院區</option>` : '')
+    + ['douliu','huwei','store'].map(c => `<option value="${c}" ${c===selected?'selected':''}>${CAMPUS_LABEL[c]}</option>`).join('');
+}
+function adminGuard() {
+  if(!currentUser || !isAdmin(currentUser.id)) { showToast('只有管理員可以使用系統管理', 'error'); return false; }
+  return true;
+}
+
+let adminBusy = false;
+// 寫入前一律重新讀取雲端最新內容再修改，避免兩位管理員同時操作時互相覆蓋，也避免用到過期名單
+async function adminMutate(docId, makeDefault, mutator) {
+  const fresh = await window._templogGet(docId);
+  const data = fresh ? fresh : makeDefault();
+  mutator(data); // 有問題時會 throw，整個操作就不會寫入
+  data.updatedAt = new Date().toISOString();
+  data.updatedBy = currentUser.id;
+  await window._templogSet(docId, data);
+  LS_CACHE[docId] = JSON.stringify(data);
+  return data;
+}
+function staffDocDefault() {
+  return { list: STAFF_DEFAULT.map(s => ({ ...s })), ignoreIds: [] };
+}
+function adminDocDefault() {
+  return { ids: ADMIN_DEFAULT_IDS.slice() };
+}
+async function adminLog(action) {
+  try {
+    await adminMutate(CFG_AUDIT_DOC, () => ({ logs: [] }), d => {
+      d.logs = Array.isArray(d.logs) ? d.logs : [];
+      d.logs.unshift({ t: new Date().toISOString(), by: currentUser.id, byName: currentUser.name, action });
+      d.logs = d.logs.slice(0, 300);
+    });
+  } catch(e) { console.error('異動紀錄寫入失敗：', e); }
+}
+function userError(msg) { const e = new Error(msg); e.userMsg = msg; return e; }
+
+// 執行一個管理操作：鎖住按鈕、寫入雲端、套用結果、寫異動紀錄、重畫畫面
+async function adminRun(fn, successMsg, logText) {
+  if(!adminGuard() || adminBusy) return false;
+  adminBusy = true;
+  document.querySelectorAll('#adminPage button').forEach(b => b.disabled = true);
+  try {
+    await fn();
+    if(logText) await adminLog(logText);
+    await syncStaffNamesFromSchedule();
+    showToast(successMsg, 'success');
+    return true;
+  } catch(e) {
+    console.error(e);
+    showToast(e.userMsg || '雲端儲存失敗，請確認網路後再試一次', 'error');
+    return false;
+  } finally {
+    adminBusy = false;
+    document.querySelectorAll('#adminPage button').forEach(b => b.disabled = false);
+    renderAdminPage();
+  }
+}
+
+async function openAdminPage() {
+  if(!adminGuard()) return;
+  document.getElementById('appPage').classList.remove('active');
+  const fixedBar = document.getElementById('fixedSubmitBar');
+  if(fixedBar) fixedBar.style.display = 'none';
+  document.getElementById('adminPage').classList.add('active');
+  window.scrollTo(0, 0);
+  document.getElementById('admStaffBody').innerHTML = `<tr><td colspan="4" class="adm-empty">正在讀取雲端最新名單…</td></tr>`;
+  // 進入時重新讀取雲端最新設定（可能有其他管理員剛改過）
+  cloudConfigPromise = null;
+  await ensureCloudConfig();
+  if(!currentUser || !isAdmin(currentUser.id)) { closeAdminPage(); showToast('你已不在管理員名單中', 'warn'); return; }
+  try {
+    const audit = await window._templogGet(CFG_AUDIT_DOC);
+    if(audit) LS_CACHE[CFG_AUDIT_DOC] = JSON.stringify(audit);
+  } catch(e) {}
+  renderAdminPage();
+}
+function closeAdminPage() {
+  document.getElementById('adminPage').classList.remove('active');
+  if(!currentUser) return;
+  document.getElementById('appPage').classList.add('active');
+  const fixedBar = document.getElementById('fixedSubmitBar');
+  if(fixedBar) fixedBar.style.display = (currentView === 'today') ? 'block' : 'none';
+  const adminBtnEl = document.getElementById('adminBtn');
+  if(adminBtnEl) adminBtnEl.style.display = isAdmin(currentUser.id) ? '' : 'none';
+  requestAnimationFrame(() => { updateStickyFieldsTop(); setTimeout(updateStickyFieldsTop, 150); });
+  renderOnDutyStaff();
+}
+
+function renderAdminPage() {
+  if(!document.getElementById('adminPage').classList.contains('active')) return;
+  renderAdminChips();
+  renderAdminStaffTable();
+  renderAdminPending();
+  renderAdminLog();
+}
+
+function renderAdminChips() {
+  const box = document.getElementById('admAdminChips');
+  box.innerHTML = ADMIN_IDS.map(id => {
+    const s = STAFF.find(x => x.id === id);
+    const name = s ? s.name : '（不在員工名單）';
+    const isSelf = currentUser && id === currentUser.id;
+    const removeBtn = isSelf ? `<span class="self">（你）</span>`
+      : `<button title="移除管理員" aria-label="移除管理員 ${escHtml(name)}" onclick="adminRemoveAdmin('${id}')">✕</button>`;
+    return `<span class="adm-chip"><span class="cid">${id}</span>${escHtml(name)}${removeBtn}</span>`;
+  }).join('');
+}
+
+function renderAdminStaffTable() {
+  const body = document.getElementById('admStaffBody');
+  if(!body) return;
+  const q = (document.getElementById('admSearch').value || '').trim().toUpperCase();
+  const fc = document.getElementById('admFilterCampus').value;
+  const rows = STAFF.slice()
+    .filter(s => !fc || s.campus === fc)
+    .filter(s => !q || s.id.toUpperCase().includes(q) || (s.name || '').toUpperCase().includes(q))
+    .sort((a, b) => a.id.localeCompare(b.id));
+  const counts = { douliu:0, huwei:0, store:0 };
+  STAFF.forEach(s => { if(counts[s.campus] != null) counts[s.campus]++; });
+  document.getElementById('admStaffCount').textContent =
+    `目前員工名單：${STAFF.length} 人（斗六 ${counts.douliu}、虎尾 ${counts.huwei}、藥庫 ${counts.store}）`
+    + ((q || fc) ? `，符合條件 ${rows.length} 人` : '');
+  if(!rows.length) { body.innerHTML = `<tr><td colspan="4" class="adm-empty">找不到符合的員工</td></tr>`; return; }
+  body.innerHTML = rows.map(s => {
+    const tags = adminRoleTags(s.id).concat(isAdmin(s.id) ? ['管理員'] : [])
+      .map(t => `<span class="adm-tag">${t}</span>`).join('');
+    return `<tr>
+      <td class="cid">${s.id}</td>
+      <td>${escHtml(s.name)}${tags}</td>
+      <td><span class="adm-badge ${s.campus}">${CAMPUS_LABEL_FULL[s.campus] || s.campus}</span></td>
+      <td><div class="adm-ops">
+        <select class="adm-select" aria-label="變更 ${escHtml(s.name)} 的院區" onchange="adminChangeCampus('${s.id}', this.value, this)">${adminCampusOptions(s.campus)}</select>
+        <button class="adm-btn danger" onclick="adminDeleteStaff('${s.id}')">刪除</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+let adminPendingNames = {};
+async function renderAdminPending() {
+  const sec = document.getElementById('admPendingSection');
+  const box = document.getElementById('admPendingList');
+  let missing = [];
+  try { missing = await getRosterMissingStaff(); } catch(e) {}
+  adminPendingNames = {};
+  missing.forEach(m => { adminPendingNames[m.id] = m.name; });
+  const ignored = STAFF_IGNORE_IDS.slice().sort();
+  if(!missing.length && !ignored.length) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  let html = missing.length
+    ? missing.map(m => `<div class="adm-pending-row">
+        <span class="who"><strong>${escHtml(m.name || '（班表無姓名）')}</strong>　${m.id}</span>
+        <select class="adm-select" id="admPend_${m.id}" aria-label="${m.id} 的院區">${adminCampusOptions('', true)}</select>
+        <button class="adm-btn small" onclick="adminAddPending('${m.id}')">加入</button>
+        <button class="adm-btn ghost small" onclick="adminIgnore('${m.id}')">不需加入</button>
+      </div>`).join('')
+    : `<div class="adm-empty">目前沒有待處理的新進人員 ✓</div>`;
+  if(ignored.length) {
+    html += `<details class="adm-details"><summary>已設定不需加入的人員（${ignored.length} 人）</summary>`
+      + ignored.map(id => `<div class="adm-pending-row"><span class="who">${id}</span>
+          <button class="adm-btn ghost small" onclick="adminUnignore('${id}')">恢復提醒</button></div>`).join('')
+      + `</details>`;
+  }
+  box.innerHTML = html;
+}
+
+function renderAdminLog() {
+  const box = document.getElementById('admLog');
+  let logs = [];
+  try { logs = (JSON.parse(LS_CACHE[CFG_AUDIT_DOC] || '{}').logs) || []; } catch(e) {}
+  if(!logs.length) { box.innerHTML = `<div class="adm-empty">還沒有異動紀錄</div>`; return; }
+  box.innerHTML = logs.slice(0, 50).map(l => {
+    const d = new Date(l.t);
+    const ts = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    return `<div><time>${ts}</time>${escHtml(l.byName)}（${escHtml(l.by)}）${escHtml(l.action)}</div>`;
+  }).join('');
+}
+
+// ── 管理員 ──
+function adminAddAdmin() {
+  const input = document.getElementById('admAdminInput');
+  const id = (input.value || '').trim().toUpperCase();
+  const s = STAFF.find(x => x.id === id);
+  if(!/^Y\d{5}$/.test(id)) { showToast('請輸入正確的員編（如 Y12345）', 'warn'); return; }
+  if(!s) { showToast('此員編不在員工名單中，請先加入員工名單', 'warn'); return; }
+  adminRun(() => adminMutate(CFG_ADMIN_DOC, adminDocDefault, d => {
+    d.ids = Array.isArray(d.ids) && d.ids.length ? d.ids : ADMIN_DEFAULT_IDS.slice();
+    if(d.ids.includes(id)) throw userError(`${s.name} 已經是管理員`);
+    d.ids.push(id);
+  }).then(applyAdminConfig), `已新增管理員：${s.name}`, `新增管理員 ${s.name}（${id}）`)
+    .then(ok => { if(ok) input.value = ''; });
+}
+function adminRemoveAdmin(id) {
+  const s = STAFF.find(x => x.id === id);
+  const name = s ? s.name : id;
+  if(currentUser && id === currentUser.id) { showToast('不能移除自己的管理員身分', 'warn'); return; }
+  if(!confirm(`確定要移除管理員「${name}（${id}）」嗎？`)) return;
+  adminRun(() => adminMutate(CFG_ADMIN_DOC, adminDocDefault, d => {
+    d.ids = Array.isArray(d.ids) && d.ids.length ? d.ids : ADMIN_DEFAULT_IDS.slice();
+    if(!d.ids.includes(id)) throw userError('此人已不是管理員');
+    if(d.ids.length <= 1) throw userError('至少要保留一位管理員');
+    d.ids = d.ids.filter(x => x !== id);
+  }).then(applyAdminConfig), `已移除管理員：${name}`, `移除管理員 ${name}（${id}）`);
+}
+
+// ── 員工名單 ──
+async function adminAutofillName() {
+  const id = (document.getElementById('admNewId').value || '').trim().toUpperCase();
+  const nameEl = document.getElementById('admNewName');
+  if(!/^Y\d{5}$/.test(id) || typeof window.fetchEmployeeDirectory !== 'function') return;
+  try {
+    const dir = await window.fetchEmployeeDirectory();
+    if(dir[id] && !nameEl.value.trim()) nameEl.value = dir[id];
+  } catch(e) {}
+}
+function adminAddStaffCore(id, name, campus, clearForm) {
+  if(!/^Y\d{5}$/.test(id)) { showToast('請輸入正確的員編（如 Y12345）', 'warn'); return; }
+  if(!name) { showToast('請輸入姓名', 'warn'); return; }
+  if(!campus) { showToast('請選擇院區', 'warn'); return; }
+  adminRun(() => adminMutate(CFG_STAFF_DOC, staffDocDefault, d => {
+    d.list = Array.isArray(d.list) ? d.list : STAFF_DEFAULT.map(s => ({ ...s }));
+    const exist = d.list.find(x => x.id === id);
+    if(exist) throw userError(`${id} 已在名單中（${exist.name}，${CAMPUS_LABEL[exist.campus]}）`);
+    d.list.push({ id, name, campus });
+    d.ignoreIds = (d.ignoreIds || []).filter(x => x !== id);
+  }).then(applyStaffConfig), `已新增：${name}（${CAMPUS_LABEL[campus]}）`, `新增員工 ${name}（${id}），院區：${CAMPUS_LABEL[campus]}`)
+    .then(ok => { if(ok && clearForm) clearForm(); });
+}
+function adminAddStaff() {
+  const id = (document.getElementById('admNewId').value || '').trim().toUpperCase();
+  const name = (document.getElementById('admNewName').value || '').trim();
+  const campus = document.getElementById('admNewCampus').value;
+  adminAddStaffCore(id, name, campus, () => {
+    document.getElementById('admNewId').value = '';
+    document.getElementById('admNewName').value = '';
+    document.getElementById('admNewCampus').value = '';
+  });
+}
+function adminAddPending(id) {
+  const name = adminPendingNames[id] || '';
+  const sel = document.getElementById('admPend_' + id);
+  const campus = sel ? sel.value : '';
+  if(!campus) { showToast('請先選擇院區', 'warn'); if(sel) sel.focus(); return; }
+  adminAddStaffCore(id, name || id, campus);
+}
+function adminChangeCampus(id, campus, selEl) {
+  const s = STAFF.find(x => x.id === id);
+  if(!s || s.campus === campus) return;
+  const roles = adminRoleTags(id);
+  let msg = `確定要把「${s.name}（${id}）」從 ${CAMPUS_LABEL[s.campus]} 改到 ${CAMPUS_LABEL[campus]} 嗎？\n\n改完後，此人下次登入起只能登記${CAMPUS_LABEL[campus]}的表單。`;
+  if(roles.length) msg += `\n\n⚠️ 此人目前是「${roles.join('、')}」，這個身分不會跟著改變，需另外通知系統維護者調整。`;
+  if(!confirm(msg)) { selEl.value = s.campus; return; }
+  const from = s.campus;
+  adminRun(() => adminMutate(CFG_STAFF_DOC, staffDocDefault, d => {
+    d.list = Array.isArray(d.list) ? d.list : STAFF_DEFAULT.map(x => ({ ...x }));
+    const t = d.list.find(x => x.id === id);
+    if(!t) throw userError('此人已不在名單中（可能剛被其他管理員刪除）');
+    t.campus = campus;
+  }).then(applyStaffConfig), `已將 ${s.name} 改為${CAMPUS_LABEL[campus]}`, `變更院區 ${s.name}（${id}）：${CAMPUS_LABEL[from]} → ${CAMPUS_LABEL[campus]}`);
+}
+function adminDeleteStaff(id) {
+  const s = STAFF.find(x => x.id === id);
+  if(!s) return;
+  if(currentUser && id === currentUser.id) { showToast('不能刪除自己', 'warn'); return; }
+  const roles = adminRoleTags(id);
+  const admin = isAdmin(id);
+  if(admin && ADMIN_IDS.length <= 1) { showToast('此人是最後一位管理員，不能刪除', 'warn'); return; }
+  let msg = `確定要從名單刪除「${s.name}（${id}，${CAMPUS_LABEL[s.campus]}）」嗎？\n\n刪除後此人將無法登入；過去的登記與簽名紀錄會保留。`;
+  if(admin) msg += `\n\n此人也會一併移除管理員身分。`;
+  if(roles.length) msg += `\n\n⚠️ 此人目前是「${roles.join('、')}」，刪除後請通知系統維護者指定新的人選。`;
+  if(!confirm(msg)) return;
+  adminRun(async () => {
+    const d = await adminMutate(CFG_STAFF_DOC, staffDocDefault, d => {
+      d.list = Array.isArray(d.list) ? d.list : STAFF_DEFAULT.map(x => ({ ...x }));
+      if(!d.list.some(x => x.id === id)) throw userError('此人已不在名單中');
+      d.list = d.list.filter(x => x.id !== id);
+    });
+    applyStaffConfig(d);
+    if(admin) {
+      const a = await adminMutate(CFG_ADMIN_DOC, adminDocDefault, d => {
+        d.ids = (Array.isArray(d.ids) && d.ids.length ? d.ids : ADMIN_DEFAULT_IDS.slice());
+        if(d.ids.length > 1) d.ids = d.ids.filter(x => x !== id);
+      });
+      applyAdminConfig(a);
+    }
+  }, `已刪除：${s.name}`, `刪除員工 ${s.name}（${id}，${CAMPUS_LABEL[s.campus]}）`);
+}
+function adminIgnore(id) {
+  const name = adminPendingNames[id] || '';
+  if(!confirm(`確定「${name || id}（${id}）」不需要登記溫溼度嗎？\n之後不會再出現在新進人員提醒裡（可在下方「已設定不需加入」恢復）。`)) return;
+  adminRun(() => adminMutate(CFG_STAFF_DOC, staffDocDefault, d => {
+    d.ignoreIds = Array.isArray(d.ignoreIds) ? d.ignoreIds : [];
+    if(!d.ignoreIds.includes(id)) d.ignoreIds.push(id);
+  }).then(applyStaffConfig), `已設定 ${name || id} 不需加入`, `設定不需加入 ${name || ''}（${id}）`);
+}
+function adminUnignore(id) {
+  adminRun(() => adminMutate(CFG_STAFF_DOC, staffDocDefault, d => {
+    d.ignoreIds = (d.ignoreIds || []).filter(x => x !== id);
+  }).then(applyStaffConfig), `已恢復 ${id} 的提醒`, `恢復新進人員提醒（${id}）`);
 }
 
 function showToast(msg, type='success') {
