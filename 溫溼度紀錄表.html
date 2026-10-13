@@ -1151,6 +1151,24 @@
       <div class="adm-desc" style="margin-top:10px;margin-bottom:0">組長、週檢核者的指定目前仍由系統維護者設定，在這裡改院區或刪除他們時會先提醒。</div>
     </div>
 
+    <!-- 登記地點 -->
+    <div class="adm-section">
+      <h3>📍 登記地點</h3>
+      <div class="adm-desc">各院區要登記室內溫溼度的地點，標準一律為溫度 ≦25℃、溼度 ≦65%。新增的地點從新增當天起需要登記；停用的地點從停用當天起不再要求登記，過去的資料仍保留、可查詢與匯出。每個院區的第一個地點為主地點，不可停用。</div>
+      <div id="admDeptList"></div>
+      <div class="adm-row" style="margin-top:12px">
+        <select class="adm-select" id="admDeptCampus" style="flex:0 1 130px">
+          <option value="">選擇院區</option>
+          <option value="douliu">斗六</option>
+          <option value="huwei">虎尾</option>
+          <option value="store">藥庫</option>
+        </select>
+        <input class="adm-input" id="admDeptName" placeholder="地點名稱（如：調劑室、冷藏庫前室）" maxlength="20" style="flex:1 1 200px"
+          onkeydown="if(event.key==='Enter') adminAddDept()">
+        <button class="adm-btn" onclick="adminAddDept()">＋ 新增地點</button>
+      </div>
+    </div>
+
     <!-- 異動紀錄 -->
     <div class="adm-section">
       <h3>📝 異動紀錄</h3>
@@ -1337,12 +1355,13 @@ async function loadCloudConfig() {
   const timeout = new Promise(resolve => setTimeout(() => resolve('timeout'), 8000));
   try {
     const res = await Promise.race([
-      Promise.all([window._templogGet(CFG_STAFF_DOC), window._templogGet(CFG_ADMIN_DOC)]),
+      Promise.all([window._templogGet(CFG_STAFF_DOC), window._templogGet(CFG_ADMIN_DOC), window._templogGet(CFG_DEPTS_DOC)]),
       timeout
     ]);
     if(res === 'timeout') throw new Error('讀取逾時');
-    const [staffCfg, adminCfg] = res;
+    const [staffCfg, adminCfg, deptCfg] = res;
     if(staffCfg) applyStaffConfig(staffCfg);
+    if(deptCfg) applyDeptConfig(deptCfg);
     applyAdminConfig(adminCfg);
     await syncStaffNamesFromSchedule();
     return true;
@@ -1380,7 +1399,7 @@ let currentView = 'today'; // 'today' | 'month'
 let logData = {};
 
 // ══════════ CAMPUS / DEPT CONFIG ══════════
-const CAMPUS_DEPTS = {
+let CAMPUS_DEPTS = {
   'douliu': [
     { key:'OPD', label:'門診藥局' },
     { key:'IPD', label:'住診藥局' },
@@ -1394,6 +1413,67 @@ const CAMPUS_DEPTS = {
     { key:'TRIAL',   label:'試驗用藥區' },
   ],
 };
+// ══════════ 登記地點（管理員可在「系統管理」新增／改名／停用，存在雲端 config_depts）══════════
+// 每個地點：{ key, label, since?, until? }
+//  key   ：建立後永遠不變（資料文件名稱用它），改名只改 label，不影響已存資料
+//  since ：開始登記的日期（YYYY-MM-DD），這天以前不要求登記；原本的地點沒有 since
+//  until ：停用的日期（YYYY-MM-DD），這天起不再要求登記；過去的資料仍保留、可查詢、可匯出
+// 每個院區的第一個地點是「主地點」，月底核定紀錄存在它底下，因此不可停用。
+const CAMPUS_DEPTS_DEFAULT = JSON.parse(JSON.stringify(CAMPUS_DEPTS));
+const CFG_DEPTS_DOC = 'config_depts';
+function applyDeptConfig(data) {
+  if(!data || !data.campuses) return;
+  Object.keys(CAMPUS_DEPTS).forEach(c => {
+    const list = data.campuses[c];
+    if(Array.isArray(list) && list.length) CAMPUS_DEPTS[c] = list.map(d => ({ ...d }));
+  });
+}
+function ymdOf(ym, day) { return ym + '-' + String(day).padStart(2,'0'); }
+// 某地點在某月份「需要登記」的日期範圍；整個月都不需要時回傳 null
+function deptRange(dept, ym) {
+  const days = daysInMonth(ym);
+  let from = 1, to = days;
+  if(dept.since) {
+    const sYm = dept.since.slice(0,7);
+    if(sYm > ym) return null;
+    if(sYm === ym) from = parseInt(dept.since.slice(8,10), 10);
+  }
+  if(dept.until) {
+    const uYm = dept.until.slice(0,7);
+    if(uYm < ym) return null;
+    if(uYm === ym) to = parseInt(dept.until.slice(8,10), 10) - 1;
+  }
+  return from <= to ? { from, to } : null;
+}
+function deptHasData(campus, dept, ym) {
+  const area = campus + '_' + dept.key;
+  return ['templog_','checker_','supervisor_'].some(p => LS.getItem(p + area + '_' + ym));
+}
+// 本月總覽／PDF／核定用：這個月需要登記，或這個月有資料的地點
+function deptsForMonth(campus, ym) {
+  return (CAMPUS_DEPTS[campus] || []).filter(d => deptRange(d, ym) || deptHasData(campus, d, ym));
+}
+// 今日登記用：這一天需要登記的地點
+function deptsForDay(campus, ym, day) {
+  return (CAMPUS_DEPTS[campus] || []).filter(d => { const r = deptRange(d, ym); return r && day >= r.from && day <= r.to; });
+}
+const DEPT_STYLES = [
+  { color:'#1a7f6e', bg:'#e8f5f2', icon:'🏥' },
+  { color:'#1d4ed8', bg:'#eff6ff', icon:'🛏' },
+  { color:'#b45309', bg:'#fef9f0', icon:'📦' },
+  { color:'#7c3aed', bg:'#f5f3ff', icon:'📍' },
+  { color:'#be185d', bg:'#fdf2f8', icon:'📍' },
+  { color:'#0e7490', bg:'#ecfeff', icon:'📍' },
+];
+function deptStyle(campus, deptKey) {
+  const key = String(deptKey);
+  if(key === 'OPD') return DEPT_STYLES[0];
+  if(key === 'IPD') return DEPT_STYLES[1];
+  if(key === 'STORAGE') return DEPT_STYLES[2];
+  if(key === 'TRIAL') return DEPT_STYLES[3];
+  const idx = Math.max(0, (CAMPUS_DEPTS[campus] || []).findIndex(d => d.key === key));
+  return DEPT_STYLES[2 + (idx % (DEPT_STYLES.length - 2))];
+}
 const CAMPUS_LABEL = { 'douliu':'斗六', 'huwei':'虎尾', 'store':'藥庫' };
 const CAMPUS_LABEL_FULL = { 'douliu':'斗六院區', 'huwei':'虎尾院區', 'store':'藥庫' };
 
@@ -1570,7 +1650,7 @@ function renderSupervisor() {
 // 回傳 null 代表可以核定；否則回傳 { msg（提示用）, html（畫面用）}
 function getSupervisorBlock() {
   const campus = currentArea.split('_')[0];
-  const depts = CAMPUS_DEPTS[campus] || [];
+  const depts = deptsForMonth(campus, currentMonth);
   const days = daysInMonth(currentMonth);
   const weeks = Math.ceil(days / 7);
   const now = new Date();
@@ -1586,9 +1666,12 @@ function getSupervisorBlock() {
     let log = {}, ck = {};
     try { const r = LS.getItem('templog_' + area + '_' + currentMonth); if(r) log = JSON.parse(r); } catch(e) {}
     try { const r = LS.getItem('checker_' + area + '_' + currentMonth); if(r) ck = JSON.parse(r); } catch(e) {}
-    for(let d = 1; d <= checkUpTo; d++) {
-      if(!log[d]?.AM?.signedBy) missingSlots++;
-      if(!log[d]?.PM?.signedBy) missingSlots++;
+    const range = deptRange(dept, currentMonth); // 新增或停用的地點，只要求範圍內的日期
+    if(range) {
+      for(let d = range.from; d <= Math.min(range.to, checkUpTo); d++) {
+        if(!log[d]?.AM?.signedBy) missingSlots++;
+        if(!log[d]?.PM?.signedBy) missingSlots++;
+      }
     }
     Object.keys(log).sort((a,b)=>Number(a)-Number(b)).forEach(d => {
       ['AM','PM'].forEach(s => {
@@ -1600,7 +1683,11 @@ function getSupervisorBlock() {
     });
     const lastWeek = monthEnded ? weeks : Math.floor(checkUpTo / 7); // 當月只列出已經結束的週
     const miss = [];
-    for(let w = 1; w <= Math.min(lastWeek, weeks); w++) if(!ck[w]) miss.push(w);
+    for(let w = 1; w <= Math.min(lastWeek, weeks); w++) {
+      const ws = (w - 1) * 7 + 1, we = Math.min(w * 7, days);
+      if(!range || we < range.from || ws > range.to) continue; // 這一週此地點不需登記，也不需週檢核
+      if(!ck[w]) miss.push(w);
+    }
     if(miss.length) unsignedWeeks.push(`${dept.label} 第 ${miss.join('、')} 週`);
   });
 
@@ -1692,7 +1779,12 @@ function signChecker(week, areaKey) {
 
   const data = logData[currentMonth] || {};
   const missing = [];
-  for(let d = weekStart; d <= weekEnd; d++) {
+  const ckCampus = currentArea.split('_')[0];
+  const ckDept = (CAMPUS_DEPTS[ckCampus] || []).find(x => ckCampus + '_' + x.key === currentArea);
+  const ckRange = ckDept ? deptRange(ckDept, currentMonth) : null;
+  const fromDay = ckRange ? Math.max(weekStart, ckRange.from) : weekStart;
+  const toDay = ckRange ? Math.min(weekEnd, ckRange.to) : weekEnd;
+  for(let d = fromDay; d <= toDay; d++) {
     const am = data[d]?.AM;
     const pm = data[d]?.PM;
     if(!am?.signedBy) missing.push(`${String(d).padStart(2,'0')}日上午`);
@@ -2173,7 +2265,7 @@ function renderTodayView() {
   if(sf) {
     sf.style.display = 'block';
     const campus = currentArea.split('_')[0];
-    const depts = CAMPUS_DEPTS[campus] || [];
+    const depts = deptsForDay(campus, currentMonth, d);
 
     // 為每個部門取得資料
     const weekNum = Math.ceil(d / 7);
@@ -2214,10 +2306,10 @@ function renderTodayView() {
             ? `<div style="background:#f3f4f6;border:1.5px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:10px;color:var(--gray-500);font-weight:600;margin-bottom:5px;">🔒 本週已由 ${dept.weekCheckerName} 完成核定，資料已鎖定無法修改</div>`
             : '';
         return `
-      <div id="deptCard-${dept.key}" class="dept-today-card" style="background:white;border-radius:10px;padding:16px 12px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:4px solid ${i===0?'#1a7f6e':i===1?'#1d4ed8':'#b45309'};${locked?'opacity:.75;':''}">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:7px 10px;border-radius:8px;background:${i===0?'#e8f5f2':i===1?'#eff6ff':'#fef9f0'};">
-          <span style="font-size:14px;">${i===0?'🏥':i===1?'🛏':'📦'}</span>
-          <span style="font-size:13px;font-weight:800;color:${i===0?'#1a7f6e':i===1?'#1d4ed8':'#b45309'};">${dept.label}</span>
+      <div id="deptCard-${dept.key}" class="dept-today-card" style="background:white;border-radius:10px;padding:16px 12px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:4px solid ${deptStyle(campus, dept.key).color};${locked?'opacity:.75;':''}">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:7px 10px;border-radius:8px;background:${deptStyle(campus, dept.key).bg};">
+          <span style="font-size:14px;">${deptStyle(campus, dept.key).icon}</span>
+          <span style="font-size:13px;font-weight:800;color:${deptStyle(campus, dept.key).color};">${escHtml(dept.label)}</span>
         </div>
         ${lockBanner}
         <div class="today-fields" style="margin-bottom:8px;">
@@ -2451,7 +2543,7 @@ function renderMonthView() {
 
   // 多部門：遍歷同院區所有部門
   const campus = currentArea.split('_')[0];
-  const depts = CAMPUS_DEPTS[campus] || [];
+  const depts = deptsForMonth(campus, currentMonth);
   const savedArea = currentArea;
   const allDeptHtml = depts.map(dept => {
     currentArea = campus + '_' + dept.key;
@@ -2549,8 +2641,8 @@ function renderMonthView() {
   }
 
   // 回傳這個部門的完整表格 HTML
-  const deptColor = dept.key === 'OPD' ? '#1a7f6e' : dept.key === 'IPD' ? '#1d4ed8' : '#b45309';
-  const deptIcon = dept.key === 'OPD' ? '🏥' : dept.key === 'IPD' ? '🛏' : '📦';
+  const deptColor = deptStyle(campus, dept.key).color;
+  const deptIcon = deptStyle(campus, dept.key).icon;
   return `
     <div style="margin-bottom:20px;">
       <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:white;border-radius:10px 10px 0 0;border-left:4px solid ${deptColor};border-bottom:2px solid ${deptColor};margin-bottom:0;">
@@ -2765,7 +2857,7 @@ function submitAllDepts() {
   const d = currentDay;
   const session = currentSession;
   const campus = currentArea.split('_')[0];
-  const depts = CAMPUS_DEPTS[campus] || [];
+  const depts = deptsForDay(campus, currentMonth, d);
   const savedArea = currentArea;
   let hasError = false;
   let hasAbnormal = false;
@@ -3067,7 +3159,7 @@ function renderStats() {
 function renderAbnormal() {
   // 顯示控制已由 setView 統一管理，這裡只處理內容渲染
   const campus = currentArea.split('_')[0];
-  const depts = CAMPUS_DEPTS[campus] || [];
+  const depts = deptsForMonth(campus, currentMonth);
   const rows = [];
 
   depts.forEach(dept => {
@@ -3325,7 +3417,7 @@ function sendAbnormalMail(day, session) {
 // ══════════ PDF EXPORT ══════════
 function exportPDF() {
   const campus = currentArea.split('_')[0];
-  const depts = CAMPUS_DEPTS[campus] || [];
+  const depts = deptsForMonth(campus, currentMonth);
   const savedArea = currentArea;
   // 依序匯出各部門，再還原
   let allSections = '';
@@ -3909,12 +4001,15 @@ function closeAdminPage() {
   if(fixedBar) fixedBar.style.display = (currentView === 'today') ? 'block' : 'none';
   const adminBtnEl = document.getElementById('adminBtn');
   if(adminBtnEl) adminBtnEl.style.display = isAdmin(currentUser.id) ? '' : 'none';
+  renderTable(); // 地點可能剛被新增／停用，重新繪製登記畫面
+  renderStats();
   requestAnimationFrame(() => { updateStickyFieldsTop(); setTimeout(updateStickyFieldsTop, 150); });
   renderOnDutyStaff();
 }
 
 function renderAdminPage() {
   if(!document.getElementById('adminPage').classList.contains('active')) return;
+  renderAdminDepts();
   renderAdminChips();
   renderAdminStaffTable();
   renderAdminPending();
@@ -4001,6 +4096,102 @@ function renderAdminLog() {
     const ts = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     return `<div><time>${ts}</time>${escHtml(l.byName)}（${escHtml(l.by)}）${escHtml(l.action)}</div>`;
   }).join('');
+}
+
+// ── 登記地點 ──
+function renderAdminDepts() {
+  const box = document.getElementById('admDeptList');
+  if(!box) return;
+  const today = todayYMD();
+  box.innerHTML = ['douliu','huwei','store'].map(c => {
+    const list = CAMPUS_DEPTS[c] || [];
+    const rows = list.map((d, i) => {
+      const stopped = d.until && d.until <= today;
+      const status = stopped ? `<span class="adm-tag">已停用（${d.until} 起）</span>`
+        : d.until ? `<span class="adm-tag">將於 ${d.until} 停用</span>`
+        : d.since && d.since > today ? `<span class="adm-tag">${d.since} 起登記</span>`
+        : d.since ? `<span class="adm-tag">${d.since} 起登記</span>` : '';
+      const main = i === 0 ? `<span class="adm-tag">主地點</span>` : '';
+      const toggle = i === 0 ? '' : stopped
+        ? `<button class="adm-btn ghost small" onclick="adminToggleDept('${c}','${d.key}',true)">恢復登記</button>`
+        : `<button class="adm-btn danger" onclick="adminToggleDept('${c}','${d.key}',false)">停用</button>`;
+      return `<tr style="${stopped ? 'opacity:.6' : ''}">
+        <td>${escHtml(d.label)}${main}${status}</td>
+        <td><div class="adm-ops">
+          <button class="adm-btn ghost small" onclick="adminRenameDept('${c}','${d.key}')">改名稱</button>${toggle}
+        </div></td></tr>`;
+    }).join('');
+    return `<div style="margin-bottom:10px">
+      <div style="font-size:13px;font-weight:700;color:var(--gray-700);margin-bottom:4px">${CAMPUS_LABEL_FULL[c]}</div>
+      <div class="adm-table-wrap" style="max-height:none"><table class="adm-table" style="min-width:0">
+        <thead><tr><th>地點</th><th style="width:170px">操作</th></tr></thead><tbody>${rows}</tbody></table></div>
+    </div>`;
+  }).join('');
+}
+function deptsDocDefault() {
+  return { campuses: JSON.parse(JSON.stringify(CAMPUS_DEPTS_DEFAULT)) };
+}
+function deptDocList(d, campus) {
+  if(!d.campuses) d.campuses = JSON.parse(JSON.stringify(CAMPUS_DEPTS_DEFAULT));
+  if(!Array.isArray(d.campuses[campus]) || !d.campuses[campus].length)
+    d.campuses[campus] = JSON.parse(JSON.stringify(CAMPUS_DEPTS_DEFAULT[campus] || []));
+  return d.campuses[campus];
+}
+function validDeptName(name) {
+  if(!name) { showToast('請輸入地點名稱', 'warn'); return false; }
+  if(/[<>&"'`\\]/.test(name)) { showToast('地點名稱不可包含 < > & " \' 等符號', 'warn'); return false; }
+  return true;
+}
+function adminAddDept() {
+  const campus = document.getElementById('admDeptCampus').value;
+  const name = (document.getElementById('admDeptName').value || '').trim();
+  if(!campus) { showToast('請選擇院區', 'warn'); return; }
+  if(!validDeptName(name)) return;
+  const today = todayYMD();
+  if(!confirm(`確定要在${CAMPUS_LABEL_FULL[campus]}新增登記地點「${name}」嗎？\n\n從今天（${today}）起，${CAMPUS_LABEL[campus]}的同仁登記時會多一個「${name}」欄位，週檢核與月底核定也會一併要求這個地點。`)) return;
+  const key = 'L' + Date.now().toString(36).toUpperCase(); // 固定代號，之後不會變
+  adminRun(() => adminMutate(CFG_DEPTS_DOC, deptsDocDefault, d => {
+    const list = deptDocList(d, campus);
+    if(list.some(x => x.label === name && !(x.until && x.until <= today))) throw userError(`${CAMPUS_LABEL[campus]}已有「${name}」`);
+    list.push({ key, label: name, since: today });
+  }).then(applyDeptConfig), `已新增地點：${CAMPUS_LABEL[campus]} ${name}`, `新增登記地點 ${CAMPUS_LABEL[campus]}「${name}」（${today} 起）`)
+    .then(ok => { if(ok) document.getElementById('admDeptName').value = ''; });
+}
+function adminRenameDept(campus, key) {
+  const cur = (CAMPUS_DEPTS[campus] || []).find(x => x.key === key);
+  if(!cur) return;
+  const name = (prompt(`把「${cur.label}」改成：`, cur.label) || '').trim();
+  if(!name || name === cur.label) return;
+  if(!validDeptName(name)) return;
+  adminRun(() => adminMutate(CFG_DEPTS_DOC, deptsDocDefault, d => {
+    const t = deptDocList(d, campus).find(x => x.key === key);
+    if(!t) throw userError('找不到這個地點，可能剛被其他管理員修改');
+    t.label = name;
+  }).then(applyDeptConfig), `已改名為「${name}」`, `登記地點改名 ${CAMPUS_LABEL[campus]}「${cur.label}」→「${name}」`);
+}
+function adminToggleDept(campus, key, enable) {
+  const list = CAMPUS_DEPTS[campus] || [];
+  const cur = list.find(x => x.key === key);
+  if(!cur) return;
+  if(list[0] && list[0].key === key) { showToast('主地點不可停用', 'warn'); return; }
+  const today = todayYMD();
+  const msg = enable
+    ? `確定要恢復「${cur.label}」的登記嗎？\n\n從今天起，${CAMPUS_LABEL[campus]}登記時會再出現這個地點。`
+    : `確定要停用「${cur.label}」嗎？\n\n從今天（${today}）起不再要求登記這個地點。過去的資料都會保留，本月總覽與 PDF 仍查得到。`;
+  if(!confirm(msg)) return;
+  adminRun(() => adminMutate(CFG_DEPTS_DOC, deptsDocDefault, d => {
+    const t = deptDocList(d, campus).find(x => x.key === key);
+    if(!t) throw userError('找不到這個地點，可能剛被其他管理員修改');
+    if(enable) {
+      // 停用期間不補要求登記：從恢復當天起重新開始要求
+      delete t.until;
+      t.since = today;
+    } else {
+      t.until = today;
+    }
+  }).then(applyDeptConfig),
+    enable ? `已恢復登記：${cur.label}` : `已停用：${cur.label}`,
+    enable ? `恢復登記地點 ${CAMPUS_LABEL[campus]}「${cur.label}」` : `停用登記地點 ${CAMPUS_LABEL[campus]}「${cur.label}」（${today} 起）`);
 }
 
 // ── 管理員 ──
