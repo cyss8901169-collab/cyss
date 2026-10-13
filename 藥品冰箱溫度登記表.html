@@ -1743,6 +1743,24 @@
   }
   .admin-card-icon.i-admin{ background:#fdeee2; }
   .admin-card-icon.i-staff{ background:#e6eef8; }
+  .admin-card-icon.i-fridge{ background:#e3f3f6; }
+  .fridge-edit-list{ border:1px solid var(--line); border-radius:10px; }
+  .fridge-edit-row{
+    display:grid; grid-template-columns:28px 1fr auto auto auto; gap:8px; align-items:center;
+    padding:8px 12px; border-top:1px solid #e6edf2;
+  }
+  .fridge-edit-row:first-child{ border-top:none; }
+  .fridge-edit-row.is-new{ background:#f1faf4; }
+  .fridge-edit-row .f-no{ font-weight:700; color:var(--muted); text-align:center; }
+  .admin-overlay .fridge-edit-row input.admin-input{ font-size:16px; padding:7px 10px; }
+  .fridge-mini-btn{
+    font-family:inherit; font-size:14px; width:34px; height:34px; border-radius:8px; cursor:pointer;
+    border:1px solid var(--line); background:#fff; color:var(--ink);
+  }
+  .fridge-mini-btn:disabled{ opacity:.3; cursor:not-allowed; }
+  .fridge-removed{ padding:8px 12px; font-size:12.5px; color:var(--muted); border-top:1px dashed var(--line); }
+  .fridge-effective{ display:flex; align-items:center; gap:10px; margin-top:12px; font-size:14px; font-weight:600; color:var(--ink); flex-wrap:wrap; }
+  .admin-overlay .fridge-effective select.admin-select{ flex:1 1 220px; }
   .admin-card-desc{ font-size:12.5px; color:var(--muted); margin:0 0 14px; line-height:1.6; }
   .admin-count{ font-size:12.5px; color:var(--muted); font-weight:600; margin:0 0 8px; }
   .admin-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
@@ -1918,6 +1936,26 @@
           <button type="button" class="admin-primary-btn" id="adminAddBtn">＋ 新增管理員</button>
         </div>
         <div class="admin-form-hint" id="adminAddHint"></div>
+      </section>
+
+      <section class="admin-card">
+        <h3 class="admin-card-title"><span class="admin-card-icon i-fridge">🧊</span>冰箱設定</h3>
+        <p class="admin-card-desc">設定每個院區要登記哪些冰箱、以及顯示順序。改名稱會套用到所有月份（含以前的報表）；新增、移除、調整順序則從你選的月份開始生效，以前的紀錄不受影響。</p>
+        <div class="admin-site-filter" id="fridgeSiteTabs"></div>
+        <div class="fridge-edit-list" id="fridgeEditList"></div>
+        <div class="admin-form-row" style="margin-top:10px;">
+          <input type="text" class="admin-input grow" id="fridgeAddName" placeholder="新冰箱名稱，例如 IE" autocomplete="off" maxlength="12">
+          <button type="button" class="admin-ghost-btn" id="fridgeAddBtn">＋ 加入清單</button>
+        </div>
+        <div class="fridge-effective">
+          <span>生效月份</span>
+          <select class="admin-select" id="fridgeEffectiveSel"></select>
+        </div>
+        <div class="admin-form-hint" id="fridgeHint"></div>
+        <div class="admin-form-row" style="margin-top:6px;">
+          <button type="button" class="admin-primary-btn" id="fridgeSaveBtn">儲存冰箱設定</button>
+          <button type="button" class="admin-ghost-btn" id="fridgeResetBtn">復原未儲存的修改</button>
+        </div>
       </section>
 
       <section class="admin-card">
@@ -2513,6 +2551,12 @@ async function loadAdminConfig(){
     if(cfg && Array.isArray(cfg.admins) && cfg.admins.length){
       ADMIN_IDS.splice(0, ADMIN_IDS.length, ...cfg.admins.map(String));
     }
+    if(cfg && cfg.fridges && typeof cfg.fridges === 'object'){
+      Object.keys(cfg.fridges).forEach(site=>{
+        const fc = cfg.fridges[site];
+        if(fc && fc.defs && Array.isArray(fc.versions) && fc.versions.length) FRIDGE_CFG[site] = fc;
+      });
+    }
   }catch(e){
     const msg = String(e);
     if(!msg.includes('not found')) console.warn('讀取系統管理設定失敗：', e);
@@ -2525,6 +2569,7 @@ async function saveAdminConfig(){
   const cfg = {
     staff: STAFF,
     admins: ADMIN_IDS,
+    fridges: FRIDGE_CFG,
     updatedAt: new Date().toISOString(),
     updatedBy: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : ''
   };
@@ -2692,7 +2737,8 @@ async function detectNewStaff(rosterEntries){
 }
 
 // 頁面載入時，先套用之前手動新增過的員工，再開始跟班表系統同步
-loadAdminConfig().then(loadExtraStaff).then(()=>{
+const adminConfigReady = loadAdminConfig();
+adminConfigReady.then(loadExtraStaff).then(()=>{
   // 頁面載入時就開始同步（不擋住其他初始化流程，失敗也不影響本系統正常使用）
   syncRosterDirectory();
 });
@@ -2987,7 +3033,6 @@ const FRIDGE_COLORS = [
 
 const SITES = {
   "斗六院區": {
-    fridges: ["IA", "IB-1", "IB-2", "IC"],
     shifts: [
       {key:"am", label:"上午時段（7:00～10:00）"},
       {key:"pm", label:"下午時段（12:00～15:00）"},
@@ -2995,7 +3040,6 @@ const SITES = {
     ]
   },
   "虎尾院區": {
-    fridges: ["IA", "IB"],
     shifts: [
       {key:"am", label:"上午時段（7:00～10:00）"},
       {key:"pm", label:"下午時段（12:00～15:00）"},
@@ -3003,7 +3047,6 @@ const SITES = {
     ]
   },
   "藥庫": {
-    fridges: ["庫1","庫2","庫3","庫4","庫5","庫6","庫7"],
     shifts: [
       {key:"am", label:"上午時段（8:00～9:00）"},
       {key:"noon", label:"中午時段（12:00～13:00）"},
@@ -3011,6 +3054,119 @@ const SITES = {
     ]
   }
 };
+
+// ===================== 冰箱設定（管理員可在「系統管理」修改） =====================
+// 每台冰箱有一個永久不變的 id；名稱可以改。
+// versions：從某個月份開始使用哪些冰箱（依順序）。查某個月時，用「起始月 ≤ 該月」的最後一個版本。
+// 每筆登記資料都會記下當時的冰箱 id 順序（fridgeIds），所以之後新增／移除／調整順序，舊紀錄也不會錯位。
+const DEFAULT_FRIDGE_NAMES = {
+  "斗六院區": ["IA", "疫苗", "IB", "IC", "ID"],
+  "虎尾院區": ["IA", "IB"],
+  "藥庫": ["庫1","庫2","庫3","庫4","庫5","庫6","庫7"]
+};
+function buildDefaultFridgeConfig(){
+  const cfg = {};
+  Object.entries(DEFAULT_FRIDGE_NAMES).forEach(([site, names])=>{
+    const defs = {}; const ids = [];
+    names.forEach((n, i)=>{ const id = 'f' + (i + 1); defs[id] = { name: n }; ids.push(id); });
+    cfg[site] = { defs, versions: [{ from: '0000-00', ids }] };
+  });
+  return cfg;
+}
+let FRIDGE_CFG = buildDefaultFridgeConfig();
+
+function currentViewYm(){
+  const el = document.getElementById('monthSelect');
+  if(el && el.value) return el.value;
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+function fridgeVersionFor(site, ym){
+  const c = FRIDGE_CFG[site];
+  if(!c || !c.versions || !c.versions.length) return null;
+  const sorted = [...c.versions].sort((a,b)=> a.from.localeCompare(b.from));
+  let v = sorted[0];
+  sorted.forEach(x=>{ if(x.from <= ym) v = x; });
+  return v;
+}
+function fridgeIdsFor(site, ym){
+  const v = fridgeVersionFor(site, ym || currentViewYm());
+  return v ? [...v.ids] : [];
+}
+function fridgeNameOf(site, id){
+  const c = FRIDGE_CFG[site];
+  return (c && c.defs && c.defs[id] && c.defs[id].name) || id;
+}
+function fridgeNamesFor(site, ym){
+  return fridgeIdsFor(site, ym).map(id => fridgeNameOf(site, id));
+}
+Object.keys(SITES).forEach(site=>{
+  Object.defineProperty(SITES[site], 'fridges', {
+    get(){ return fridgeNamesFor(site, currentViewYm()); },
+    enumerable: true, configurable: true
+  });
+});
+
+// 把一筆登記資料（temps 陣列、fridgeAbn 以位置為鍵）換成目前冰箱順序。
+// 目前清單裡沒有的冰箱，資料會先收進 hiddenFridges 保留，不會被刪掉。
+function remapRowToFridges(row, targetIds){
+  if(!row || typeof row !== 'object') return row;
+  const srcIds = Array.isArray(row.fridgeIds) ? row.fridgeIds : targetIds;
+  if(Array.isArray(row.fridgeIds) && row.fridgeIds.join('|') === targetIds.join('|') && !row.hiddenFridges) return row;
+  const pool = {};
+  const hidden = row.hiddenFridges || {};
+  Object.keys(hidden).forEach(id=>{ pool[id] = hidden[id]; });
+  const temps = Array.isArray(row.temps) ? row.temps : [];
+  const abn = (row.fridgeAbn && typeof row.fridgeAbn === 'object') ? row.fridgeAbn : null;
+  srcIds.forEach((id, i)=>{
+    pool[id] = { t: temps[i], a: abn ? abn[i] : undefined };
+  });
+  // 舊資料若比冰箱數還多欄，多出來的用位置當 id 保留
+  for(let i = srcIds.length; i < temps.length; i++){
+    pool['#' + i] = { t: temps[i], a: abn ? abn[i] : undefined };
+  }
+  row.temps = targetIds.map(id => (pool[id] && pool[id].t) || { min:'', now:'', max:'' });
+  if(abn || targetIds.some(id => pool[id] && pool[id].a)){
+    const nf = {};
+    targetIds.forEach((id, i)=>{ if(pool[id] && pool[id].a) nf[i] = pool[id].a; });
+    row.fridgeAbn = nf;
+  }
+  const leftover = {};
+  Object.keys(pool).forEach(id=>{
+    if(targetIds.includes(id)) return;
+    const e = pool[id];
+    const hasT = e.t && ['min','now','max'].some(k => e.t[k] !== undefined && e.t[k] !== '');
+    if(hasT || e.a) leftover[id] = e;
+  });
+  if(Object.keys(leftover).length) row.hiddenFridges = leftover; else delete row.hiddenFridges;
+  row.fridgeIds = [...targetIds];
+  return row;
+}
+function remapMonthBlob(blob, site, ym){
+  if(!blob || !blob.shifts) return blob;
+  const ids = fridgeIdsFor(site, ym);
+  if(!ids.length) return blob;
+  Object.values(blob.shifts).forEach(sh=>{
+    if(!sh || !sh.rows) return;
+    Object.values(sh.rows).forEach(row => remapRowToFridges(row, ids));
+    if(sh.fridges) delete sh.fridges; // 舊版存的冰箱名稱清單，已改用 fridgeIds
+  });
+  return blob;
+}
+// 寫入前：沒有 fridgeIds 的新資料，蓋上目前的冰箱順序
+function stampShiftFridgeIds(shift, site, ym){
+  if(!shift || !shift.rows) return shift;
+  const ids = fridgeIdsFor(site, ym);
+  Object.values(shift.rows).forEach(row=>{
+    if(row && typeof row === 'object' && !Array.isArray(row.fridgeIds)) row.fridgeIds = [...ids];
+  });
+  if(shift.fridges) delete shift.fridges;
+  return shift;
+}
+function parseMonthKey(key){
+  const parts = String(key).split(':'); // temp-log-v2:{site}:{ym}
+  return { site: parts[1], ym: parts[2] };
+}
 
 const siteSelect = document.getElementById('siteSelect');
 const shiftSelect = document.getElementById('shiftSelect');
@@ -3532,6 +3688,8 @@ function cacheMonthBlob(key, d){
   if(!d || typeof d !== 'object') d = {};
   if(!d.shifts) d.shifts = {};
   if(!d.checkers) d.checkers = {};
+  const mk = parseMonthKey(key);
+  remapMonthBlob(d, mk.site, mk.ym);
   trackCloudBase(d);
   Object.values(d.shifts).forEach(trackCloudBase);
   trackCloudBase(d.checkers);
@@ -3542,6 +3700,7 @@ function cacheMonthBlob(key, d){
 
 async function getSiteMonthData(site, ym){
   const key = siteMonthKey(site, ym);
+  try{ await adminConfigReady; }catch(e){}
   if(USE_CLOUD){
     if(_memCache[key] && Date.now() - (_memCacheTime[key] || 0) < CLOUD_CACHE_TTL_MS) return _memCache[key];
     try{
@@ -3558,7 +3717,7 @@ async function getSiteMonthData(site, ym){
   if(hasStorage()){
     try{
       const r = await window.storage.get(key, true);
-      if(r && r.value){ const d = JSON.parse(r.value); _memCache[key]=d; return d; }
+      if(r && r.value){ const d = remapMonthBlob(JSON.parse(r.value), site, ym); _memCache[key]=d; return d; }
     }catch(e){}
   }
   const builtIn = getBuiltInDemoData(site, ym);
@@ -3571,7 +3730,9 @@ async function saveSiteMonthData(site, ym, blob){
   if(USE_CLOUD){
     const base = cloudBaseFor(blob, {});
     try{
-      const merged = await cloudMergeUpdate(key, server => merge3(base, JSON.parse(JSON.stringify(blob)), server));
+      const mine = JSON.parse(JSON.stringify(blob));
+      Object.values(mine.shifts || {}).forEach(sh => stampShiftFridgeIds(sh, site, ym));
+      const merged = await cloudMergeUpdate(key, server => merge3(base, mine, server));
       cacheMonthBlob(key, merged);
     }catch(err){
       showCloudError(cloudFailMsg('儲存', err));
@@ -3604,7 +3765,7 @@ async function setShiftData(site, shiftKey, ym, data){
     // 以「這個班別」為單位合併：base 用 data 當初讀到時的內容
     const key = siteMonthKey(site, ym);
     const base = cloudBaseFor(data, {});
-    const mine = JSON.parse(JSON.stringify(data || {}));
+    const mine = stampShiftFridgeIds(JSON.parse(JSON.stringify(data || {})), site, ym);
     try{
       const merged = await cloudMergeUpdate(key, server=>{
         if(!server.shifts) server.shifts = {};
@@ -3620,7 +3781,7 @@ async function setShiftData(site, shiftKey, ym, data){
   }
   const blob = await getSiteMonthData(site, ym);
   if(!blob.shifts) blob.shifts = {};
-  blob.shifts[shiftKey] = data;
+  blob.shifts[shiftKey] = stampShiftFridgeIds(data, site, ym);
   await saveSiteMonthData(site, ym, blob);
 }
 
@@ -4133,7 +4294,7 @@ document.getElementById('confirmDailyBtn').addEventListener('click', async ()=>{
     }
   }
 
-  const data = (await getShiftData(siteName, shiftKey, ym)) || { manager: '', fridges: site.fridges, rows: {} };
+  const data = (await getShiftData(siteName, shiftKey, ym)) || { manager: '', rows: {} };
   const existingRow = data.rows[day] || { temps: site.fridges.map(()=>({min:'',now:'',max:''})), reason:'', abn:'', sign:'' };
 
   // 重複登記防呆：這個時段只要先前已經有登記過（不論是誰、什麼時候），
@@ -5731,6 +5892,7 @@ function renderStaffList(){
 function renderAdminPanel(){
   renderAdminStorageNote();
   renderAdminChips();
+  renderFridgeAdmin();
   renderStaffSiteControls();
   renderStaffList();
 }
@@ -5797,6 +5959,7 @@ function openAdminPanel(){
 }
 function closeAdminPanel(){
   if(!adminOverlayEl) return;
+  _fridgeDraft = null;
   adminOverlayEl.classList.add('hidden');
   document.body.style.overflow = '';
 }
@@ -5818,6 +5981,191 @@ document.getElementById('staffSearchClear').addEventListener('click', ()=>{
   document.getElementById('staffSearchInput').value = '';
   renderStaffList();
 });
+
+/* ----- 冰箱設定 ----- */
+let _fridgeSite = Object.keys(SITES)[0];
+let _fridgeDraft = null; // { site, items:[{id,name,isNew}] }
+
+function ymAdd(ym, n){
+  let [y, m] = ym.split('-').map(Number);
+  m += n; while(m > 12){ m -= 12; y++; } while(m < 1){ m += 12; y--; }
+  return `${y}-${String(m).padStart(2,'0')}`;
+}
+function ymLabel(ym){ const [y, m] = ym.split('-'); return `${y}年${Number(m)}月`; }
+function thisYm(){ const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+
+function fridgeDraftFromConfig(site){
+  const eff = document.getElementById('fridgeEffectiveSel').value || ymAdd(thisYm(), 1);
+  return { site, items: fridgeIdsFor(site, eff).map(id => ({ id, name: fridgeNameOf(site, id), isNew:false })) };
+}
+
+function renderFridgeAdmin(){
+  const tabs = document.getElementById('fridgeSiteTabs');
+  tabs.innerHTML = '';
+  Object.keys(SITES).forEach(site=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = `${site}（${fridgeIdsFor(site, thisYm()).length} 台）`;
+    if(site === _fridgeSite) b.classList.add('active');
+    b.addEventListener('click', ()=>{
+      if(_fridgeDraft && fridgeDraftDirty() && !confirm('目前的修改還沒儲存，確定要切換院區嗎？')) return;
+      _fridgeSite = site; _fridgeDraft = null; renderFridgeAdmin();
+    });
+    tabs.appendChild(b);
+  });
+
+  const sel = document.getElementById('fridgeEffectiveSel');
+  const keep = sel.value;
+  const cur = thisYm(), next = ymAdd(cur, 1);
+  sel.innerHTML = `<option value="${next}">下個月起（${ymLabel(next)}）— 建議</option>` +
+                  `<option value="${cur}">本月起（${ymLabel(cur)}）</option>`;
+  sel.value = (keep === cur || keep === next) ? keep : next;
+
+  if(!_fridgeDraft || _fridgeDraft.site !== _fridgeSite) _fridgeDraft = fridgeDraftFromConfig(_fridgeSite);
+  const list = document.getElementById('fridgeEditList');
+  list.innerHTML = '';
+  _fridgeDraft.items.forEach((it, i)=>{
+    const row = document.createElement('div');
+    row.className = 'fridge-edit-row' + (it.isNew ? ' is-new' : '');
+    const no = document.createElement('span'); no.className = 'f-no'; no.textContent = i + 1;
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.className = 'admin-input'; inp.value = it.name; inp.maxLength = 12;
+    inp.setAttribute('aria-label', `第 ${i+1} 台冰箱名稱`);
+    inp.addEventListener('input', ()=>{ it.name = inp.value; updateFridgeHint(); });
+    const up = document.createElement('button'); up.type='button'; up.className='fridge-mini-btn'; up.textContent='↑';
+    up.setAttribute('aria-label','往上移'); up.disabled = i === 0;
+    up.addEventListener('click', ()=>{ [_fridgeDraft.items[i-1], _fridgeDraft.items[i]] = [_fridgeDraft.items[i], _fridgeDraft.items[i-1]]; renderFridgeAdmin(); });
+    const down = document.createElement('button'); down.type='button'; down.className='fridge-mini-btn'; down.textContent='↓';
+    down.setAttribute('aria-label','往下移'); down.disabled = i === _fridgeDraft.items.length - 1;
+    down.addEventListener('click', ()=>{ [_fridgeDraft.items[i+1], _fridgeDraft.items[i]] = [_fridgeDraft.items[i], _fridgeDraft.items[i+1]]; renderFridgeAdmin(); });
+    const del = document.createElement('button'); del.type='button'; del.className='staff-del-btn'; del.textContent='移除';
+    del.disabled = _fridgeDraft.items.length <= 1;
+    if(del.disabled) del.title = '每個院區至少要有一台冰箱';
+    del.addEventListener('click', ()=>{ _fridgeDraft.items.splice(i, 1); renderFridgeAdmin(); });
+    row.append(no, inp, up, down, del);
+    list.appendChild(row);
+  });
+  // 已移除（之前用過、現在不在清單）的冰箱：提示可以加回來
+  const usedIds = new Set(_fridgeDraft.items.map(x => x.id));
+  const defs = (FRIDGE_CFG[_fridgeSite] && FRIDGE_CFG[_fridgeSite].defs) || {};
+  const removed = Object.keys(defs).filter(id => !usedIds.has(id));
+  if(removed.length){
+    const r = document.createElement('div');
+    r.className = 'fridge-removed';
+    r.append('以前用過的冰箱（點一下加回清單）：');
+    removed.forEach(id=>{
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'admin-ghost-btn';
+      b.style.cssText = 'padding:3px 10px;font-size:12.5px;margin:4px 0 0 6px;';
+      b.textContent = '＋ ' + defs[id].name;
+      b.addEventListener('click', ()=>{ _fridgeDraft.items.push({ id, name: defs[id].name, isNew:false }); renderFridgeAdmin(); });
+      r.appendChild(b);
+    });
+    list.appendChild(r);
+  }
+  updateFridgeHint();
+}
+
+function fridgeDraftDirty(){
+  if(!_fridgeDraft) return false;
+  const eff = document.getElementById('fridgeEffectiveSel').value;
+  const site = _fridgeDraft.site;
+  const ids = fridgeIdsFor(site, eff);
+  if(ids.join('|') !== _fridgeDraft.items.map(x=>x.id).join('|')) return true;
+  return _fridgeDraft.items.some(x => x.name.trim() !== fridgeNameOf(site, x.id));
+}
+
+function fridgeDraftError(){
+  const names = _fridgeDraft.items.map(x => x.name.trim());
+  if(!names.length) return '每個院區至少要有一台冰箱。';
+  if(names.some(n => !n)) return '冰箱名稱不能空白。';
+  const dup = names.find((n, i) => names.indexOf(n) !== i);
+  if(dup) return `「${dup}」重複了，每台冰箱的名稱要不一樣。`;
+  return '';
+}
+
+function updateFridgeHint(){
+  const hint = document.getElementById('fridgeHint');
+  const err = fridgeDraftError();
+  if(err){ hint.className = 'admin-form-hint err'; hint.textContent = err; return; }
+  const eff = document.getElementById('fridgeEffectiveSel').value;
+  const site = _fridgeDraft.site;
+  const before = fridgeIdsFor(site, eff);
+  const after = _fridgeDraft.items.map(x => x.id);
+  const listChanged = before.join('|') !== after.join('|');
+  const added = _fridgeDraft.items.filter(x => !before.includes(x.id)).map(x => x.name.trim());
+  const removedNames = before.filter(id => !after.includes(id)).map(id => fridgeNameOf(site, id));
+  const renamed = _fridgeDraft.items.filter(x => before.includes(x.id) && x.name.trim() !== fridgeNameOf(site, x.id));
+  const parts = [];
+  if(added.length) parts.push(`新增 ${added.join('、')}`);
+  if(removedNames.length) parts.push(`移除 ${removedNames.join('、')}`);
+  if(listChanged && !added.length && !removedNames.length) parts.push('調整順序');
+  if(renamed.length) parts.push(`改名 ${renamed.map(x => `${fridgeNameOf(site, x.id)}→${x.name.trim()}`).join('、')}`);
+  hint.className = 'admin-form-hint';
+  if(!parts.length){ hint.textContent = ''; return; }
+  let msg = `尚未儲存：${parts.join('；')}。`;
+  if(listChanged){
+    msg += `從${ymLabel(eff)}開始生效。`;
+    if(eff === thisYm() && added.length) msg += '本月已經登記過的日子，新冰箱會顯示空白，需要補登才算完整。';
+  }
+  hint.textContent = msg;
+}
+
+async function saveFridgeConfig(){
+  const err = fridgeDraftError();
+  if(err){ updateFridgeHint(); return; }
+  if(!fridgeDraftDirty()){ showSuccessToast('沒有需要儲存的修改', 1400); return; }
+  const site = _fridgeDraft.site;
+  const eff = document.getElementById('fridgeEffectiveSel').value;
+  const before = fridgeIdsFor(site, eff);
+  const afterIds = _fridgeDraft.items.map(x => x.id);
+  const listChanged = before.join('|') !== afterIds.join('|');
+  if(!confirm(`確定要儲存${site}的冰箱設定嗎？\n\n${document.getElementById('fridgeHint').textContent}`)) return;
+
+  const prev = JSON.parse(JSON.stringify(FRIDGE_CFG[site]));
+  const c = FRIDGE_CFG[site];
+  _fridgeDraft.items.forEach(x=>{
+    if(!c.defs[x.id]) c.defs[x.id] = { name: x.name.trim() };
+    else c.defs[x.id].name = x.name.trim();
+  });
+  if(listChanged){
+    // 從生效月份開始用新清單；之後原本排定的版本一併取代
+    c.versions = c.versions.filter(v => v.from < eff);
+    c.versions.push({ from: eff, ids: afterIds });
+    if(!c.versions.some(v => v.from === '0000-00')){
+      // 保底：最早的版本永遠存在
+      c.versions.unshift({ from: '0000-00', ids: prev.versions.sort((a,b)=>a.from.localeCompare(b.from))[0].ids });
+    }
+  }
+  try{
+    await saveAdminConfig();
+  }catch(e){
+    FRIDGE_CFG[site] = prev;
+    alert('⚠ 冰箱設定沒有存成功，請確認網路後再試一次。');
+    return;
+  }
+  Object.keys(_memCache).forEach(k=>{ delete _memCache[k]; delete _memCacheTime[k]; });
+  _fridgeDraft = null;
+  renderFridgeAdmin();
+  showSuccessToast(`✅ 已儲存${site}的冰箱設定`);
+  try{ await refreshAll(); }catch(e){}
+}
+
+document.getElementById('fridgeAddBtn').addEventListener('click', ()=>{
+  const inp = document.getElementById('fridgeAddName');
+  const name = inp.value.trim();
+  if(!name){ inp.focus(); return; }
+  _fridgeDraft.items.push({ id: 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2,5), name, isNew:true });
+  inp.value = '';
+  renderFridgeAdmin();
+});
+document.getElementById('fridgeAddName').addEventListener('keydown', e=>{ if(e.key === 'Enter') document.getElementById('fridgeAddBtn').click(); });
+document.getElementById('fridgeEffectiveSel').addEventListener('change', ()=>{
+  // 換生效月份時，保留目前的編輯內容，只更新提示
+  updateFridgeHint();
+});
+document.getElementById('fridgeSaveBtn').addEventListener('click', saveFridgeConfig);
+document.getElementById('fridgeResetBtn').addEventListener('click', ()=>{ _fridgeDraft = null; renderFridgeAdmin(); });
 </script>
 
 </body>
