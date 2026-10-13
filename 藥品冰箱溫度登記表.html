@@ -884,6 +884,58 @@
   }
   .abn-banner.show{ display:block; }
 
+  .new-staff-banner{
+    background:#fff8e0;
+    border:1px solid #e8c060;
+    border-radius:8px;
+    padding:10px 14px;
+    margin-bottom:10px;
+    font-size:13px;
+    color:#6b4e00;
+  }
+  .new-staff-banner-title{
+    font-weight:700;
+    margin-bottom:8px;
+  }
+  .new-staff-row{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:8px;
+    padding:6px 0;
+    border-top:1px dashed #e8c060;
+  }
+  .new-staff-row:first-of-type{ border-top:none; }
+  .new-staff-name{
+    font-weight:600;
+    min-width:140px;
+  }
+  .new-staff-assign-btn{
+    font-family:inherit;
+    font-size:12px;
+    font-weight:600;
+    padding:5px 11px;
+    border-radius:16px;
+    border:1px solid #e8a000;
+    background:#fff;
+    color:#8a5a00;
+    cursor:pointer;
+  }
+  .new-staff-assign-btn:hover{ background:#e8a000; color:#fff; }
+  .new-staff-ignore-btn{
+    font-family:inherit;
+    font-size:12px;
+    font-weight:600;
+    padding:5px 10px;
+    border-radius:16px;
+    border:1px solid #c7cdd6;
+    background:#f4f6f8;
+    color:#4a5568;
+    cursor:pointer;
+  }
+  .new-staff-ignore-btn:hover{ background:#e2e6eb; color:#1c2733; }
+  .new-staff-ignore-btn:disabled{ opacity:0.6; cursor:not-allowed; }
+
   .daily-card{
     background:#fff;
     border:1px solid var(--line);
@@ -1644,6 +1696,132 @@
      導致整個頁面看起來「跑版/被裁切」。這裡統一保底設為16px。
      （個別欄位若有更明確的樣式規則，仍可再自行調整，只是不會小於這個底線太多。） */
   input, select, textarea{ font-size:16px; }
+
+  .cloud-error-bar{
+    position:fixed; top:0; left:0; right:0; z-index:1100;
+    background:var(--danger); color:#fff; font-size:14px; line-height:1.5;
+    padding:10px 44px 10px 16px; box-shadow:0 2px 8px rgba(0,0,0,.25);
+  }
+  .cloud-error-bar button{
+    position:absolute; right:8px; top:50%; transform:translateY(-50%);
+    background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.5); color:#fff;
+    border-radius:6px; width:28px; height:28px; cursor:pointer; font-size:14px;
+  }
+  /* ===================== 系統管理（僅管理員） ===================== */
+  .admin-open-btn{
+    background:#fff; border:1px solid #fff; color:var(--navy);
+    font-size:12px; font-weight:700; padding:4px 10px; border-radius:6px;
+    cursor:pointer; font-family:inherit;
+  }
+  .admin-open-btn:hover{ background:var(--pale); }
+  .admin-overlay{
+    position:fixed; inset:0; z-index:900; background:var(--bg);
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  .admin-overlay.hidden{ display:none; }
+  .admin-head{
+    flex:none; background:linear-gradient(135deg,var(--navy),var(--blue)); color:#fff;
+    padding:12px 18px; display:flex; align-items:center; gap:12px;
+  }
+  .admin-head h2{ margin:0; font-size:17px; font-weight:700; flex:1; }
+  .admin-head .admin-head-sub{ display:block; font-size:12px; font-weight:400; opacity:.8; margin-top:2px; }
+  .admin-close-btn{
+    background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.45); color:#fff;
+    font-size:13px; padding:6px 14px; border-radius:8px; cursor:pointer; font-family:inherit;
+  }
+  .admin-close-btn:hover{ background:rgba(255,255,255,0.28); }
+  .admin-scroll{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .admin-body{ max-width:980px; margin:0 auto; padding:16px 16px 40px; display:flex; flex-direction:column; gap:16px; }
+  .admin-storage-note{ font-size:13px; line-height:1.6; padding:10px 14px; border-radius:10px; }
+  .admin-storage-note.ok{ background:#e8f5ee; color:var(--ok); border:1px solid #b9dcc8; }
+  .admin-storage-note.warn{ background:#fff6e5; color:#8a5a00; border:1px solid #f0d49a; }
+  .admin-card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px; }
+  .admin-card-title{ display:flex; align-items:center; gap:10px; margin:0 0 4px; font-size:17px; font-weight:700; color:var(--navy); }
+  .admin-card-icon{
+    width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center;
+    font-size:17px; flex:none;
+  }
+  .admin-card-icon.i-admin{ background:#fdeee2; }
+  .admin-card-icon.i-staff{ background:#e6eef8; }
+  .admin-card-desc{ font-size:12.5px; color:var(--muted); margin:0 0 14px; line-height:1.6; }
+  .admin-count{ font-size:12.5px; color:var(--muted); font-weight:600; margin:0 0 8px; }
+  .admin-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .admin-chip{
+    display:inline-flex; align-items:center; gap:8px; padding:7px 8px 7px 12px;
+    background:#fff8ef; border:1px solid #f3d6ae; border-radius:9px; font-size:14px;
+  }
+  .admin-chip .chip-id{ font-family:ui-monospace,Consolas,monospace; font-weight:700; color:#b5620d; }
+  .admin-chip .chip-self{ font-size:11px; color:var(--muted); }
+  .admin-chip-x{
+    display:inline-flex; align-items:center; justify-content:center; padding:0;
+    border:none; background:none; color:#a08060; font-size:16px; line-height:1;
+    width:24px; height:24px; border-radius:6px; cursor:pointer;
+  }
+  .admin-chip-x:hover{ background:#f6e2c8; color:var(--danger); }
+  .admin-chip-x:disabled{ opacity:.3; cursor:not-allowed; background:none; }
+  .admin-form-row{ display:flex; gap:10px; align-items:stretch; flex-wrap:wrap; }
+  .admin-overlay input.admin-input, .admin-overlay select.admin-select{
+    font-family:inherit; font-size:16px; padding:10px 12px; border:1px solid var(--line);
+    border-radius:9px; background:#fff; color:var(--ink); min-width:0;
+  }
+  .admin-input:focus, .admin-select:focus{ outline:2px solid var(--blue); outline-offset:0; border-color:var(--blue); }
+  .admin-overlay .admin-input.grow{ flex:1 1 180px; }
+  .admin-select.site{ flex:0 0 130px; }
+  .admin-primary-btn{
+    font-family:inherit; font-size:14px; font-weight:700; padding:10px 18px; border:none; border-radius:9px;
+    background:var(--navy); color:#fff; cursor:pointer; white-space:nowrap;
+  }
+  .admin-primary-btn:hover{ background:var(--blue); }
+  .admin-ghost-btn{
+    font-family:inherit; font-size:14px; padding:10px 16px; border:1px solid var(--line); border-radius:9px;
+    background:#fff; color:var(--muted); cursor:pointer; white-space:nowrap;
+  }
+  .admin-form-hint{ font-size:12.5px; color:var(--muted); margin-top:6px; min-height:18px; }
+  .admin-form-hint.found{ color:var(--ok); font-weight:600; }
+  .admin-form-hint.err{ color:var(--danger); }
+  .admin-search-row{ margin-top:14px; }
+  .admin-site-filter{ display:flex; gap:6px; flex-wrap:wrap; margin:12px 0 8px; }
+  .admin-site-filter button{
+    font-family:inherit; font-size:12.5px; padding:5px 12px; border-radius:20px; cursor:pointer;
+    border:1px solid var(--line); background:#fff; color:var(--muted);
+  }
+  .admin-site-filter button.active{ background:var(--navy); border-color:var(--navy); color:#fff; }
+  .staff-list{ border:1px solid var(--line); border-radius:10px; max-height:460px; overflow-y:auto; }
+  .staff-row{
+    display:grid; grid-template-columns:90px 1fr auto 130px auto; gap:10px; align-items:center;
+    padding:9px 14px; border-top:1px solid #e6edf2; font-size:14px;
+  }
+  .staff-row:first-child{ border-top:none; }
+  .staff-row:nth-child(even){ background:#f8fafb; }
+  .staff-row .s-id{ font-family:ui-monospace,Consolas,monospace; font-weight:700; }
+  .staff-row .s-name{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .role-tag{ font-size:11px; padding:1px 7px; border-radius:10px; background:#eef1f4; color:var(--muted); white-space:nowrap; }
+  .role-tag.lead{ background:#e8f0fa; color:#1f5f99; }
+  .role-tag.admin{ background:#fdeee2; color:#b5620d; }
+  .site-badge{ font-size:12px; font-weight:600; padding:2px 10px; border-radius:12px; white-space:nowrap; }
+  .site-badge.s0{ background:#e3eefb; color:#1f5f99; }
+  .site-badge.s1{ background:#e2f4ea; color:#1c7a4d; }
+  .site-badge.s2{ background:#fbf0dc; color:#94600a; }
+  .admin-overlay .staff-row select.admin-select{ font-size:14px; padding:6px 8px; }
+  .staff-del-btn{
+    font-family:inherit; font-size:13px; padding:6px 12px; border-radius:8px; cursor:pointer;
+    border:1px solid #f1c3bf; background:var(--danger-bg); color:var(--danger); white-space:nowrap;
+  }
+  .staff-del-btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .staff-empty{ padding:24px; text-align:center; color:var(--muted); font-size:14px; }
+  @media (max-width:640px){
+    .admin-head{ padding:10px 12px; }
+    .admin-body{ padding:12px 10px 40px; }
+    .admin-card{ padding:14px; }
+    .admin-select.site{ flex:1 1 120px; }
+    .admin-primary-btn{ flex:1 1 100%; }
+    .staff-row{ grid-template-columns:1fr auto; grid-template-areas:"id badge" "name name" "sel del"; row-gap:6px; }
+    .staff-row .s-id{ grid-area:id; }
+    .staff-row .s-name{ grid-area:name; }
+    .staff-row .site-badge{ grid-area:badge; justify-self:end; }
+    .staff-row .admin-select{ grid-area:sel; }
+    .staff-row .staff-del-btn{ grid-area:del; }
+  }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -1660,6 +1838,7 @@
     <div class="topbar-row2">
       <div class="topbar-user" id="topbarUser" style="display:none;">
         <span class="user-badge" id="userBadge"></span>
+        <button class="admin-open-btn" id="openAdminBtn" style="display:none;">⚙️ 系統管理</button>
         <button class="logout-btn" id="logoutBtn">登出</button>
       </div>
       <div class="topbar-login" id="topbarLogin">
@@ -1716,6 +1895,51 @@
 
     <div id="loginHint" class="login-hint"></div>
     <button class="login-submit-btn" id="numOk">登入系統</button>
+  </div>
+</div>
+
+<!-- ===== 系統管理（只有管理員看得到） ===== -->
+<div id="adminOverlay" class="admin-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+  <div class="admin-head">
+    <h2 id="adminTitle">⚙️ 系統管理<span class="admin-head-sub">管理員與員工名單設定</span></h2>
+    <button type="button" class="admin-close-btn" id="adminCloseBtn">✕ 關閉</button>
+  </div>
+  <div class="admin-scroll">
+    <div class="admin-body">
+      <div class="admin-storage-note" id="adminStorageNote"></div>
+
+      <section class="admin-card">
+        <h3 class="admin-card-title"><span class="admin-card-icon i-admin">🔐</span>管理員</h3>
+        <p class="admin-card-desc">管理員登入後可以看到「系統管理」，並處理班表系統的新員工指派。</p>
+        <div class="admin-count" id="adminCountText"></div>
+        <div class="admin-chips" id="adminChips"></div>
+        <div class="admin-form-row">
+          <input type="text" class="admin-input grow" id="adminAddInput" placeholder="輸入員工編號，例如 Y01234" autocomplete="off" maxlength="6">
+          <button type="button" class="admin-primary-btn" id="adminAddBtn">＋ 新增管理員</button>
+        </div>
+        <div class="admin-form-hint" id="adminAddHint"></div>
+      </section>
+
+      <section class="admin-card">
+        <h3 class="admin-card-title"><span class="admin-card-icon i-staff">👥</span>員工名單</h3>
+        <p class="admin-card-desc">名單上的人才能登入本系統。院區決定登入後登記哪一個院區的冰箱。組長與每週檢核者不能刪除或更換院區。</p>
+        <div class="admin-form-row">
+          <input type="text" class="admin-input grow" id="staffAddId" placeholder="員工編號（如 Y12345）" autocomplete="off" maxlength="6">
+          <input type="text" class="admin-input grow" id="staffAddName" placeholder="姓名" autocomplete="off">
+          <select class="admin-select site" id="staffAddSite"></select>
+          <button type="button" class="admin-primary-btn" id="staffAddBtn">＋ 新增員工</button>
+        </div>
+        <div class="admin-form-hint" id="staffAddHint"></div>
+
+        <div class="admin-form-row admin-search-row">
+          <input type="search" class="admin-input grow" id="staffSearchInput" placeholder="搜尋員編或姓名…" autocomplete="off">
+          <button type="button" class="admin-ghost-btn" id="staffSearchClear">清除</button>
+        </div>
+        <div class="admin-site-filter" id="staffSiteFilter"></div>
+        <div class="admin-count" id="staffCountText"></div>
+        <div class="staff-list" id="staffList"></div>
+      </section>
+    </div>
   </div>
 </div>
 
@@ -1776,6 +2000,7 @@
   </div>
 
   <div class="abn-banner" id="abnBanner"></div>
+  <div id="newStaffBanner" class="new-staff-banner" style="display:none;"></div>
 
   <!-- ===== Daily check-in view ===== -->
   <div id="dailyView" class="daily-view">
@@ -1946,6 +2171,219 @@
 </div>
 
 <script>
+// ===================== 本系統專屬雲端資料庫（Firebase：fridge-temp-log） =====================
+// 溫度登記、異常處理、週檢核、組長核定、系統管理設定，全部存在這裡。
+// 跟「班表系統」(pharmacy-scheduling-e20ad) 是兩個完全分開的專案。
+const FRIDGE_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyA2zan-owl-eMsKgmm9I2pVVsNeu6S4KaI",
+  authDomain: "fridge-temp-log.firebaseapp.com",
+  projectId: "fridge-temp-log",
+  storageBucket: "fridge-temp-log.firebasestorage.app",
+  messagingSenderId: "706323857152",
+  appId: "1:706323857152:web:56a59caf961a112a2a7de5"
+};
+const CLOUD_COLLECTION = 'kv';          // 每一筆資料 = kv 集合裡的一份文件，文件ID = 資料鍵
+const CLOUD_DOC_LIMIT = 900000;         // Firestore 單一文件上限約 1MB，預留空間
+const CLOUD_CACHE_TTL_MS = 10000;       // 讀過的資料 10 秒內不重複讀，超過就重新抓最新的
+const FB_VER = '10.13.0';
+
+// 在 Claude.ai 裡預覽時，有內建的 window.storage 可用，就沿用；
+// 放到 GitHub Pages 上沒有 window.storage，就改用 Firebase。
+const USE_CLOUD = !(typeof window !== 'undefined' && window.storage &&
+  typeof window.storage.get === 'function' && typeof window.storage.set === 'function');
+
+let cloudStatus = USE_CLOUD ? 'pending' : 'off'; // 'pending' | 'ok' | 'failed' | 'off'
+let _cloudInitPromise = null;
+
+function initCloud(){
+  if(_cloudInitPromise) return _cloudInitPromise;
+  _cloudInitPromise = (async ()=>{
+    const [appM, authM, fsM] = await Promise.all([
+      import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-app.js`),
+      import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-auth.js`),
+      import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-firestore.js`)
+    ]);
+    const app = appM.initializeApp(FRIDGE_FIREBASE_CONFIG, 'fridgeApp');
+    const auth = authM.getAuth(app);
+    await authM.signInAnonymously(auth);
+    const db = fsM.getFirestore(app);
+    cloudStatus = 'ok';
+    hideCloudError();
+    return { db, doc: fsM.doc, getDoc: fsM.getDoc, setDoc: fsM.setDoc,
+             runTransaction: fsM.runTransaction, serverTimestamp: fsM.serverTimestamp };
+  })().catch(err=>{
+    cloudStatus = 'failed';
+    _cloudInitPromise = null; // 下次操作時會再重試連線
+    console.error('雲端資料庫連線失敗：', err);
+    showCloudError('無法連線到雲端資料庫，目前看到的資料可能不完整，登記也無法儲存。請確認網路後重新整理頁面；若在醫院內網持續發生，請資訊室開放 gstatic.com 與 googleapis.com。');
+    throw err;
+  });
+  return _cloudInitPromise;
+}
+
+function showCloudError(msg){
+  let bar = document.getElementById('cloudErrorBar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'cloudErrorBar';
+    bar.className = 'cloud-error-bar';
+    bar.setAttribute('role', 'alert');
+    bar.innerHTML = '<span></span><button type="button" aria-label="關閉">✕</button>';
+    bar.querySelector('button').addEventListener('click', ()=>{ bar.style.display = 'none'; });
+    document.body.appendChild(bar);
+  }
+  bar.querySelector('span').textContent = '⚠ ' + msg;
+  bar.style.display = 'block';
+}
+function hideCloudError(){
+  const bar = document.getElementById('cloudErrorBar');
+  if(bar) bar.style.display = 'none';
+}
+
+function cloudActorId(){
+  try{ return (currentUser && currentUser.id) || ''; }catch(e){ return ''; }
+}
+function cloudFailMsg(action, err){
+  const code = (err && err.code) || '';
+  if(code === 'permission-denied') return `${action}被雲端資料庫拒絕（權限不足）。請通知管理員檢查 Firebase 安全規則。`;
+  if(code === 'unavailable') return `${action}失敗：網路連線中斷。請確認網路後再操作一次。`;
+  if(String(err && err.message).includes('資料量過大')) return err.message;
+  return `${action}失敗，資料沒有存到雲端。請確認網路後再操作一次。`;
+}
+
+async function cloudGetRaw(key){
+  const c = await initCloud();
+  const snap = await c.getDoc(c.doc(c.db, CLOUD_COLLECTION, key));
+  if(!snap.exists()) return null;
+  const v = snap.data().value;
+  return (typeof v === 'string') ? v : null;
+}
+async function cloudSetRaw(key, value){
+  if(value.length > CLOUD_DOC_LIMIT) throw new Error('資料量過大，無法儲存（通常是簽名圖片太大，請改用較小的圖片）。');
+  const c = await initCloud();
+  await c.setDoc(c.doc(c.db, CLOUD_COLLECTION, key), {
+    value, updatedAt: c.serverTimestamp(), updatedBy: cloudActorId()
+  });
+}
+
+// ----- 三方合併：只把「我這次改過的部分」套用到雲端最新資料上 -----
+// base = 我當初讀到的版本；mine = 我改完的版本；server = 雲端現在的版本。
+// 這樣兩個人同時登記不同班別／不同天，不會互相蓋掉對方的資料。
+function stableStr(v){
+  if(v === undefined) return 'undefined';
+  if(v === null || typeof v !== 'object') return JSON.stringify(v);
+  if(Array.isArray(v)) return '[' + v.map(x => x === undefined ? 'null' : stableStr(x)).join(',') + ']';
+  return '{' + Object.keys(v).filter(k => v[k] !== undefined).sort()
+    .map(k => JSON.stringify(k) + ':' + stableStr(v[k])).join(',') + '}';
+}
+function sameVal(a, b){ return stableStr(a) === stableStr(b); }
+function isPlainObj(v){ return v !== null && typeof v === 'object' && !Array.isArray(v); }
+function merge3(base, mine, server){
+  if(sameVal(mine, base)) return server;
+  if(sameVal(server, base)) return mine;
+  if(Array.isArray(mine) && Array.isArray(server)){
+    const b = Array.isArray(base) ? base : [];
+    const n = Math.max(mine.length, server.length, b.length);
+    const out = [];
+    for(let i = 0; i < n; i++){
+      const v = merge3(b[i], mine[i], server[i]);
+      out[i] = (v === undefined) ? null : v;
+    }
+    while(out.length && out[out.length - 1] === null && mine[out.length - 1] === undefined) out.pop();
+    return out;
+  }
+  if(isPlainObj(mine) && isPlainObj(server)){
+    const b = isPlainObj(base) ? base : {};
+    const out = {};
+    new Set([...Object.keys(b), ...Object.keys(mine), ...Object.keys(server)]).forEach(k=>{
+      const v = merge3(b[k], mine[k], server[k]);
+      if(v !== undefined) out[k] = v;
+    });
+    return out;
+  }
+  return mine; // 同一個欄位兩邊都改了：以這次儲存的為準
+}
+const _cloudBaseOf = new WeakMap(); // 物件 → 當初讀到時的內容
+function trackCloudBase(obj){
+  if(obj && typeof obj === 'object') _cloudBaseOf.set(obj, JSON.stringify(obj));
+}
+function cloudBaseFor(obj, fallback){
+  const b = obj && typeof obj === 'object' ? _cloudBaseOf.get(obj) : undefined;
+  return b !== undefined ? JSON.parse(b) : fallback;
+}
+
+// 在雲端交易裡：讀最新 → 合併 → 寫回（同一時間有人寫入時，Firestore 會自動重試）
+async function cloudMergeUpdate(key, applyFn){
+  const c = await initCloud();
+  const ref = c.doc(c.db, CLOUD_COLLECTION, key);
+  return await c.runTransaction(c.db, async tx=>{
+    const snap = await tx.get(ref);
+    let server = {};
+    if(snap.exists() && typeof snap.data().value === 'string'){
+      try{ server = JSON.parse(snap.data().value) || {}; }catch(e){ server = {}; }
+    }
+    const merged = applyFn(server);
+    const str = JSON.stringify(merged);
+    if(str.length > CLOUD_DOC_LIMIT) throw new Error('資料量過大，無法儲存。');
+    tx.set(ref, { value: str, updatedAt: c.serverTimestamp(), updatedBy: cloudActorId() });
+    return merged;
+  });
+}
+
+// 讓其他沿用 window.storage 寫法的地方（管理員設定、新員工指派…）自動改存到 Firebase
+if(USE_CLOUD){
+  window.storage = {
+    async get(key){
+      try{
+        const v = await cloudGetRaw(key);
+        return v === null ? null : { key, value: v, shared: true };
+      }catch(err){
+        if(cloudStatus !== 'failed') showCloudError(cloudFailMsg('讀取資料', err));
+        throw err;
+      }
+    },
+    async set(key, value){
+      try{
+        await cloudSetRaw(key, value);
+        return { key, value, shared: true };
+      }catch(err){
+        showCloudError(cloudFailMsg('儲存', err));
+        throw err;
+      }
+    }
+  };
+  initCloud().catch(()=>{});
+}
+
+// 簽名圖片壓縮：手機照片動輒好幾 MB，縮到長邊 900px 的 JPEG（白底），一般會在 100KB 左右
+function compressImageToDataUrl(file, maxSide = 900, maxBytes = 350000){
+  return new Promise((resolve, reject)=>{
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = ()=>{
+      URL.revokeObjectURL(url);
+      let side = maxSide, quality = 0.82, out = '';
+      for(let i = 0; i < 6; i++){
+        const scale = Math.min(1, side / Math.max(img.naturalWidth, img.naturalHeight));
+        const w = Math.max(1, Math.round(img.naturalWidth * scale));
+        const h = Math.max(1, Math.round(img.naturalHeight * scale));
+        const cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        const ctx = cv.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        out = cv.toDataURL('image/jpeg', quality);
+        if(out.length <= maxBytes) break;
+        side = Math.round(side * 0.75); quality = Math.max(0.5, quality - 0.1);
+      }
+      resolve(out);
+    };
+    img.onerror = ()=>{ URL.revokeObjectURL(url); reject(new Error('圖片讀取失敗')); };
+    img.src = url;
+  });
+}
+</script>
+<script>
 const STAFF = {
   "斗六院區": [
     {name:"黃永成",id:"Y00243"},{name:"沈倩如",id:"Y00326"},
@@ -1988,6 +2426,7 @@ const STAFF = {
 // 如果連線失敗、或 scheduleSummary 這份文件還沒建立好，會自動優雅退回，
 // 不會讓系統掛掉，只是不會自動預選登記人員而已。
 let rosterSyncStatus = 'pending'; // 'pending' | 'ok' | 'failed'
+let _lastRosterEntries = null; // 快取最後一次讀到的班表員工對照，供登入後重新檢查新員工提示用
 let _rosterFirebase = null; // 共用同一個Firebase連線，避免重複初始化衝突
 
 const ROSTER_CONFIG = {
@@ -2038,13 +2477,225 @@ async function syncRosterDirectory(){
     if(typeof refreshAll === 'function'){
       try{ await refreshAll(); }catch(e){}
     }
+
+    // 偵測班表系統裡有、但我們系統完全沒見過的員編，提示手動指派院區
+    _lastRosterEntries = entries;
+    await detectNewStaff(entries);
   }catch(err){
     rosterSyncStatus = 'failed';
     console.warn('⚠ 班表系統串接失敗，改用本地員工名單：', err);
   }
 }
-// 頁面載入時就開始同步（不擋住其他初始化流程，失敗也不影響本系統正常使用）
-syncRosterDirectory();
+
+// ----- 「手動新增的員工」持久化：避免每次重新整理頁面就要重新指派一次 -----
+const EXTRA_STAFF_KEY = 'temp-log-extra-staff';
+const IGNORED_NEW_STAFF_KEY = 'temp-log-ignored-new-staff';
+// 「系統管理」頁面修改後的完整員工名單＋管理員名單，存成一份設定。
+// 只要這份設定存在，就以它為準（取代程式碼裡寫死的 STAFF / ADMIN_IDS）。
+const ADMIN_CONFIG_KEY = 'temp-log-admin-config';
+
+async function loadAdminConfig(){
+  if(!(typeof hasStorage === 'function' && hasStorage())) return;
+  try{
+    const r = await window.storage.get(ADMIN_CONFIG_KEY, true);
+    if(!r || !r.value) return;
+    const cfg = JSON.parse(r.value);
+    if(cfg && cfg.staff && typeof cfg.staff === 'object'){
+      Object.keys(cfg.staff).forEach(site=>{
+        if(!Array.isArray(cfg.staff[site])) return;
+        const list = cfg.staff[site]
+          .filter(p => p && p.id && p.name)
+          .map(p => ({ name:String(p.name), id:String(p.id) }));
+        if(!STAFF[site]) STAFF[site] = [];
+        STAFF[site].splice(0, STAFF[site].length, ...list);
+      });
+    }
+    if(cfg && Array.isArray(cfg.admins) && cfg.admins.length){
+      ADMIN_IDS.splice(0, ADMIN_IDS.length, ...cfg.admins.map(String));
+    }
+  }catch(e){
+    const msg = String(e);
+    if(!msg.includes('not found')) console.warn('讀取系統管理設定失敗：', e);
+  }
+}
+
+// 回傳 true = 已存到共用儲存空間；false = 目前環境沒有可用的儲存空間（只在本次瀏覽有效）
+async function saveAdminConfig(){
+  if(!(typeof hasStorage === 'function' && hasStorage())) return false;
+  const cfg = {
+    staff: STAFF,
+    admins: ADMIN_IDS,
+    updatedAt: new Date().toISOString(),
+    updatedBy: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : ''
+  };
+  await storageSetWithRetry(ADMIN_CONFIG_KEY, JSON.stringify(cfg));
+  return true;
+}
+
+async function removeExtraStaffEntry(id){
+  try{
+    if(typeof hasStorage === 'function' && hasStorage()){
+      let extra = {};
+      try{
+        const r = await window.storage.get(EXTRA_STAFF_KEY, true);
+        if(r && r.value) extra = JSON.parse(r.value);
+      }catch(e){ return; }
+      let changed = false;
+      Object.keys(extra).forEach(site=>{
+        const before = extra[site].length;
+        extra[site] = extra[site].filter(p => p.id !== id);
+        if(extra[site].length !== before) changed = true;
+      });
+      if(changed) await window.storage.set(EXTRA_STAFF_KEY, JSON.stringify(extra), true);
+    }
+  }catch(e){ console.warn('更新手動新增員工清單失敗：', e); }
+}
+
+async function loadExtraStaff(){
+  try{
+    if(typeof hasStorage === 'function' && hasStorage()){
+      const r = await window.storage.get(EXTRA_STAFF_KEY, true);
+      if(r && r.value){
+        const extra = JSON.parse(r.value); // { "斗六院區": [{name,id}], ... }
+        Object.keys(extra).forEach(site=>{
+          if(!STAFF[site]) STAFF[site] = [];
+          extra[site].forEach(person=>{
+            if(!STAFF[site].some(s => s.id === person.id)){
+              STAFF[site].push(person);
+            }
+          });
+        });
+      }
+    }
+  }catch(e){
+    // 「Key not found」是正常情況——代表目前還沒有任何手動新增過的員工，不是錯誤，不需要顯示警告。
+    const msg = String(e);
+    if(!msg.includes('not found') && !msg.includes('Key not found')){
+      console.warn('讀取手動新增員工清單失敗：', e);
+    }
+  }
+}
+
+async function saveExtraStaffEntry(site, name, id){
+  STAFF[site] = STAFF[site] || [];
+  if(!STAFF[site].some(s => s.id === id)){
+    STAFF[site].push({ name, id });
+  }
+  try{
+    if(typeof hasStorage === 'function' && hasStorage()){
+      let extra = {};
+      try{
+        const r = await window.storage.get(EXTRA_STAFF_KEY, true);
+        if(r && r.value) extra = JSON.parse(r.value);
+      }catch(e){}
+      if(!extra[site]) extra[site] = [];
+      if(!extra[site].some(s => s.id === id)) extra[site].push({ name, id });
+      await window.storage.set(EXTRA_STAFF_KEY, JSON.stringify(extra), true);
+      await saveAdminConfig();
+    }
+  }catch(e){ console.warn('儲存手動新增員工失敗（已加入本次瀏覽，但重新整理後可能需要重新指派）：', e); }
+}
+
+async function loadIgnoredNewStaffIds(){
+  try{
+    if(typeof hasStorage === 'function' && hasStorage()){
+      const r = await window.storage.get(IGNORED_NEW_STAFF_KEY, true);
+      if(r && r.value) return JSON.parse(r.value);
+    }
+  }catch(e){}
+  return [];
+}
+async function addIgnoredNewStaffId(id){
+  try{
+    if(typeof hasStorage === 'function' && hasStorage()){
+      const ids = await loadIgnoredNewStaffIds();
+      if(!ids.includes(id)) ids.push(id);
+      await window.storage.set(IGNORED_NEW_STAFF_KEY, JSON.stringify(ids), true);
+    }
+  }catch(e){}
+}
+
+// ----- 新員編偵測：找出班表系統有、但我們系統裡完全沒有的員編，提示手動指派院區 -----
+async function detectNewStaff(rosterEntries){
+  const banner = document.getElementById('newStaffBanner');
+  if(!banner) return;
+
+  // 權限限制：只有組長或管理員登入時，才顯示這個管理性質的提示卡片，
+  // 一般員工或尚未登入的人完全看不到，避免誤點把人指派到錯的院區。
+  if(!canManageStaff()){
+    banner.style.display = 'none';
+    banner.innerHTML = '';
+    return;
+  }
+
+  const knownIds = new Set();
+  Object.values(STAFF).forEach(list => list.forEach(p => knownIds.add(p.id)));
+  const ignoredIds = await loadIgnoredNewStaffIds();
+
+  // 員工編號格式固定是「大寫 Y + 5碼數字」。directory 裡其實還混了一些
+  // 不是員工的標籤（例如 E1/E2/E3 這種班別代碼），要先濾掉，不然會被誤認成新員工。
+  const EMPLOYEE_ID_PATTERN = /^Y\d{5}$/;
+
+  const unknown = Object.entries(rosterEntries || {})
+    .filter(([id]) => EMPLOYEE_ID_PATTERN.test(id) && !knownIds.has(id) && !ignoredIds.includes(id));
+
+  if(unknown.length === 0){
+    banner.style.display = 'none';
+    banner.innerHTML = '';
+    return;
+  }
+
+  const sites = Object.keys(STAFF);
+  banner.innerHTML = `<div class="new-staff-banner-title">👤 發現 ${unknown.length} 位班表系統裡有、但本系統名單中沒有的員工，請指派所屬院區：</div>`;
+  unknown.forEach(([id, name])=>{
+    const row = document.createElement('div');
+    row.className = 'new-staff-row';
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'new-staff-name';
+    nameSpan.textContent = `${name}（${id}）`;
+    row.appendChild(nameSpan);
+    sites.forEach(site=>{
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'new-staff-assign-btn';
+      btn.textContent = site;
+      btn.addEventListener('click', async ()=>{
+        await saveExtraStaffEntry(site, name, id);
+        setStatus(`已將 ${name} 加入${site}`);
+        if(typeof showSuccessToast === 'function') showSuccessToast(`✅ 已將 ${name} 加入${site}`);
+        await detectNewStaff(rosterEntries); // 重新整理清單（這位已指派，會從列表移除）
+        if(typeof refreshAll === 'function'){ try{ await refreshAll(); }catch(e){} }
+      });
+      row.appendChild(btn);
+    });
+    const ignoreBtn = document.createElement('button');
+    ignoreBtn.type = 'button';
+    ignoreBtn.className = 'new-staff-ignore-btn';
+    ignoreBtn.textContent = '忽略';
+    ignoreBtn.title = '這個人可能不是藥局人員，之後不會再提示';
+    ignoreBtn.addEventListener('click', async ()=>{
+      ignoreBtn.disabled = true;
+      ignoreBtn.textContent = '處理中…';
+      try{
+        await addIgnoredNewStaffId(id);
+        await detectNewStaff(rosterEntries);
+      }catch(err){
+        console.warn('忽略失敗：', err);
+        ignoreBtn.disabled = false;
+        ignoreBtn.textContent = '忽略';
+      }
+    });
+    row.appendChild(ignoreBtn);
+    banner.appendChild(row);
+  });
+  banner.style.display = 'block';
+}
+
+// 頁面載入時，先套用之前手動新增過的員工，再開始跟班表系統同步
+loadAdminConfig().then(loadExtraStaff).then(()=>{
+  // 頁面載入時就開始同步（不擋住其他初始化流程，失敗也不影響本系統正常使用）
+  syncRosterDirectory();
+});
 
 // ----- 班別代碼對照：班表系統的代碼 → 我們自己的班別(am/pm/night) -----
 // 假設班表系統維護者已依先前討論，建立好一份「乾淨版」班別摘要文件：
@@ -2136,6 +2787,22 @@ const SITE_TEAM_LEAD_ID = {
   "藥庫": "Y00287",
   "虎尾院區": "Y00230"
 };
+// 判斷目前登入的人，是不是任何一個院區的組長——
+// 「指派新員工院區」這種管理性質的操作，限定只有組長本人登入才能看到、才能操作。
+// 管理員名單（跨院區，不限於自己所屬院區，都能操作「新員工指派院區」這類管理功能）
+const ADMIN_IDS = ["Y01643", "Y01644", "Y00326", "Y08215", "Y00325"];
+function isCurrentUserAdmin(){
+  if(!currentUser || !currentUser.id) return false;
+  return ADMIN_IDS.includes(currentUser.id);
+}
+function isCurrentUserAnyTeamLead(){
+  if(!currentUser || !currentUser.id) return false;
+  return Object.values(SITE_TEAM_LEAD_ID).includes(currentUser.id);
+}
+// 「組長」或「管理員」其中一種身分，都能使用管理性質的功能（例如指派新員工院區）
+function canManageStaff(){
+  return isCurrentUserAnyTeamLead() || isCurrentUserAdmin();
+}
 function findStaffById(siteName, id){
   return (STAFF[siteName] || []).find(s => s.id === id) || null;
 }
@@ -2252,6 +2919,7 @@ function buildBuiltInDemoData(site, ym){
 }
 
 function getBuiltInDemoData(site, ym){
+  if(USE_CLOUD) return null; // 正式環境不顯示示範資料，避免跟真實紀錄混淆
   if(BUILT_IN_DEMO_SITES.includes(site) && BUILT_IN_DEMO_MONTHS.includes(ym)){
     return buildBuiltInDemoData(site, ym);
   }
@@ -2274,6 +2942,7 @@ function buildDemoSignatureDataUri(name){
 }
 
 function getBuiltInDemoApproval(site, ym){
+  if(USE_CLOUD) return null;
   if(BUILT_IN_DEMO_SITES.includes(site) && BUILT_IN_DEMO_MONTHS.includes(ym)){
     const numDays = daysInMonth(ym);
     const teamLead = getSiteTeamLead(site);
@@ -2692,6 +3361,7 @@ async function storageSetWithRetry(key, value, maxRetries = 3){
         return null;
       }
       console.warn('storageSetWithRetry failed:', err);
+      if(USE_CLOUD) throw err; // 雲端模式：存失敗要讓畫面知道
       return null;
     }
   }
@@ -2857,8 +3527,33 @@ function hasStorage(){
 
 function siteMonthKey(site, ym){ return `temp-log-v2:${site}:${ym}`; }
 
+const _memCacheTime = {};
+function cacheMonthBlob(key, d){
+  if(!d || typeof d !== 'object') d = {};
+  if(!d.shifts) d.shifts = {};
+  if(!d.checkers) d.checkers = {};
+  trackCloudBase(d);
+  Object.values(d.shifts).forEach(trackCloudBase);
+  trackCloudBase(d.checkers);
+  _memCache[key] = d;
+  _memCacheTime[key] = Date.now();
+  return d;
+}
+
 async function getSiteMonthData(site, ym){
   const key = siteMonthKey(site, ym);
+  if(USE_CLOUD){
+    if(_memCache[key] && Date.now() - (_memCacheTime[key] || 0) < CLOUD_CACHE_TTL_MS) return _memCache[key];
+    try{
+      const v = await cloudGetRaw(key);
+      return cacheMonthBlob(key, v ? JSON.parse(v) : { shifts:{}, checkers:{}, approval:null });
+    }catch(e){
+      console.warn('讀取月資料失敗：', e);
+      if(cloudStatus !== 'failed') showCloudError(cloudFailMsg('讀取資料', e));
+      // 讀不到時沿用上一次的資料（沒有就給空的），儲存時一樣會跟雲端最新資料合併，不會蓋掉別人的紀錄
+      return _memCache[key] || { shifts:{}, checkers:{}, approval:null };
+    }
+  }
   if(_memCache[key]) return _memCache[key];
   if(hasStorage()){
     try{
@@ -2873,6 +3568,17 @@ async function getSiteMonthData(site, ym){
 
 async function saveSiteMonthData(site, ym, blob){
   const key = siteMonthKey(site, ym);
+  if(USE_CLOUD){
+    const base = cloudBaseFor(blob, {});
+    try{
+      const merged = await cloudMergeUpdate(key, server => merge3(base, JSON.parse(JSON.stringify(blob)), server));
+      cacheMonthBlob(key, merged);
+    }catch(err){
+      showCloudError(cloudFailMsg('儲存', err));
+      throw err; // 讓畫面顯示「儲存失敗」，不要誤以為已經存好
+    }
+    return;
+  }
   _memCache[key] = blob; // always update memory first, so data survives for this session either way
   if(!hasStorage()) return; // 沒有持久化功能可用，資料保留在記憶體即可，不視為錯誤
   try{
@@ -2894,6 +3600,24 @@ async function getShiftData(site, shiftKey, ym){
 }
 
 async function setShiftData(site, shiftKey, ym, data){
+  if(USE_CLOUD){
+    // 以「這個班別」為單位合併：base 用 data 當初讀到時的內容
+    const key = siteMonthKey(site, ym);
+    const base = cloudBaseFor(data, {});
+    const mine = JSON.parse(JSON.stringify(data || {}));
+    try{
+      const merged = await cloudMergeUpdate(key, server=>{
+        if(!server.shifts) server.shifts = {};
+        server.shifts[shiftKey] = merge3(base, mine, server.shifts[shiftKey]);
+        return server;
+      });
+      cacheMonthBlob(key, merged);
+    }catch(err){
+      showCloudError(cloudFailMsg('儲存', err));
+      throw err;
+    }
+    return;
+  }
   const blob = await getSiteMonthData(site, ym);
   if(!blob.shifts) blob.shifts = {};
   blob.shifts[shiftKey] = data;
@@ -2906,6 +3630,22 @@ async function getSiteCheckers(site, ym){
 }
 
 async function setSiteCheckers(site, ym, checkers){
+  if(USE_CLOUD){
+    const key = siteMonthKey(site, ym);
+    const base = cloudBaseFor(checkers, undefined);
+    const mine = JSON.parse(JSON.stringify(checkers));
+    try{
+      const merged = await cloudMergeUpdate(key, server=>{
+        server.checkers = merge3(base, mine, server.checkers);
+        return server;
+      });
+      cacheMonthBlob(key, merged);
+    }catch(err){
+      showCloudError(cloudFailMsg('儲存', err));
+      throw err;
+    }
+    return;
+  }
   const blob = await getSiteMonthData(site, ym);
   blob.checkers = checkers;
   await saveSiteMonthData(site, ym, blob);
@@ -3818,9 +4558,21 @@ async function renderMonthlyFeed(){
 function getApprovalKey(siteName, ym){
   return `temp-log-approval:${siteName}:${ym}`;
 }
-const _approvalMemCache = {}; // in-memory fallback if storage is unavailable (e.g. hosted outside Claude.ai)
+const _approvalMemCache = {};
+const _approvalMemTime = {}; // in-memory fallback if storage is unavailable (e.g. hosted outside Claude.ai)
 async function getApproval(siteName, ym){
   const key = getApprovalKey(siteName, ym);
+  if(USE_CLOUD){
+    if(key in _approvalMemCache && Date.now() - (_approvalMemTime[key] || 0) < CLOUD_CACHE_TTL_MS) return _approvalMemCache[key];
+    try{
+      const v = await cloudGetRaw(key);
+      _approvalMemCache[key] = v ? JSON.parse(v) : null;
+      _approvalMemTime[key] = Date.now();
+      return _approvalMemCache[key];
+    }catch(e){
+      return _approvalMemCache[key] || null;
+    }
+  }
   if(_approvalMemCache[key]) return _approvalMemCache[key];
   if(hasStorage()){
     try{
@@ -3835,6 +4587,13 @@ async function getApproval(siteName, ym){
   return getBuiltInDemoApproval(siteName, ym);
 }
 async function setApproval(siteName, ym, data){
+  if(USE_CLOUD){
+    const key = getApprovalKey(siteName, ym);
+    await storageSetWithRetry(key, JSON.stringify(data)); // 失敗會丟出錯誤
+    _approvalMemCache[key] = data;
+    _approvalMemTime[key] = Date.now();
+    return;
+  }
   _approvalMemCache[getApprovalKey(siteName, ym)] = data; // keep for this session regardless
   await storageSetWithRetry(getApprovalKey(siteName, ym), JSON.stringify(data));
 }
@@ -4003,13 +4762,12 @@ function renderApprovalForm(siteName, ym, existing, reapprove){
     let signImageData = '';
     if(file.type.startsWith('image/')){
       try{
-        signImageData = await new Promise((resolve, reject)=>{
-          const reader = new FileReader();
-          reader.onload = ()=> resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-      }catch(err){ console.error('簽名檔讀取失敗', err); }
+        signImageData = await compressImageToDataUrl(file);
+      }catch(err){
+        console.error('簽名檔讀取失敗', err);
+        alert('簽名圖片讀取失敗，請換一張圖片再試一次。');
+        return;
+      }
     }
     const data = {
       approved: true,
@@ -4020,7 +4778,16 @@ function renderApprovalForm(siteName, ym, existing, reapprove){
       note: document.getElementById('approvalNoteInput').value.trim(),
       approvedAt: new Date().toISOString().slice(0,10)
     };
-    await setApproval(siteName, ym, data);
+    const submitBtn = document.getElementById('submitApprovalBtn');
+    submitBtn.disabled = true;
+    try{
+      await setApproval(siteName, ym, data);
+    }catch(err){
+      console.error('核定儲存失敗', err);
+      submitBtn.disabled = false;
+      alert('⚠ 核定沒有存成功，請確認網路後再按一次「確認核定」。');
+      return;
+    }
     setStatus('本月已核定');
     await renderApprovalCard(siteName, ym);
   });
@@ -4663,6 +5430,10 @@ function applyLogin(user){
   if(dss) dss.value = user.name;
   refreshAll();
   setTimeout(updateTopbarHeight, 50);
+  if(typeof detectNewStaff === 'function'){
+    try{ detectNewStaff(_lastRosterEntries); }catch(e){}
+  }
+  updateAdminButtonVisibility();
 }
 
 document.getElementById('openLoginBtn').addEventListener('click', ()=>{
@@ -4672,6 +5443,8 @@ document.getElementById('openLoginBtn').addEventListener('click', ()=>{
 
 function performLogout(){
   currentUser = null;
+  closeAdminPanel();
+  updateAdminButtonVisibility();
   topbarUser.style.display = 'none';
   topbarLogin.style.display = 'flex';
   siteSelect.disabled = false;
@@ -4681,6 +5454,9 @@ function performLogout(){
   topbarSubtitle.textContent = '國立臺灣大學醫學院附設醫院雲林分院－藥劑部';
   resetLoginForm();
   loginOverlay.classList.remove('hidden');
+  if(typeof detectNewStaff === 'function'){
+    try{ detectNewStaff(_lastRosterEntries); }catch(e){}
+  }
 }
 logoutBtn.addEventListener('click', performLogout);
 
@@ -4741,6 +5517,307 @@ populateShifts();
 renderShiftPills();
 
 refreshAll();
+
+/* ===================== 系統管理（管理員／員工名單） ===================== */
+const adminOverlayEl = document.getElementById('adminOverlay');
+const openAdminBtnEl = document.getElementById('openAdminBtn');
+let _staffSiteFilter = '全部';
+
+function updateAdminButtonVisibility(){
+  if(!openAdminBtnEl) return;
+  openAdminBtnEl.style.display = isCurrentUserAdmin() ? '' : 'none';
+  setTimeout(updateTopbarHeight, 50);
+}
+
+function siteBadgeClass(site){
+  const idx = Object.keys(STAFF).indexOf(site);
+  return 's' + (idx >= 0 ? idx % 3 : 0);
+}
+
+// 組長／檢核者是系統流程固定綁定的人，不能刪除、也不能換院區
+function getStaffLockedRoles(id){
+  const roles = [];
+  Object.entries(SITE_TEAM_LEAD_ID).forEach(([site, lid])=>{ if(lid === id) roles.push(`${site.replace('院區','')}組長`); });
+  Object.entries(SITE_DEFAULT_CHECKER_ID).forEach(([site, cid])=>{ if(cid === id) roles.push(`${site.replace('院區','')}檢核者`); });
+  return roles;
+}
+
+function normalizeStaffId(raw){
+  let v = String(raw || '').trim().toUpperCase().replace(/\s/g,'');
+  if(/^\d{5}$/.test(v)) v = 'Y' + v;
+  return v;
+}
+
+function findStaffAnySite(id){
+  for(const [site, list] of Object.entries(STAFF)){
+    const p = list.find(s => s.id === id);
+    if(p) return { site, person: p };
+  }
+  return null;
+}
+
+function renderAdminStorageNote(){
+  const el = document.getElementById('adminStorageNote');
+  if(USE_CLOUD && cloudStatus === 'failed'){
+    el.className = 'admin-storage-note warn';
+    el.textContent = '⚠ 目前連不上雲端資料庫，這裡的修改不會被儲存。請確認網路後重新整理頁面。';
+  } else if(hasStorage()){
+    el.className = 'admin-storage-note ok';
+    el.textContent = '✓ 修改會自動存到雲端，其他人下次開啟頁面時就會套用新的名單。';
+  } else {
+    el.className = 'admin-storage-note warn';
+    el.innerHTML = '⚠ 目前還沒接上雲端資料庫（Firebase），在這裡做的修改<b>只在這次開啟頁面時有效</b>，重新整理後會恢復原狀。接上 Firebase 之後就會永久保存、所有人共用。';
+  }
+}
+
+function renderAdminChips(){
+  const wrap = document.getElementById('adminChips');
+  document.getElementById('adminCountText').textContent = `目前管理員（${ADMIN_IDS.length} 人）`;
+  wrap.innerHTML = '';
+  ADMIN_IDS.forEach(id=>{
+    const found = findStaffAnySite(id);
+    const isSelf = currentUser && currentUser.id === id;
+    const chip = document.createElement('span');
+    chip.className = 'admin-chip';
+    chip.innerHTML = `<span class="chip-id">${escapeHtml(id)}</span><span>${escapeHtml(found ? found.person.name : '（不在員工名單）')}</span>` +
+      (isSelf ? '<span class="chip-self">（你）</span>' : '');
+    const x = document.createElement('button');
+    x.type = 'button';
+    x.className = 'admin-chip-x';
+    x.textContent = '✕';
+    x.setAttribute('aria-label', `移除管理員 ${id}`);
+    if(isSelf){ x.disabled = true; x.title = '不能移除自己的管理員身分'; }
+    x.addEventListener('click', ()=> removeAdmin(id));
+    chip.appendChild(x);
+    wrap.appendChild(chip);
+  });
+}
+
+async function persistAdminChange(okMsg){
+  let saved = false;
+  try{ saved = await saveAdminConfig(); }
+  catch(e){
+    console.error('系統管理設定儲存失敗', e);
+    alert('⚠ 儲存失敗，請稍後再試一次。');
+    return;
+  }
+  showSuccessToast(saved ? `✅ ${okMsg}` : `✅ ${okMsg}（尚未接雲端，重新整理後會恢復）`, saved ? 1600 : 2600);
+  try{ await refreshAll(); }catch(e){}
+  try{ detectNewStaff(_lastRosterEntries); }catch(e){}
+}
+
+async function removeAdmin(id){
+  if(currentUser && currentUser.id === id){ alert('不能移除自己的管理員身分，請由其他管理員操作。'); return; }
+  if(ADMIN_IDS.length <= 1){ alert('至少要保留一位管理員。'); return; }
+  const found = findStaffAnySite(id);
+  const label = found ? `${found.person.name}（${id}）` : id;
+  if(!confirm(`確定要移除管理員 ${label} 嗎？\n移除後他就看不到「系統管理」。`)) return;
+  const i = ADMIN_IDS.indexOf(id);
+  if(i >= 0) ADMIN_IDS.splice(i, 1);
+  renderAdminPanel();
+  await persistAdminChange(`已移除管理員 ${label}`);
+}
+
+function updateAdminAddHint(){
+  const hint = document.getElementById('adminAddHint');
+  const id = normalizeStaffId(document.getElementById('adminAddInput').value);
+  hint.className = 'admin-form-hint';
+  if(!id){ hint.textContent = ''; return; }
+  if(!/^Y\d{5}$/.test(id)){ hint.textContent = ''; return; }
+  const found = findStaffAnySite(id);
+  if(!found){ hint.className += ' err'; hint.textContent = `找不到 ${id}，請先到下方「員工名單」新增這位員工。`; return; }
+  if(ADMIN_IDS.includes(id)){ hint.className += ' err'; hint.textContent = `${found.person.name} 已經是管理員。`; return; }
+  hint.className += ' found';
+  hint.textContent = `${found.person.name}（${found.site}）`;
+}
+
+async function addAdmin(){
+  const input = document.getElementById('adminAddInput');
+  const hint = document.getElementById('adminAddHint');
+  const id = normalizeStaffId(input.value);
+  if(!/^Y\d{5}$/.test(id)){
+    hint.className = 'admin-form-hint err';
+    hint.textContent = '請輸入正確的員工編號：Y 加 5 碼數字（也可以只打 5 碼數字）。';
+    input.focus(); return;
+  }
+  const found = findStaffAnySite(id);
+  if(!found){ updateAdminAddHint(); input.focus(); return; }
+  if(ADMIN_IDS.includes(id)){ updateAdminAddHint(); return; }
+  ADMIN_IDS.push(id);
+  input.value = '';
+  hint.textContent = '';
+  renderAdminPanel();
+  await persistAdminChange(`已新增管理員 ${found.person.name}`);
+}
+
+function renderStaffSiteControls(){
+  const sites = Object.keys(STAFF);
+  const addSel = document.getElementById('staffAddSite');
+  const keep = addSel.value;
+  addSel.innerHTML = '<option value="">選擇院區</option>' + sites.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+  if(keep && sites.includes(keep)) addSel.value = keep;
+
+  const filterWrap = document.getElementById('staffSiteFilter');
+  filterWrap.innerHTML = '';
+  ['全部', ...sites].forEach(s=>{
+    const n = s === '全部' ? allStaff().length : STAFF[s].length;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = `${s}（${n}）`;
+    if(_staffSiteFilter === s) b.classList.add('active');
+    b.addEventListener('click', ()=>{ _staffSiteFilter = s; renderStaffSiteControls(); renderStaffList(); });
+    filterWrap.appendChild(b);
+  });
+}
+
+function renderStaffList(){
+  const listEl = document.getElementById('staffList');
+  const q = document.getElementById('staffSearchInput').value.trim().toUpperCase();
+  const sites = Object.keys(STAFF);
+  let rows = [];
+  sites.forEach(site=>{
+    if(_staffSiteFilter !== '全部' && _staffSiteFilter !== site) return;
+    STAFF[site].forEach(p => rows.push({ site, ...p }));
+  });
+  if(q) rows = rows.filter(r => r.id.toUpperCase().includes(q) || r.name.toUpperCase().includes(q));
+  rows.sort((a,b)=> sites.indexOf(a.site) - sites.indexOf(b.site) || a.id.localeCompare(b.id));
+
+  document.getElementById('staffCountText').textContent =
+    q ? `搜尋結果：${rows.length} 人` : `目前員工名單：${rows.length} 人`;
+
+  listEl.innerHTML = '';
+  if(rows.length === 0){
+    listEl.innerHTML = `<div class="staff-empty">${q ? '找不到符合的員工。' : '這個院區目前沒有員工。'}</div>`;
+    return;
+  }
+  rows.forEach(r=>{
+    const locked = getStaffLockedRoles(r.id);
+    const isAdmin = ADMIN_IDS.includes(r.id);
+    const isSelf = currentUser && currentUser.id === r.id;
+    const row = document.createElement('div');
+    row.className = 'staff-row';
+    const tags = locked.map(t=>`<span class="role-tag lead">${escapeHtml(t)}</span>`).join('') +
+      (isAdmin ? '<span class="role-tag admin">管理員</span>' : '');
+    row.innerHTML = `<span class="s-id">${escapeHtml(r.id)}</span>
+      <span class="s-name">${escapeHtml(r.name)}${tags}</span>
+      <span class="site-badge ${siteBadgeClass(r.site)}">${escapeHtml(r.site)}</span>`;
+
+    const sel = document.createElement('select');
+    sel.className = 'admin-select';
+    sel.setAttribute('aria-label', `${r.name} 的院區`);
+    sites.forEach(s=>{
+      const o = document.createElement('option');
+      o.value = s; o.textContent = s;
+      if(s === r.site) o.selected = true;
+      sel.appendChild(o);
+    });
+    if(locked.length){ sel.disabled = true; sel.title = `${locked.join('、')}，院區固定不能更換`; }
+    sel.addEventListener('change', ()=> moveStaffSite(r.id, r.site, sel.value, sel));
+    row.appendChild(sel);
+
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'staff-del-btn';
+    del.textContent = '刪除';
+    if(locked.length){ del.disabled = true; del.title = `${locked.join('、')}，不能刪除`; }
+    else if(isSelf){ del.disabled = true; del.title = '不能刪除自己'; }
+    del.addEventListener('click', ()=> deleteStaff(r.id, r.site));
+    row.appendChild(del);
+
+    listEl.appendChild(row);
+  });
+}
+
+function renderAdminPanel(){
+  renderAdminStorageNote();
+  renderAdminChips();
+  renderStaffSiteControls();
+  renderStaffList();
+}
+
+async function addStaff(){
+  const idEl = document.getElementById('staffAddId');
+  const nameEl = document.getElementById('staffAddName');
+  const siteEl = document.getElementById('staffAddSite');
+  const hint = document.getElementById('staffAddHint');
+  const id = normalizeStaffId(idEl.value);
+  const name = nameEl.value.trim();
+  const site = siteEl.value;
+  hint.className = 'admin-form-hint err';
+  if(!/^Y\d{5}$/.test(id)){ hint.textContent = '員工編號格式不對：要是 Y 加 5 碼數字，例如 Y12345。'; idEl.focus(); return; }
+  const exist = findStaffAnySite(id);
+  if(exist){ hint.textContent = `${id} 已經在名單裡了（${exist.person.name}，${exist.site}）。`; idEl.focus(); return; }
+  if(!name){ hint.textContent = '請填寫姓名。'; nameEl.focus(); return; }
+  if(!site){ hint.textContent = '請選擇院區。'; siteEl.focus(); return; }
+  STAFF[site].push({ name, id });
+  idEl.value = ''; nameEl.value = '';
+  hint.className = 'admin-form-hint found';
+  hint.textContent = `已新增 ${name}（${id}）到${site}。`;
+  renderAdminPanel();
+  await persistAdminChange(`已新增 ${name}`);
+}
+
+async function moveStaffSite(id, fromSite, toSite, selEl){
+  if(fromSite === toSite) return;
+  const p = (STAFF[fromSite] || []).find(s => s.id === id);
+  if(!p){ renderStaffList(); return; }
+  if(!confirm(`確定要把 ${p.name}（${id}）從「${fromSite}」改到「${toSite}」嗎？\n之後他登入就會登記${toSite}的冰箱。`)){
+    selEl.value = fromSite; return;
+  }
+  STAFF[fromSite] = STAFF[fromSite].filter(s => s.id !== id);
+  STAFF[toSite].push(p);
+  await removeExtraStaffEntry(id);
+  renderAdminPanel();
+  await persistAdminChange(`已將 ${p.name} 改到${toSite}`);
+}
+
+async function deleteStaff(id, site){
+  const p = (STAFF[site] || []).find(s => s.id === id);
+  if(!p) return;
+  if(getStaffLockedRoles(id).length){ alert('組長／檢核者不能刪除。'); return; }
+  if(currentUser && currentUser.id === id){ alert('不能刪除自己。'); return; }
+  const alsoAdmin = ADMIN_IDS.includes(id);
+  const msg = `確定要刪除 ${p.name}（${id}）嗎？\n刪除後他就不能登入本系統，以前的登記紀錄不受影響。` +
+    (alsoAdmin ? '\n\n他目前也是管理員，會一併移除管理員身分。' : '');
+  if(!confirm(msg)) return;
+  STAFF[site] = STAFF[site].filter(s => s.id !== id);
+  if(alsoAdmin){ const i = ADMIN_IDS.indexOf(id); if(i >= 0) ADMIN_IDS.splice(i, 1); }
+  await removeExtraStaffEntry(id);
+  // 避免班表系統同步時又把他當成「新員工」跳出來提示
+  await addIgnoredNewStaffId(id);
+  renderAdminPanel();
+  await persistAdminChange(`已刪除 ${p.name}`);
+}
+
+function openAdminPanel(){
+  if(!isCurrentUserAdmin()) return;
+  renderAdminPanel();
+  adminOverlayEl.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+function closeAdminPanel(){
+  if(!adminOverlayEl) return;
+  adminOverlayEl.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+openAdminBtnEl.addEventListener('click', openAdminPanel);
+document.getElementById('adminCloseBtn').addEventListener('click', closeAdminPanel);
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape' && !adminOverlayEl.classList.contains('hidden')) closeAdminPanel();
+});
+document.getElementById('adminAddBtn').addEventListener('click', addAdmin);
+document.getElementById('adminAddInput').addEventListener('input', updateAdminAddHint);
+document.getElementById('adminAddInput').addEventListener('keydown', e=>{ if(e.key === 'Enter') addAdmin(); });
+document.getElementById('staffAddBtn').addEventListener('click', addStaff);
+['staffAddId','staffAddName'].forEach(id=>{
+  document.getElementById(id).addEventListener('keydown', e=>{ if(e.key === 'Enter') addStaff(); });
+});
+document.getElementById('staffSearchInput').addEventListener('input', renderStaffList);
+document.getElementById('staffSearchClear').addEventListener('click', ()=>{
+  document.getElementById('staffSearchInput').value = '';
+  renderStaffList();
+});
 </script>
 
 </body>
