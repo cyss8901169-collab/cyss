@@ -2761,6 +2761,8 @@ function openAbnormalModal(areaKey, day, session, deptKey) {
 
 function closeAbnormalModal(e) {
   if(e && e.target !== document.getElementById('abnormalModalOverlay')) return;
+  // 直接關閉（✕ 或點視窗外）時，也把已填的內容存起來，下次打開還在
+  if(abnormalModalCtx && document.getElementById('modal-abn-handling')) abnModalPersistAll();
   document.getElementById('abnormalModalOverlay').classList.remove('open');
   abnormalModalCtx = null;
   renderTable(); // 更新卡片上的完成狀態
@@ -2789,14 +2791,15 @@ function renderAbnormalModalBody() {
   document.getElementById('abnormalModalBody').innerHTML = `
     <div style="margin-bottom:14px;">
       <label style="display:block;font-size:12px;font-weight:700;color:var(--gray-700);margin-bottom:6px;">異常原因</label>
-      <input type="text" id="modal-abn-reason" value="${e.reason||''}" placeholder="請填寫異常原因"
+      <input type="text" id="modal-abn-reason" value="${escHtml(e.reason||'')}" placeholder="請填寫異常原因"
+        oninput="if(this.value.trim()) abnClearMark(this)" onchange="abnModalPersist('reason', this.value)"
         style="width:100%;padding:11px 12px;border:1.5px solid var(--gray-200);border-radius:8px;
                font-size:16px;font-family:inherit;box-sizing:border-box;">
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
       <div>
         <label style="display:block;font-size:12px;font-weight:700;color:var(--gray-700);margin-bottom:6px;">是否解除</label>
-        <select id="modal-abn-resolved"
+        <select id="modal-abn-resolved" onchange="abnModalPersist('resolved', this.value)"
           style="width:100%;padding:11px 8px;border:1.5px solid var(--gray-200);border-radius:8px;
                  font-size:16px;font-family:inherit;font-weight:700;box-sizing:border-box;">
           <option value="" ${resolved===''?'selected':''}>— 請選擇 —</option>
@@ -2808,15 +2811,16 @@ function renderAbnormalModalBody() {
         <label style="display:block;font-size:12px;font-weight:700;color:var(--gray-700);margin-bottom:6px;">回復溫(溼)度</label>
         <input type="tel" id="modal-abn-recovery" inputmode="decimal" pattern="[0-9]*[.]?[0-9]*"
           autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-          value="${recovery}" placeholder="例如 24.5"
-          oninput="filterDecimalInput(this)"
+          value="${escHtml(recovery)}" placeholder="例如 24.5"
+          oninput="filterDecimalInput(this);if(this.value.trim()) abnClearMark(this)" onchange="abnModalPersist('recovery', this.value)"
           style="width:100%;padding:11px 8px;border:1.5px solid var(--gray-200);border-radius:8px;
                  font-size:16px;font-family:inherit;text-align:center;box-sizing:border-box;">
       </div>
     </div>
     <div style="margin-bottom:16px;">
       <label style="display:block;font-size:12px;font-weight:700;color:var(--gray-700);margin-bottom:6px;">處理方式</label>
-      <input type="text" id="modal-abn-handling" value="${handling}" placeholder="請填寫實際處理方式"
+      <input type="text" id="modal-abn-handling" value="${escHtml(handling)}" placeholder="請填寫實際處理方式"
+        oninput="if(this.value.trim()) abnClearMark(this)" onchange="abnModalPersist('handling', this.value)"
         style="width:100%;padding:11px 12px;border:1.5px solid var(--gray-200);border-radius:8px;
                font-size:16px;font-family:inherit;box-sizing:border-box;">
     </div>
@@ -2838,6 +2842,42 @@ function renderAbnormalModalBody() {
       ✔ 儲存並關閉
     </button>
   `;
+}
+
+// 異常處理視窗：欄位一改就存，關閉視窗或驗證未過都不會遺失已填的內容
+function abnModalLocked() {
+  if(!abnormalModalCtx) return true;
+  const { areaKey, day } = abnormalModalCtx;
+  const savedArea = currentArea;
+  currentArea = areaKey;
+  loadData(currentMonth);
+  const locked = !!getChecker(Math.ceil(day / 7));
+  currentArea = savedArea;
+  loadData(currentMonth);
+  return locked;
+}
+function abnModalPersist(field, value) {
+  if(!abnormalModalCtx || abnModalLocked()) return;
+  const { areaKey, day, session } = abnormalModalCtx;
+  const v = String(value == null ? '' : value).trim();
+  if(field === 'reason') {
+    const savedArea = currentArea;
+    currentArea = areaKey; loadData(currentMonth);
+    setEntry(day, session, 'reason', v);
+    currentArea = savedArea; loadData(currentMonth);
+  } else {
+    setAbnormalField(areaKey, day, session, field, v);
+  }
+  const el = document.getElementById('modal-abn-' + field);
+  if(el && v) abnClearMark(el);
+}
+function abnClearMark(el) { el.style.borderColor = ''; el.style.boxShadow = ''; el.style.background = ''; }
+function abnModalPersistAll() {
+  const get = id => (document.getElementById(id)?.value || '').trim();
+  abnModalPersist('reason', get('modal-abn-reason'));
+  abnModalPersist('resolved', get('modal-abn-resolved'));
+  abnModalPersist('recovery', get('modal-abn-recovery'));
+  abnModalPersist('handling', get('modal-abn-handling'));
 }
 
 function saveAbnormalModal() {
@@ -2862,15 +2902,27 @@ function saveAbnormalModal() {
   const recovery = document.getElementById('modal-abn-recovery').value.trim();
   const handling = document.getElementById('modal-abn-handling').value.trim();
 
-  if(!reason) { showToast('請先填寫異常原因', 'warn'); return; }
-  if(!resolved) { showToast('請選擇是否解除', 'warn'); return; }
-  if(!handling) { showToast('請填寫處理方式', 'warn'); return; }
-  if(!recovery) { showToast('請填寫回復溫(溼)度', 'warn'); return; }
-
-  setEntryByArea(areaKey, day, session, 'reason', reason);
-  setAbnormalField(areaKey, day, session, 'resolved', resolved);
-  setAbnormalField(areaKey, day, session, 'handling', handling);
-  setAbnormalField(areaKey, day, session, 'recovery', recovery);
+  // 先把已經填好的欄位存起來，缺的欄位再提醒補填（不會清空已填的內容）
+  abnModalPersistAll();
+  const missing = [];
+  if(!reason)   missing.push(['modal-abn-reason', '異常原因']);
+  if(!resolved) missing.push(['modal-abn-resolved', '是否解除']);
+  if(!recovery) missing.push(['modal-abn-recovery', '回復溫(溼)度']);
+  if(!handling) missing.push(['modal-abn-handling', '處理方式']);
+  ['modal-abn-reason','modal-abn-resolved','modal-abn-recovery','modal-abn-handling'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) abnClearMark(el);
+  });
+  if(missing.length) {
+    missing.forEach(([id]) => {
+      const el = document.getElementById(id);
+      if(el) { el.style.borderColor = 'var(--red)'; el.style.boxShadow = '0 0 0 2px rgba(220,38,38,.25)'; el.style.background = '#fff5f5'; }
+    });
+    // 只用紅框標出缺少的欄位，不跳出提示訊息
+    const first = document.getElementById(missing[0][0]);
+    if(first) { first.scrollIntoView({ block:'center', behavior:'smooth' }); first.focus(); }
+    return;
+  }
 
   showToast('✅ 異常處理紀錄已儲存', 'success');
   closeAbnormalModal();
