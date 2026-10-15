@@ -1242,6 +1242,16 @@
     box-shadow:0 -4px 18px rgba(15,48,87,0.25);
   }
   .confirm-btn:hover{ filter:brightness(0.95); }
+  .confirm-pending-bar{
+    position:fixed; left:16px; right:16px; bottom:14px; max-width:1148px; margin:0 auto;
+    padding:12px 14px; border-radius:9px; z-index:30; text-align:center;
+    font-size:14px; font-weight:600; line-height:1.45;
+    background:#eef1f4; color:var(--muted); border:1px dashed #b8c4ce;
+    box-shadow:0 -4px 14px rgba(15,48,87,0.10);
+  }
+  .confirm-pending-bar.warn{ background:#fff4e5; color:#8a5a00; border-color:#f0c070; }
+  .confirm-pending-bar.done{ background:#e8f5ee; color:var(--ok); border:1px solid #b9dcc8; }
+  .confirm-pending-bar:empty{ display:none; }
   .staff-select-row{
     display:flex;
     align-items:center;
@@ -2054,7 +2064,8 @@
       <input type="text" id="reasonInput" style="display:none;">
       <select id="dailyStaffSelect" style="display:none;"></select>
 
-      <button class="confirm-btn" id="confirmDailyBtn">✓ 確認本次登記</button>
+      <div class="confirm-pending-bar" id="confirmPendingBar" role="status" aria-live="polite"></div>
+      <button class="confirm-btn" id="confirmDailyBtn" style="display:none;">✓ 確認本次登記</button>
     </div>
   </div>
 
@@ -3660,6 +3671,7 @@ function renderShiftPills(){
     btn.textContent = s.label.replace(/時段|（.*?）|\(.*?\)/g, '').trim();
     btn.addEventListener('click', ()=>{
       if(shiftSelect.value !== s.key){
+        if(!confirmLeaveDaily()) return;
         shiftSelect.value = s.key;
         shiftSelect.dispatchEvent(new Event('change'));
       }
@@ -4087,6 +4099,9 @@ async function renderDailyView(){
     staffSel.appendChild(opt);
   });
 
+  _dailySnapshot = dailyStateString();
+  _dailyRowSaved = !!(row && row.savedAt);
+
   // 查詢班表系統的排班摘要，顯示成「僅供參考」的提醒訊息——
   // 實際登記人員一律以登入者本人為準，這裡不會改變真正的登記人員。
   const scheduleHintEl = document.getElementById('scheduleHintBar');
@@ -4123,6 +4138,7 @@ async function renderDailyView(){
   }
 
   updateStatusCardPreview();
+  updateConfirmState();
 }
 
 function checkCardLogicError(card, fridgeIdx){
@@ -4174,6 +4190,91 @@ function checkCardLogicError(card, fridgeIdx){
   }
 
   return !errorMsg;
+}
+
+/* ===== 登記完整性檢查 & 離開提醒 ===== */
+let _dailySnapshot = '';
+let _dailyRowSaved = false;
+let _dailySaving = false;
+
+function dailyStateString(){
+  if(!fridgeCardsEl) return '';
+  const vals = [];
+  fridgeCardsEl.querySelectorAll('input[data-sub-key]').forEach(inp=> vals.push(inp.value.trim()));
+  fridgeCardsEl.querySelectorAll('.reason-text-input').forEach(inp=> vals.push(inp.value.trim()));
+  return vals.join('|');
+}
+function isDailyViewActive(){
+  return !!(dailyViewEl && dailyViewEl.style.display !== 'none' && currentUser);
+}
+// 畫面上有填了、但還沒按「確認本次登記」的內容
+function isDailyDirty(){
+  if(!isDailyViewActive() || _dailySaving) return false;
+  return dailyStateString() !== _dailySnapshot;
+}
+
+// 回傳尚未完成的項目；全部空陣列 = 可以送出
+function getDailyCompletion(){
+  const res = { emptyCount:0, invalidCount:0, logicError:false, missingReason:false, missingHandling:false };
+  fridgeCardsEl.querySelectorAll('input[data-sub-key]').forEach(inp=>{
+    const v = inp.value.trim();
+    if(v === '') res.emptyCount++;
+    else if(!/^-?\d+(\.\d+)?$/.test(v)) res.invalidCount++;
+  });
+  res.logicError = dailyHasAnyError();
+  if(dailyHasAbnormal()){
+    fridgeCardsEl.querySelectorAll('.fridge-reason-section').forEach(section=>{
+      if(section.style.display === 'none') return;
+      const r = section.querySelector('.reason-text-input');
+      if(!r || !r.value.trim()) res.missingReason = true;
+      const done = section.querySelector('.abn-done-bar');
+      if(!done || done.style.display !== 'flex') res.missingHandling = true;
+    });
+  }
+  return res;
+}
+function dailyIncompleteMessage(c){
+  if(c.emptyCount) return `還有 ${c.emptyCount} 格溫度未填寫，全部填完才能確認登記`;
+  if(c.invalidCount) return `有 ${c.invalidCount} 格不是數字，請修正`;
+  if(c.logicError) return '「現在溫度」不可高於最高溫度或低於最低溫度，請檢查橘色欄位';
+  if(c.missingReason) return '溫度超出 2℃～8℃，請填寫「異常原因」';
+  if(c.missingHandling) return '請完成「異常處理記錄」後才能確認登記';
+  return '';
+}
+
+function updateConfirmState(){
+  const btn = document.getElementById('confirmDailyBtn');
+  const bar = document.getElementById('confirmPendingBar');
+  if(!btn || !bar || !fridgeCardsEl) return;
+  if(!fridgeCardsEl.querySelector('input[data-sub-key]')){ btn.style.display = 'none'; bar.textContent = ''; return; }
+  const msg = dailyIncompleteMessage(getDailyCompletion());
+  const dirty = dailyStateString() !== _dailySnapshot;
+  if(msg){
+    btn.style.display = 'none';
+    bar.className = 'confirm-pending-bar' + (dirty ? ' warn' : '');
+    bar.textContent = (dirty ? '⚠ 尚未儲存｜' : '') + msg;
+  } else if(_dailyRowSaved && !dirty){
+    btn.style.display = 'none';
+    bar.className = 'confirm-pending-bar done';
+    bar.textContent = '✓ 本時段已登記完成';
+  } else {
+    bar.textContent = '';
+    btn.style.display = '';
+  }
+}
+
+// 要離開目前登記畫面前呼叫：沒有未儲存內容就直接放行；有的話先問
+if(fridgeCardsEl){
+  ['input','change'].forEach(ev => fridgeCardsEl.addEventListener(ev, ()=> setTimeout(updateConfirmState, 0)));
+  fridgeCardsEl.addEventListener('click', ()=> setTimeout(updateConfirmState, 0));
+}
+window.addEventListener('beforeunload', e=>{
+  if(isDailyDirty()){ e.preventDefault(); e.returnValue = ''; }
+});
+
+function confirmLeaveDaily(){
+  if(!isDailyDirty()) return true;
+  return confirm('⚠ 本次登記還沒有按「確認本次登記」。\n\n現在離開，剛才填寫的溫度不會被儲存。\n\n確定要離開嗎？\n（按「取消」留在這個畫面繼續登記）');
 }
 
 function dailyHasAnyError(){
@@ -4242,6 +4343,14 @@ document.getElementById('confirmDailyBtn').addEventListener('click', async ()=>{
   const selectedDateStr = dateSelectEl.value || `${ym}-${String(day).padStart(2,'0')}`;
   if(selectedDateStr > todayDateValue()){
     alert('⚠ 無法登記未來日期的資料，請確認日期是否選擇正確。');
+    return;
+  }
+
+  // 防呆檢查 0：每一台冰箱的最低／現在／最高都要填寫
+  const completion = getDailyCompletion();
+  if(completion.emptyCount || completion.invalidCount){
+    alert('⚠ ' + dailyIncompleteMessage(completion));
+    updateConfirmState();
     return;
   }
 
@@ -4344,7 +4453,13 @@ document.getElementById('confirmDailyBtn').addEventListener('click', async ()=>{
   data.manager = staffName || data.manager || '';
 
   try{
+    _dailySaving = true;
     await setShiftData(siteName, shiftKey, ym, data);
+    _dailySaving = false;
+    _dailySnapshot = dailyStateString();
+    _dailyRowSaved = true;
+    _dailyLoadedSavedAt = data.rows[day].savedAt;
+    updateConfirmState();
     const shiftObjNow = site.shifts.find(s=>s.key===shiftKey);
     const shiftShortNow = shiftObjNow ? shiftObjNow.label.replace(/時段|（.*?）|\(.*?\)/g,'').trim() : '';
     setStatus('已確認本次登記');
@@ -4361,6 +4476,7 @@ document.getElementById('confirmDailyBtn').addEventListener('click', async ()=>{
     await renderAbnSection();
     await renderStatCards();
   }catch(err){
+    _dailySaving = false;
     console.error(err);
     const msg = String(err);
     if(msg.includes('rate limit') || msg.includes('Rate limit')){
@@ -4371,7 +4487,7 @@ document.getElementById('confirmDailyBtn').addEventListener('click', async ()=>{
   }
 });
 
-dailyDateSelect.addEventListener('change', renderDailyView);
+// （換日期時的重新顯示，統一由下方 dateSelect 的 change 處理，才能先做「尚未儲存」提醒）
 
 /* ===================== Abnormal record section ===================== */
 
@@ -4991,6 +5107,8 @@ modeDailyBtn.addEventListener('click', async ()=>{
   await renderAbnSection();
 });
 modeGridBtn.addEventListener('click', async ()=>{
+  if(modeGridBtn.classList.contains('active')) return;
+  if(!confirmLeaveDaily()) return;
   modeGridBtn.classList.add('active');
   modeDailyBtn.classList.remove('active');
   dailyViewEl.style.display = 'none';
@@ -5481,6 +5599,7 @@ document.querySelectorAll('#abnProcessCannedBtns .reason-canned-btn').forEach(bt
 
 document.getElementById('abnRecordSkipBtn').addEventListener('click', ()=>{
   abnRecordModal.classList.add('hidden');
+  setTimeout(updateConfirmState, 0);
 });
 
 abnRecordSubmitBtn.addEventListener('click', async ()=>{
@@ -5528,6 +5647,7 @@ abnRecordSubmitBtn.addEventListener('click', async ()=>{
   // 不論上面是否成功，都要讓彈窗確實關閉、按鈕確實有反應，
   // 避免看起來像「按了沒反應」；失敗時另外用明確訊息告知。
   abnRecordModal.classList.add('hidden');
+  setTimeout(updateConfirmState, 0);
   if(saveOk){
     setStatus('異常處理紀錄已儲存');
     if(_abnRecordCtx && _abnRecordCtx.doneBar){
@@ -5619,7 +5739,10 @@ function performLogout(){
     try{ detectNewStaff(_lastRosterEntries); }catch(e){}
   }
 }
-logoutBtn.addEventListener('click', performLogout);
+logoutBtn.addEventListener('click', ()=>{
+  if(!confirmLeaveDaily()) return;
+  performLogout();
+});
 
 // 閒置自動登出：畫面超過2分鐘沒有任何操作（滑鼠/鍵盤/觸控/捲動），就自動登出，
 // 避免忘記登出、離開座位時被別人看到已登入的畫面。
@@ -5642,7 +5765,12 @@ document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState === 'visible') resetInactivityTimer();
 });
 
+let _prevSiteValue = siteSelect.value;
 siteSelect.addEventListener('change', async ()=>{
+  if(siteSelect.value !== _prevSiteValue && !confirmLeaveDaily()){
+    siteSelect.value = _prevSiteValue; return;
+  }
+  _prevSiteValue = siteSelect.value;
   populateShifts();
   await refreshAll();
 });
@@ -5664,7 +5792,13 @@ dateSelectEl.value = todayDateValue();
 dateSelectEl.max = todayDateValue();
 
 // sync date input → daily view
+let _prevDateValue = dateSelectEl.value;
 dateSelectEl.addEventListener('change', async ()=>{
+  if(dateSelectEl.value !== _prevDateValue && !confirmLeaveDaily()){
+    dateSelectEl.value = _prevDateValue; // 取消：日期改回原本的
+    return;
+  }
+  _prevDateValue = dateSelectEl.value;
   const parts = dateSelectEl.value.split('-');
   if(parts.length === 3){
     monthSelect.value = `${parts[0]}-${parts[1]}`;
@@ -5964,7 +6098,12 @@ function closeAdminPanel(){
   document.body.style.overflow = '';
 }
 
-openAdminBtnEl.addEventListener('click', openAdminPanel);
+openAdminBtnEl.addEventListener('click', ()=>{
+  if(!confirmLeaveDaily()) return;
+  // 已確認放棄未儲存內容：把登記畫面恢復成雲端上的內容
+  if(isDailyDirty()) renderDailyView();
+  openAdminPanel();
+});
 document.getElementById('adminCloseBtn').addEventListener('click', closeAdminPanel);
 document.addEventListener('keydown', e=>{
   if(e.key === 'Escape' && !adminOverlayEl.classList.contains('hidden')) closeAdminPanel();
