@@ -792,6 +792,7 @@
   const scheduleMonthCache = {}; // monthKey ("2026-09") -> entries 物件
 
   // 抓取某個月份的班表 entries（有快取，同一個月只會真的打一次）
+  window.scheduleMonthStatus = {}; // 月份 → 'ok'（已讀到）/'missing'（班表尚未建立）/'error'（讀取失敗）
   window.fetchScheduleMonth = async function(monthKey) {
     if(scheduleMonthCache[monthKey]) return scheduleMonthCache[monthKey];
     try {
@@ -800,10 +801,12 @@
       const snap = await getDoc(ref);
       const entries = snap.exists() ? (snap.data().entries || {}) : {};
       scheduleMonthCache[monthKey] = entries;
+      window.scheduleMonthStatus[monthKey] = snap.exists() ? 'ok' : 'missing';
       return entries;
     } catch(e) {
+      // 讀取失敗不記住結果，下次會重新讀取（避免一次網路不穩就整段時間都抓不到）
       console.error('班表資料讀取失敗（唯讀查詢，不影響登記功能本身）：', e);
-      scheduleMonthCache[monthKey] = {};
+      window.scheduleMonthStatus[monthKey] = 'error';
       return {};
     }
   };
@@ -829,8 +832,7 @@
       return directoryCache;
     } catch(e) {
       console.error('員工姓名目錄讀取失敗（將沿用本機備用姓名，不影響登記功能）：', e);
-      directoryCache = {};
-      return {};
+      return {}; // 不記住失敗結果，下次會重新讀取
     }
   };
 </script>
@@ -1151,6 +1153,7 @@
         </select>
         <button class="adm-btn" onclick="adminAddStaff()">＋ 新增員工</button>
       </div>
+      <div class="adm-desc" id="admNewShiftHint" style="margin:6px 0 0"></div>
       <div class="adm-row" style="margin-top:10px">
         <input class="adm-input" id="admSearch" placeholder="搜尋員編或姓名" style="flex:1" oninput="renderAdminStaffTable()">
         <select class="adm-select" id="admFilterCampus" onchange="renderAdminStaffTable()">
@@ -2448,24 +2451,58 @@ async function syncStaffNamesFromSchedule() {
 // ══════════ 依班表顯示今日應登記人員（唯讀查詢班表系統，讀取失敗不影響本系統其他功能）══════════
 // ══════════ 新進人員提醒（唯讀比對班表，不會自動新增任何人員）══════════
 // 比對「本月班表上有 B8/SD/HD 班別的員編」與員工名單，找出班表上有班、但還沒加入名單的人。
-async function getRosterMissingStaff() {
-  if(typeof window.fetchScheduleMonth !== 'function') return [];
+function normShift(code) { return String(code == null ? '' : code).trim().toUpperCase(); }
+function normEmpId(id) { return String(id == null ? '' : id).trim().toUpperCase(); }
+function currentMonthKey() {
   const now = new Date();
-  const monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  return now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+}
+// 比對本月班表：回傳 { status, monthKey, total, onDuty, missing:[{id,name}] }
+async function scanRosterForNewStaff() {
+  const monthKey = currentMonthKey();
+  const result = { status: 'error', monthKey, total: 0, onDuty: 0, missing: [] };
+  if(typeof window.fetchScheduleMonth !== 'function') return result;
   const entries = await window.fetchScheduleMonth(monthKey);
-  const knownIds = new Set(STAFF.map(s => s.id));
-  const codes = window.ON_DUTY_SHIFT_CODES || [];
-  const missingIds = Object.keys(entries || {}).filter(empId => {
-    if(knownIds.has(empId) || STAFF_IGNORE_IDS.includes(empId)) return false;
-    const days = entries[empId] || {};
-    return Object.values(days).some(code => codes.includes(code));
-  }).sort();
-  if(!missingIds.length) return [];
-  let directory = {};
-  if(typeof window.fetchEmployeeDirectory === 'function') {
+  result.status = (window.scheduleMonthStatus || {})[monthKey] || 'ok';
+  const codes = (window.ON_DUTY_SHIFT_CODES || []).map(normShift);
+  const knownIds = new Set(STAFF.map(s => normEmpId(s.id)));
+  const ignore = new Set(STAFF_IGNORE_IDS.map(normEmpId));
+  const ids = Object.keys(entries || {});
+  result.total = ids.length;
+  const missingIds = [];
+  ids.forEach(raw => {
+    const days = entries[raw] || {};
+    if(!Object.values(days).some(code => codes.includes(normShift(code)))) return;
+    result.onDuty++;
+    const id = normEmpId(raw);
+    if(!knownIds.has(id) && !ignore.has(id)) missingIds.push(id);
+  });
+  missingIds.sort();
+  if(missingIds.length && typeof window.fetchEmployeeDirectory === 'function') {
+    let directory = {};
     try { directory = await window.fetchEmployeeDirectory(); } catch(e) {}
+    const dir = {};
+    Object.keys(directory).forEach(k => { dir[normEmpId(k)] = directory[k]; });
+    result.missing = missingIds.map(id => ({ id, name: dir[id] || '' }));
+  } else {
+    result.missing = missingIds.map(id => ({ id, name: '' }));
   }
-  return missingIds.map(id => ({ id, name: directory[id] || '' }));
+  return result;
+}
+async function getRosterMissingStaff() {
+  return (await scanRosterForNewStaff()).missing;
+}
+// 查某位員工本月在班表上的班別統計，例如「B8×6、休×4」
+async function rosterShiftSummary(empId) {
+  if(typeof window.fetchScheduleMonth !== 'function') return null;
+  const monthKey = currentMonthKey();
+  const entries = await window.fetchScheduleMonth(monthKey);
+  if((window.scheduleMonthStatus || {})[monthKey] === 'error') return null;
+  const key = Object.keys(entries || {}).find(k => normEmpId(k) === normEmpId(empId));
+  if(!key) return { found: false, text: '' };
+  const count = {};
+  Object.values(entries[key] || {}).forEach(c => { const n = normShift(c) || '（空白）'; count[n] = (count[n] || 0) + 1; });
+  return { found: true, text: Object.keys(count).map(k => `${k}×${count[k]}`).join('、') };
 }
 
 function canSeeNewStaffAlert(id) {
@@ -4149,21 +4186,27 @@ let adminPendingNames = {};
 async function renderAdminPending() {
   const sec = document.getElementById('admPendingSection');
   const box = document.getElementById('admPendingList');
-  let missing = [];
-  try { missing = await getRosterMissingStaff(); } catch(e) {}
+  sec.style.display = 'block';
+  box.innerHTML = `<div class="adm-empty">正在比對本月班表…</div>`;
+  let scan;
+  try { scan = await scanRosterForNewStaff(); } catch(e) { scan = { status:'error', missing:[] }; }
+  const missing = scan.missing || [];
   adminPendingNames = {};
   missing.forEach(m => { adminPendingNames[m.id] = m.name; });
   const ignored = STAFF_IGNORE_IDS.slice().sort();
-  if(!missing.length && !ignored.length) { sec.style.display = 'none'; return; }
-  sec.style.display = 'block';
-  let html = missing.length
-    ? missing.map(m => `<div class="adm-pending-row">
+  const [y, m] = (scan.monthKey || currentMonthKey()).split('-');
+  const monthLabel = `${y}年${Number(m)}月`;
+  let statusLine;
+  if(scan.status === 'error') statusLine = `⚠️ 無法讀取${monthLabel}班表（可能是網路不穩），所以無法自動找出新進人員。請重新整理頁面後再試一次。`;
+  else if(scan.status === 'missing') statusLine = `⚠️ 班表系統還沒有${monthLabel}的班表，等班表建立後才能自動找出新進人員。`;
+  else statusLine = `已比對${monthLabel}班表：班表上共 ${scan.total} 人，其中 ${scan.onDuty} 人有 B8／SD／HD 班` + (missing.length ? `，以下 ${missing.length} 人還不在名單裡。` : `，都已在員工名單中 ✓`);
+  let html = `<div class="adm-desc" style="margin-bottom:6px">${statusLine}</div>`;
+  html += missing.map(m => `<div class="adm-pending-row">
         <span class="who"><strong>${escHtml(m.name || '（班表無姓名）')}</strong>　${m.id}</span>
         <select class="adm-select" id="admPend_${m.id}" aria-label="${m.id} 的院區">${adminCampusOptions('', true)}</select>
         <button class="adm-btn small" onclick="adminAddPending('${m.id}')">加入</button>
         <button class="adm-btn ghost small" onclick="adminIgnore('${m.id}')">不需加入</button>
-      </div>`).join('')
-    : `<div class="adm-empty">目前沒有待處理的新進人員 ✓</div>`;
+      </div>`).join('');
   if(ignored.length) {
     html += `<details class="adm-details"><summary>已設定不需加入的人員（${ignored.length} 人）</summary>`
       + ignored.map(id => `<div class="adm-pending-row"><span class="who">${id}</span>
@@ -4405,6 +4448,18 @@ function adminRemoveAdmin(id) {
 async function adminAutofillName() {
   const id = (document.getElementById('admNewId').value || '').trim().toUpperCase();
   const nameEl = document.getElementById('admNewName');
+  const hint = document.getElementById('admNewShiftHint');
+  if(hint) {
+    hint.textContent = '';
+    if(/^Y\d{5}$/.test(id)) {
+      rosterShiftSummary(id).then(r => {
+        if((document.getElementById('admNewId').value || '').trim().toUpperCase() !== id) return;
+        if(!r) hint.textContent = '（目前無法讀取班表）';
+        else if(!r.found) hint.textContent = `📅 本月班表上沒有 ${id}，所以不會出現在「待處理的新進人員」。`;
+        else hint.textContent = `📅 ${id} 本月班別：${r.text}` + (/(^|、)(B8|SD|HD)×/.test(r.text) ? '' : '（沒有 B8／SD／HD 班，所以不會出現在「待處理的新進人員」）');
+      });
+    }
+  }
   if(!/^Y\d{5}$/.test(id) || typeof window.fetchEmployeeDirectory !== 'function') return;
   try {
     const dir = await window.fetchEmployeeDirectory();
