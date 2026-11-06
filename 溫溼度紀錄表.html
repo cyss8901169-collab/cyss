@@ -993,7 +993,7 @@
       <!-- 依班表顯示今日應登記人員（唯讀查詢班表系統 Firestore） -->
       <div id="onDutyStaffBox" style="display:none;margin-bottom:8px;padding:8px 12px;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:8px;font-size:12px;color:#1e40af;"></div>
 
-      <!-- 新進人員提醒：班表上有應登記班別、但尚未加入本系統名單的人（只顯示給管理人／組長） -->
+      <!-- 新進人員提醒：班表上有排班、但尚未加入本系統名單的人（只顯示給管理員／組長） -->
       <div id="newStaffAlertBox" style="display:none;margin-bottom:8px;padding:8px 12px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:8px;font-size:12px;color:#9a3412;line-height:1.6;"></div>
 
       <div id="stickyFields" style="display:none;padding:6px 0 4px;border-top:1px solid var(--gray-100);margin-top:2px;"></div>
@@ -1121,7 +1121,7 @@
     <!-- 待處理的新進人員 -->
     <div class="adm-section adm-pending" id="admPendingSection" style="display:none">
       <h3>🔔 待處理的新進人員</h3>
-      <div class="adm-desc">本月班表上有應登記班別（B8／SD／HD），但還不在員工名單裡的人。選好院區按「加入」；確定不需要登記的人按「不需加入」，之後就不會再提醒。</div>
+      <div class="adm-desc">本月班表上有排班、但還不在員工名單裡的人。選好院區按「加入」；確定不需要登記溫溼度的人（例如其他單位人員）按「不需加入」，之後就不會再提醒。</div>
       <div id="admPendingList"></div>
     </div>
 
@@ -2470,10 +2470,11 @@ async function scanRosterForNewStaff() {
   const ids = Object.keys(entries || {});
   result.total = ids.length;
   const missingIds = [];
+  // 新進人員：本月班表上「有排任何班」、但還不在員工名單的人（不限 B8／SD／HD，那只是「今日應登記人員」用的條件）
   ids.forEach(raw => {
     const days = entries[raw] || {};
-    if(!Object.values(days).some(code => codes.includes(normShift(code)))) return;
-    result.onDuty++;
+    if(Object.values(days).some(code => codes.includes(normShift(code)))) result.onDuty++;
+    if(!Object.values(days).some(code => normShift(code) !== '')) return;
     const id = normEmpId(raw);
     if(!knownIds.has(id) && !ignore.has(id)) missingIds.push(id);
   });
@@ -2525,7 +2526,7 @@ async function renderNewStaffAlert() {
       ? `<button class="adm-btn small" style="margin-top:6px" onclick="openAdminPage()">前往系統管理處理</button>`
       : `<span style="color:#c2410c;">請通知管理員到「系統管理」確認院區後加入名單。</span>`;
     box.innerHTML = `🔔 <strong>新進人員提醒</strong><br>`
-      + `以下人員本月班表上有應登記班別，但還不在員工名單裡，目前無法登入登記：<br>`
+      + `以下人員本月班表上有排班，但還不在員工名單裡，目前無法登入登記：<br>`
       + `<strong>${list}</strong><br>${action}`;
     box.style.display = 'block';
   } catch(e) {
@@ -4199,7 +4200,7 @@ async function renderAdminPending() {
   let statusLine;
   if(scan.status === 'error') statusLine = `⚠️ 無法讀取${monthLabel}班表（可能是網路不穩），所以無法自動找出新進人員。請重新整理頁面後再試一次。`;
   else if(scan.status === 'missing') statusLine = `⚠️ 班表系統還沒有${monthLabel}的班表，等班表建立後才能自動找出新進人員。`;
-  else statusLine = `已比對${monthLabel}班表：班表上共 ${scan.total} 人，其中 ${scan.onDuty} 人有 B8／SD／HD 班` + (missing.length ? `，以下 ${missing.length} 人還不在名單裡。` : `，都已在員工名單中 ✓`);
+  else statusLine = `已比對${monthLabel}班表：班表上共 ${scan.total} 人` + (missing.length ? `，以下 ${missing.length} 人還不在員工名單裡。` : `，都已在員工名單中（或已設定不需加入）✓`);
   let html = `<div class="adm-desc" style="margin-bottom:6px">${statusLine}</div>`;
   html += missing.map(m => `<div class="adm-pending-row">
         <span class="who"><strong>${escHtml(m.name || '（班表無姓名）')}</strong>　${m.id}</span>
@@ -4456,7 +4457,7 @@ async function adminAutofillName() {
         if((document.getElementById('admNewId').value || '').trim().toUpperCase() !== id) return;
         if(!r) hint.textContent = '（目前無法讀取班表）';
         else if(!r.found) hint.textContent = `📅 本月班表上沒有 ${id}，所以不會出現在「待處理的新進人員」。`;
-        else hint.textContent = `📅 ${id} 本月班別：${r.text}` + (/(^|、)(B8|SD|HD)×/.test(r.text) ? '' : '（沒有 B8／SD／HD 班，所以不會出現在「待處理的新進人員」）');
+        else hint.textContent = `📅 ${id} 本月班別：${r.text}`;
       });
     }
   }
