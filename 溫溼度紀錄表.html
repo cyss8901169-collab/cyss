@@ -2457,37 +2457,44 @@ function currentMonthKey() {
   const now = new Date();
   return now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
 }
-// 比對本月班表：回傳 { status, monthKey, total, onDuty, missing:[{id,name}] }
+function normName(n) { return String(n == null ? '' : n).replace(/[\s　]/g, ''); }
+// 比對本月班表：回傳 { status, monthKey, total, onDuty, missing:[{id,name}], sameName:[{id,name,staffId}] }
+// 比對方式：先比員編，員編不在名單時再比姓名；姓名已在名單中的人視為同一人，不列為新進人員
 async function scanRosterForNewStaff() {
   const monthKey = currentMonthKey();
-  const result = { status: 'error', monthKey, total: 0, onDuty: 0, missing: [] };
+  const result = { status: 'error', monthKey, total: 0, onDuty: 0, missing: [], sameName: [] };
   if(typeof window.fetchScheduleMonth !== 'function') return result;
   const entries = await window.fetchScheduleMonth(monthKey);
   result.status = (window.scheduleMonthStatus || {})[monthKey] || 'ok';
   const codes = (window.ON_DUTY_SHIFT_CODES || []).map(normShift);
   const knownIds = new Set(STAFF.map(s => normEmpId(s.id)));
+  const staffByName = {};
+  STAFF.forEach(s => { const n = normName(s.name); if(n) staffByName[n] = s; });
   const ignore = new Set(STAFF_IGNORE_IDS.map(normEmpId));
   const ids = Object.keys(entries || {});
   result.total = ids.length;
-  const missingIds = [];
-  // 新進人員：本月班表上「有排任何班」、但還不在員工名單的人（不限 B8／SD／HD，那只是「今日應登記人員」用的條件）
+  let directory = {};
+  if(typeof window.fetchEmployeeDirectory === 'function') {
+    try { directory = await window.fetchEmployeeDirectory(); } catch(e) {}
+  }
+  const dir = {};
+  Object.keys(directory || {}).forEach(k => { dir[normEmpId(k)] = directory[k]; });
+  const missing = [];
   ids.forEach(raw => {
     const days = entries[raw] || {};
     if(Object.values(days).some(code => codes.includes(normShift(code)))) result.onDuty++;
     if(!Object.values(days).some(code => normShift(code) !== '')) return;
     const id = normEmpId(raw);
-    if(!knownIds.has(id) && !ignore.has(id)) missingIds.push(id);
+    // 員編格式不是 Y＋5 碼數字的（例如班表上的「夜診18」等班別欄位 E1、E2），不是人員，略過
+    if(!/^Y\d{5}$/.test(id)) return;
+    if(knownIds.has(id) || ignore.has(id)) return;
+    const name = dir[id] || '';
+    const same = name ? staffByName[normName(name)] : null;
+    if(same) { result.sameName.push({ id, name, staffId: same.id }); return; }
+    missing.push({ id, name });
   });
-  missingIds.sort();
-  if(missingIds.length && typeof window.fetchEmployeeDirectory === 'function') {
-    let directory = {};
-    try { directory = await window.fetchEmployeeDirectory(); } catch(e) {}
-    const dir = {};
-    Object.keys(directory).forEach(k => { dir[normEmpId(k)] = directory[k]; });
-    result.missing = missingIds.map(id => ({ id, name: dir[id] || '' }));
-  } else {
-    result.missing = missingIds.map(id => ({ id, name: '' }));
-  }
+  missing.sort((a, b) => a.id.localeCompare(b.id));
+  result.missing = missing;
   return result;
 }
 async function getRosterMissingStaff() {
@@ -4202,6 +4209,12 @@ async function renderAdminPending() {
   else if(scan.status === 'missing') statusLine = `⚠️ 班表系統還沒有${monthLabel}的班表，等班表建立後才能自動找出新進人員。`;
   else statusLine = `已比對${monthLabel}班表：班表上共 ${scan.total} 人` + (missing.length ? `，以下 ${missing.length} 人還不在員工名單裡。` : `，都已在員工名單中（或已設定不需加入）✓`);
   let html = `<div class="adm-desc" style="margin-bottom:6px">${statusLine}</div>`;
+  const sameName = scan.sameName || [];
+  if(sameName.length) {
+    html += `<details class="adm-details" style="margin-bottom:6px"><summary>另有 ${sameName.length} 人姓名已在名單中、但員編不同，已視為同一人</summary>`
+      + sameName.map(s => `<div class="adm-pending-row"><span class="who">${escHtml(s.name)}　班表 ${s.id}／名單 ${s.staffId}</span></div>`).join('')
+      + `<div class="adm-desc" style="margin:6px 0 0">如果其中有人其實是同名的不同人，請到下方「員工名單」手動新增。</div></details>`;
+  }
   html += missing.map(m => `<div class="adm-pending-row">
         <span class="who"><strong>${escHtml(m.name || '（班表無姓名）')}</strong>　${m.id}</span>
         <select class="adm-select" id="admPend_${m.id}" aria-label="${m.id} 的院區">${adminCampusOptions('', true)}</select>
