@@ -1113,7 +1113,7 @@
     <div class="adm-topbar">
       <div>
         <h2>⚙️ 系統管理</h2>
-        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。</p>
+        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-06c</span></p>
       </div>
       <button class="adm-back" onclick="closeAdminPage()">← 返回登記</button>
     </div>
@@ -1121,7 +1121,7 @@
     <!-- 待處理的新進人員 -->
     <div class="adm-section adm-pending" id="admPendingSection" style="display:none">
       <h3>🔔 待處理的新進人員</h3>
-      <div class="adm-desc">本月班表上有排班、但還不在員工名單裡的人。選好院區按「加入」；確定不需要登記溫溼度的人（例如其他單位人員）按「不需加入」，之後就不會再提醒。</div>
+      <div class="adm-desc">排班系統人員名單（或本月班表）上有、但還不在員工名單裡的人。選好院區按「加入」；確定不需要登記溫溼度的人（例如其他單位人員）按「不需加入」，之後就不會再提醒。</div>
       <div id="admPendingList"></div>
     </div>
 
@@ -2471,20 +2471,25 @@ async function scanRosterForNewStaff() {
   const staffByName = {};
   STAFF.forEach(s => { const n = normName(s.name); if(n) staffByName[n] = s; });
   const ignore = new Set(STAFF_IGNORE_IDS.map(normEmpId));
-  const ids = Object.keys(entries || {});
-  result.total = ids.length;
   let directory = {};
   if(typeof window.fetchEmployeeDirectory === 'function') {
     try { directory = await window.fetchEmployeeDirectory(); } catch(e) {}
   }
   const dir = {};
   Object.keys(directory || {}).forEach(k => { dir[normEmpId(k)] = directory[k]; });
-  const missing = [];
-  ids.forEach(raw => {
+  result.dirTotal = Object.keys(dir).filter(id => /^Y\d{5}$/.test(id)).length;
+  // 候選人＝排班系統的「人員名單」（roster/directory）＋本月班表上有排班的人
+  const sched = {};
+  Object.keys(entries || {}).forEach(raw => {
     const days = entries[raw] || {};
     if(Object.values(days).some(code => codes.includes(normShift(code)))) result.onDuty++;
-    if(!Object.values(days).some(code => normShift(code) !== '')) return;
-    const id = normEmpId(raw);
+    if(Object.values(days).some(code => normShift(code) !== '')) sched[normEmpId(raw)] = true;
+  });
+  result.total = Object.keys(sched).length;
+  const candidates = Array.from(new Set([...Object.keys(dir), ...Object.keys(sched)]));
+  if(result.dirTotal > 0 && result.status !== 'ok') result.status = 'ok'; // 人員名單讀得到就能比對
+  const missing = [];
+  candidates.forEach(id => {
     // 員編格式不是 Y＋5 碼數字的（例如班表上的「夜診18」等班別欄位 E1、E2），不是人員，略過
     if(!/^Y\d{5}$/.test(id)) return;
     if(knownIds.has(id) || ignore.has(id)) return;
@@ -4205,15 +4210,20 @@ async function renderAdminPending() {
   const [y, m] = (scan.monthKey || currentMonthKey()).split('-');
   const monthLabel = `${y}年${Number(m)}月`;
   let statusLine;
-  if(scan.status === 'error') statusLine = `⚠️ 無法讀取${monthLabel}班表（可能是網路不穩），所以無法自動找出新進人員。請重新整理頁面後再試一次。`;
-  else if(scan.status === 'missing') statusLine = `⚠️ 班表系統還沒有${monthLabel}的班表，等班表建立後才能自動找出新進人員。`;
-  else statusLine = `已比對${monthLabel}班表：班表上共 ${scan.total} 人` + (missing.length ? `，以下 ${missing.length} 人還不在員工名單裡。` : `，都已在員工名單中（或已設定不需加入）✓`);
+  if(scan.status === 'error') statusLine = `⚠️ 無法讀取排班系統的人員名單與班表（可能是網路不穩），所以無法自動找出新進人員。請重新整理頁面後再試一次。`;
+  else if(scan.status === 'missing') statusLine = `⚠️ 排班系統還沒有${monthLabel}的班表，人員名單也讀不到，暫時無法自動找出新進人員。`;
+  else statusLine = `已比對排班系統：人員名單 ${scan.dirTotal || 0} 人、${monthLabel}班表 ${scan.total} 人`
+    + (missing.length ? `，以下 ${missing.length} 人還不在員工名單裡。` : `，都已在員工名單中（或已設定不需加入）✓`);
   let html = `<div class="adm-desc" style="margin-bottom:6px">${statusLine}</div>`;
   const sameName = scan.sameName || [];
   if(sameName.length) {
     html += `<details class="adm-details" style="margin-bottom:6px"><summary>另有 ${sameName.length} 人姓名已在名單中、但員編不同，已視為同一人</summary>`
       + sameName.map(s => `<div class="adm-pending-row"><span class="who">${escHtml(s.name)}　班表 ${s.id}／名單 ${s.staffId}</span></div>`).join('')
       + `<div class="adm-desc" style="margin:6px 0 0">如果其中有人其實是同名的不同人，請到下方「員工名單」手動新增。</div></details>`;
+  }
+  if(missing.length >= 3) {
+    html += `<div style="margin:0 0 6px"><button class="adm-btn ghost small" onclick="adminIgnoreAllPending()">清單上的人全部設為「不需加入」</button>
+      <span class="adm-desc" style="margin-left:6px">（先把需要的人加入，再按這個清掉其餘的人）</span></div>`;
   }
   html += missing.map(m => `<div class="adm-pending-row">
         <span class="who"><strong>${escHtml(m.name || '（班表無姓名）')}</strong>　${m.id}</span>
@@ -4468,9 +4478,12 @@ async function adminAutofillName() {
     if(/^Y\d{5}$/.test(id)) {
       rosterShiftSummary(id).then(r => {
         if((document.getElementById('admNewId').value || '').trim().toUpperCase() !== id) return;
-        if(!r) hint.textContent = '（目前無法讀取班表）';
-        else if(!r.found) hint.textContent = `📅 本月班表上沒有 ${id}，所以不會出現在「待處理的新進人員」。`;
-        else hint.textContent = `📅 ${id} 本月班別：${r.text}`;
+        window.fetchEmployeeDirectory().then(dir => {
+          const inDir = Object.keys(dir || {}).some(k => normEmpId(k) === id);
+          const dirText = inDir ? `排班系統人員名單：有（${dir[Object.keys(dir).find(k => normEmpId(k) === id)]}）` : '排班系統人員名單：沒有';
+          const schText = !r ? '本月班表：無法讀取' : !r.found ? '本月班表：沒有排班' : `本月班別：${r.text}`;
+          hint.textContent = `📅 ${id}　${dirText}；${schText}`;
+        });
       });
     }
   }
@@ -4559,6 +4572,15 @@ function adminIgnore(id) {
     d.ignoreIds = Array.isArray(d.ignoreIds) ? d.ignoreIds : [];
     if(!d.ignoreIds.includes(id)) d.ignoreIds.push(id);
   }).then(applyStaffConfig), `已設定 ${name || id} 不需加入`, `設定不需加入 ${name || ''}（${id}）`);
+}
+function adminIgnoreAllPending() {
+  const ids = Object.keys(adminPendingNames);
+  if(!ids.length) return;
+  if(!confirm(`確定要把清單上的 ${ids.length} 人全部設為「不需加入」嗎？\n\n之後他們不會再出現在提醒裡（可在「已設定不需加入的人員」逐一恢復）。`)) return;
+  adminRun(() => adminMutate(CFG_STAFF_DOC, staffDocDefault, d => {
+    d.ignoreIds = Array.isArray(d.ignoreIds) ? d.ignoreIds : [];
+    ids.forEach(id => { if(!d.ignoreIds.includes(id)) d.ignoreIds.push(id); });
+  }).then(applyStaffConfig), `已將 ${ids.length} 人設為不需加入`, `批次設定不需加入 ${ids.length} 人：${ids.join('、')}`);
 }
 function adminUnignore(id) {
   adminRun(() => adminMutate(CFG_STAFF_DOC, staffDocDefault, d => {
