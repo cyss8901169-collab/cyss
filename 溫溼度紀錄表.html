@@ -615,6 +615,12 @@
   .adm-log { font-size:12px; color:var(--gray-700); line-height:1.5; max-height:260px; overflow:auto; }
   .adm-log div { padding:5px 0; border-bottom:1px solid var(--gray-100); }
   .adm-log time { color:var(--gray-500); margin-right:8px; font-variant-numeric:tabular-nums; }
+  .admin-campus-bar { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .admin-campus-bar .acb-label { font-size:11px; font-weight:700; color:var(--gray-500); margin-right:2px; }
+  .admin-campus-bar button { padding:5px 14px; border-radius:16px; border:1.5px solid var(--gray-200); background:white;
+    color:var(--gray-700); font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .admin-campus-bar button.active { background:var(--teal); border-color:var(--teal); color:white; }
+  .admin-campus-bar button.own::after { content:'（本院區）'; font-size:10px; font-weight:400; }
   .adm-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
   .adm-tab { padding:7px 14px; border-radius:20px; border:1.5px solid var(--gray-200); background:white; color:var(--gray-700);
     font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
@@ -954,6 +960,13 @@
           </div>
           <button id="exportBtn" class="export-btn" onclick="exportPDF()" style="display:none;">🖨</button>
         </div>
+        <!-- 管理員專用：切換檢視的院區 -->
+        <div id="adminCampusBar" class="admin-campus-bar" style="display:none">
+          <span class="acb-label">管理員檢視院區</span>
+          <button data-campus="douliu" onclick="adminSwitchCampus('douliu')">斗六</button>
+          <button data-campus="huwei" onclick="adminSwitchCampus('huwei')">虎尾</button>
+          <button data-campus="store" onclick="adminSwitchCampus('store')">藥庫</button>
+        </div>
         <!-- 隱藏的 select 保留給 JS 邏輯使用 -->
           <select id="campusSel" style="display:none;" onchange="onCampusChange(this.value)">
             <option value="douliu">斗六</option>
@@ -1113,7 +1126,7 @@
     <div class="adm-topbar">
       <div>
         <h2>⚙️ 系統管理</h2>
-        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-06c</span></p>
+        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-12b</span></p>
       </div>
       <button class="adm-back" onclick="closeAdminPage()">← 返回登記</button>
     </div>
@@ -1135,6 +1148,13 @@
           onkeydown="if(event.key==='Enter') adminAddAdmin()">
         <button class="adm-btn" onclick="adminAddAdmin()">＋ 新增管理員</button>
       </div>
+    </div>
+
+    <!-- 院區負責人 -->
+    <div class="adm-section">
+      <h3>👤 院區負責人</h3>
+      <div class="adm-desc">每個院區的組長（月底核定、確認異常）與週檢核者（每週簽名檢核）。只能從該院區的員工名單中選人。換人後，已完成的週檢核與月底核定不受影響（紀錄上保留當時簽名的人），之後的簽核由新指定的人負責。</div>
+      <div id="admRoles"></div>
     </div>
 
     <!-- 員工名單 -->
@@ -1170,7 +1190,7 @@
           <tbody id="admStaffBody"></tbody>
         </table>
       </div>
-      <div class="adm-desc" style="margin-top:10px;margin-bottom:0">組長、週檢核者的指定目前仍由系統維護者設定，在這裡改院區或刪除他們時會先提醒。</div>
+      <div class="adm-desc" style="margin-top:10px;margin-bottom:0">組長、週檢核者請在上方「院區負責人」設定；在這裡改院區或刪除他們時會先提醒。</div>
     </div>
 
     <!-- 登記地點 -->
@@ -1355,6 +1375,28 @@ const CAMPUS_ROLES = {
   huwei:  { supervisorId:'Y00230', supervisorName:'陳宜屏', checkerId:'Y01644', checkerName:'林家薐' },
   store:  { supervisorId:'Y00287', supervisorName:'吳秋宜', checkerId:'Y00955', checkerName:'陳盈君' },
 };
+// ══════════ 院區負責人（組長／週檢核者）：管理員可在「系統管理」設定，存在雲端 config_roles ══════════
+const CAMPUS_ROLES_DEFAULT = JSON.parse(JSON.stringify(CAMPUS_ROLES));
+const CFG_ROLES_DOC = 'config_roles';
+function applyRolesConfig(data) {
+  if(!data || !data.campuses) return;
+  Object.keys(CAMPUS_ROLES).forEach(c => {
+    const r = data.campuses[c];
+    if(!r) return;
+    if(r.supervisorId) { CAMPUS_ROLES[c].supervisorId = r.supervisorId; CAMPUS_ROLES[c].supervisorName = r.supervisorName || r.supervisorId; }
+    if(r.checkerId)    { CAMPUS_ROLES[c].checkerId = r.checkerId;       CAMPUS_ROLES[c].checkerName = r.checkerName || r.checkerId; }
+  });
+  refreshRoleNames();
+}
+// 負責人的姓名以員工名單上的最新姓名為準
+function refreshRoleNames() {
+  Object.keys(CAMPUS_ROLES).forEach(c => {
+    const r = CAMPUS_ROLES[c];
+    const sv = STAFF.find(s => s.id === r.supervisorId); if(sv) r.supervisorName = sv.name;
+    const ck = STAFF.find(s => s.id === r.checkerId);    if(ck) r.checkerName = ck.name;
+  });
+}
+
 // ══════════ 系統管理設定（管理員、員工名單；存在雲端 templog 集合的 config_* 文件）══════════
 // 程式碼裡的 STAFF 只是「雲端還沒有設定時」的初始名單；管理員第一次在系統管理頁面修改後，
 // 之後一律以雲端的 config_staff 為準。
@@ -1382,15 +1424,17 @@ async function loadCloudConfig() {
   const timeout = new Promise(resolve => setTimeout(() => resolve('timeout'), 8000));
   try {
     const res = await Promise.race([
-      Promise.all([window._templogGet(CFG_STAFF_DOC), window._templogGet(CFG_ADMIN_DOC), window._templogGet(CFG_DEPTS_DOC)]),
+      Promise.all([window._templogGet(CFG_STAFF_DOC), window._templogGet(CFG_ADMIN_DOC), window._templogGet(CFG_DEPTS_DOC), window._templogGet(CFG_ROLES_DOC)]),
       timeout
     ]);
     if(res === 'timeout') throw new Error('讀取逾時');
-    const [staffCfg, adminCfg, deptCfg] = res;
+    const [staffCfg, adminCfg, deptCfg, rolesCfg] = res;
     if(staffCfg) applyStaffConfig(staffCfg);
     if(deptCfg) applyDeptConfig(deptCfg);
+    if(rolesCfg) applyRolesConfig(rolesCfg);
     applyAdminConfig(adminCfg);
     await syncStaffNamesFromSchedule();
+    refreshRoleNames();
     return true;
   } catch(e) {
     console.error('系統管理設定讀取失敗（暫時沿用目前名單）：', e);
@@ -2057,8 +2101,16 @@ function showApp() {
   const dp = document.getElementById('monthPicker');
   if(dp) { dp.value = todayStr; dp.max = todayStr; }
 
-  // 依登入人員院區自動設定，並鎖定不讓更改
+  // 依登入人員院區自動設定，並鎖定不讓更改（管理員可用上方的「管理員檢視院區」切換三個院區）
   const userCampus = currentUser.campus || 'douliu';
+  const acb = document.getElementById('adminCampusBar');
+  if(acb) {
+    acb.style.display = isAdmin(currentUser.id) ? 'flex' : 'none';
+    acb.querySelectorAll('button').forEach(b => {
+      b.classList.toggle('active', b.dataset.campus === userCampus);
+      b.classList.toggle('own', b.dataset.campus === userCampus);
+    });
+  }
   const campusSel = document.getElementById('campusSel');
   if(campusSel) {
     campusSel.value = userCampus;
@@ -2078,6 +2130,24 @@ function showApp() {
   renderOnDutyStaff();
 
 } // end showApp()
+
+// ══════════ 管理員切換院區 ══════════
+// 管理員可以檢視、登記、解除鎖定三個院區的資料；組長／週檢核者的簽核權限仍只限於被指定的院區
+function adminSwitchCampus(campus) {
+  if(!currentUser || !isAdmin(currentUser.id)) return;
+  if(campus === currentArea.split('_')[0]) return;
+  const dp = document.getElementById('monthPicker');
+  const keepDate = dp ? dp.value : '';
+  const campusSel = document.getElementById('campusSel');
+  if(campusSel) campusSel.value = campus;
+  onCampusChange(campus);
+  if(keepDate) onDatePickerChange(keepDate); // 維持原本選的日期
+  document.querySelectorAll('#adminCampusBar button').forEach(b => b.classList.toggle('active', b.dataset.campus === campus));
+  renderStats();
+  renderOnDutyStaff();
+  requestAnimationFrame(() => { updateStickyFieldsTop(); setTimeout(updateStickyFieldsTop, 150); });
+  showToast(`已切換到${CAMPUS_LABEL_FULL[campus]}`, 'success');
+}
 
 // ══════════ SESSION ══════════
 function setSession(s, btn) {
@@ -4146,6 +4216,7 @@ function closeAdminPage() {
 
 function renderAdminPage() {
   if(!document.getElementById('adminPage').classList.contains('active')) return;
+  renderAdminRoles();
   renderAdminDepts();
   renderAdminChips();
   renderAdminStaffTable();
@@ -4441,6 +4512,67 @@ function adminDeptSave() {
   .then(ok => { if(ok) { deptDraftReset(eff); renderAdminDepts(); } });
 }
 
+// ── 院區負責人 ──
+function renderAdminRoles() {
+  const box = document.getElementById('admRoles');
+  if(!box) return;
+  box.innerHTML = ['douliu','huwei','store'].map(c => {
+    const r = CAMPUS_ROLES[c];
+    const people = STAFF.filter(s => s.campus === c).sort((a, b) => a.id.localeCompare(b.id));
+    const opts = sel => {
+      let html = people.map(s => `<option value="${s.id}" ${s.id===sel?'selected':''}>${escHtml(s.name)}（${s.id}）</option>`).join('');
+      // 目前的人選已不在該院區名單（被刪除或調院區）時，仍顯示出來並標示
+      if(sel && !people.some(s => s.id === sel)) {
+        const other = STAFF.find(s => s.id === sel);
+        const label = other ? `${escHtml(other.name)}（${sel}，目前在${CAMPUS_LABEL[other.campus]}）` : `${sel}（已不在員工名單）`;
+        html = `<option value="${sel}" selected>⚠️ ${label}</option>` + html;
+      }
+      return html;
+    };
+    const warn = [];
+    if(r.supervisorId && !people.some(s => s.id === r.supervisorId)) warn.push('組長');
+    if(r.checkerId && !people.some(s => s.id === r.checkerId)) warn.push('週檢核者');
+    return `<div style="border:1px solid var(--gray-200);border-radius:10px;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:13px;font-weight:700;color:var(--gray-700);margin-bottom:8px">${CAMPUS_LABEL_FULL[c]}</div>
+      ${warn.length ? `<div class="adm-desc" style="color:var(--red);margin-bottom:8px">⚠️ 目前的${warn.join('、')}已不在${CAMPUS_LABEL[c]}員工名單中，請重新指定。</div>` : ''}
+      <div class="adm-row">
+        <label style="font-size:12px;font-weight:700;color:var(--gray-700);width:64px" for="admRoleSv_${c}">組長</label>
+        <select class="adm-select" id="admRoleSv_${c}" style="flex:1 1 200px">${opts(r.supervisorId)}</select>
+      </div>
+      <div class="adm-row" style="margin-top:8px">
+        <label style="font-size:12px;font-weight:700;color:var(--gray-700);width:64px" for="admRoleCk_${c}">週檢核者</label>
+        <select class="adm-select" id="admRoleCk_${c}" style="flex:1 1 200px">${opts(r.checkerId)}</select>
+      </div>
+      <div class="adm-row" style="margin-top:8px;justify-content:flex-end">
+        <button class="adm-btn small" onclick="adminSaveRoles('${c}')">儲存${CAMPUS_LABEL[c]}負責人</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function rolesDocDefault() {
+  return { campuses: JSON.parse(JSON.stringify(CAMPUS_ROLES_DEFAULT)) };
+}
+function adminSaveRoles(c) {
+  const svId = document.getElementById('admRoleSv_' + c).value;
+  const ckId = document.getElementById('admRoleCk_' + c).value;
+  const sv = STAFF.find(s => s.id === svId && s.campus === c);
+  const ck = STAFF.find(s => s.id === ckId && s.campus === c);
+  if(!sv) { showToast(`請從${CAMPUS_LABEL[c]}員工名單中選擇組長`, 'warn'); return; }
+  if(!ck) { showToast(`請從${CAMPUS_LABEL[c]}員工名單中選擇週檢核者`, 'warn'); return; }
+  const r = CAMPUS_ROLES[c];
+  if(sv.id === r.supervisorId && ck.id === r.checkerId) { showToast('沒有變更', 'warn'); return; }
+  const changes = [];
+  if(sv.id !== r.supervisorId) changes.push(`組長：${r.supervisorName}（${r.supervisorId}）→ ${sv.name}（${sv.id}）`);
+  if(ck.id !== r.checkerId) changes.push(`週檢核者：${r.checkerName}（${r.checkerId}）→ ${ck.name}（${ck.id}）`);
+  let msg = `確定要變更${CAMPUS_LABEL_FULL[c]}的負責人嗎？\n\n${changes.join('\n')}\n\n已完成的週檢核與月底核定不受影響，之後的簽核由新指定的人負責。`;
+  if(sv.id === ck.id) msg += `\n\n⚠️ 組長與週檢核者是同一人，週檢核與月底核定將由同一人簽核。`;
+  if(!confirm(msg)) return;
+  adminRun(() => adminMutate(CFG_ROLES_DOC, rolesDocDefault, d => {
+    if(!d.campuses) d.campuses = JSON.parse(JSON.stringify(CAMPUS_ROLES_DEFAULT));
+    d.campuses[c] = { supervisorId: sv.id, supervisorName: sv.name, checkerId: ck.id, checkerName: ck.name };
+  }).then(applyRolesConfig), `已更新${CAMPUS_LABEL[c]}負責人`, `變更${CAMPUS_LABEL[c]}負責人：${changes.join('；')}`);
+}
+
 // ── 管理員 ──
 function adminAddAdmin() {
   const input = document.getElementById('admAdminInput');
@@ -4528,7 +4660,7 @@ function adminChangeCampus(id, campus, selEl) {
   if(!s || s.campus === campus) return;
   const roles = adminRoleTags(id);
   let msg = `確定要把「${s.name}（${id}）」從 ${CAMPUS_LABEL[s.campus]} 改到 ${CAMPUS_LABEL[campus]} 嗎？\n\n改完後，此人下次登入起只能登記${CAMPUS_LABEL[campus]}的表單。`;
-  if(roles.length) msg += `\n\n⚠️ 此人目前是「${roles.join('、')}」，這個身分不會跟著改變，需另外通知系統維護者調整。`;
+  if(roles.length) msg += `\n\n⚠️ 此人目前是「${roles.join('、')}」，改完後請到「院區負責人」重新指定該院區的人選。`;
   if(!confirm(msg)) { selEl.value = s.campus; return; }
   const from = s.campus;
   adminRun(() => adminMutate(CFG_STAFF_DOC, staffDocDefault, d => {
@@ -4547,7 +4679,7 @@ function adminDeleteStaff(id) {
   if(admin && ADMIN_IDS.length <= 1) { showToast('此人是最後一位管理員，不能刪除', 'warn'); return; }
   let msg = `確定要從名單刪除「${s.name}（${id}，${CAMPUS_LABEL[s.campus]}）」嗎？\n\n刪除後此人將無法登入；過去的登記與簽名紀錄會保留。`;
   if(admin) msg += `\n\n此人也會一併移除管理員身分。`;
-  if(roles.length) msg += `\n\n⚠️ 此人目前是「${roles.join('、')}」，刪除後請通知系統維護者指定新的人選。`;
+  if(roles.length) msg += `\n\n⚠️ 此人目前是「${roles.join('、')}」，刪除後請到「院區負責人」指定新的人選。`;
   if(!confirm(msg)) return;
   adminRun(async () => {
     const d = await adminMutate(CFG_STAFF_DOC, staffDocDefault, d => {
