@@ -397,6 +397,9 @@
     gap: 6px; margin-bottom: 8px;
   }
   .field-group { display: flex; flex-direction: column; gap: 6px; }
+  .today-fields.four { grid-template-columns: repeat(4, 1fr); gap: 5px; }
+  .today-fields.four .field-group label { font-size: 11px; white-space: nowrap; }
+  @media (max-width: 360px) { .today-fields.four { grid-template-columns: repeat(2, 1fr); } }
   .field-group label {
     font-size: 13px; font-weight: 700; color: var(--gray-500);
     text-transform: uppercase; letter-spacing: .3px;
@@ -1126,7 +1129,7 @@
     <div class="adm-topbar">
       <div>
         <h2>⚙️ 系統管理</h2>
-        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-12b</span></p>
+        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-12d</span></p>
       </div>
       <button class="adm-back" onclick="closeAdminPage()">← 返回登記</button>
     </div>
@@ -1448,6 +1451,12 @@ function ensureCloudConfig() {
   }
   return cloudConfigPromise;
 }
+// ══════════ 藥庫專用欄位：最高／最低／現在溫度 ══════════
+// 藥庫的紙本紀錄表欄位是「最高溫度、最低溫度、現在溫度、溼度」，比其他藥局多一個「最低溫度」(minTemp)。
+// 「現在溫度」就是原本的 temp 欄位，資料格式不變，只是多存一個 minTemp。
+const MIN_TEMP_CAMPUSES = ['store'];
+function usesMinTemp(campus) { return MIN_TEMP_CAMPUSES.includes(campus || currentArea.split('_')[0]); }
+
 function getCampusRoles(campus) {
   campus = campus || (currentArea ? currentArea.split('_')[0] : 'douliu');
   return CAMPUS_ROLES[campus] || CAMPUS_ROLES.douliu;
@@ -2227,7 +2236,7 @@ function todayYMD() {
 
 function getEntry(day, session) {
   const d = logData[currentMonth] || {};
-  return (d[day] && d[day][session]) ? d[day][session] : {time:'',temp:'',maxTemp:'',humid:'',reason:'',signedBy:'',signedId:''};
+  return (d[day] && d[day][session]) ? d[day][session] : {time:'',temp:'',maxTemp:'',minTemp:'',humid:'',reason:'',signedBy:'',signedId:''};
 }
 
 function setEntry(day, session, field, val) {
@@ -2388,7 +2397,7 @@ function renderTodayView() {
       const fT = v => (v!==''&&v!==undefined&&v!==null&&!isNaN(parseFloat(v))) ? parseFloat(v).toFixed(1) : '';
       return {
         key: dept.key, label: dept.label, areaKey,
-        temp: fT(entry.temp), maxTemp: fT(entry.maxTemp), humid: entry.humid||'',
+        temp: fT(entry.temp), maxTemp: fT(entry.maxTemp), minTemp: fT(entry.minTemp), humid: entry.humid||'',
         reason: entry.reason||'',
         tempWarn: entry.temp!==''&&parseFloat(entry.temp)>25,
         maxWarn: entry.maxTemp!==''&&parseFloat(entry.maxTemp)>25,
@@ -2419,33 +2428,49 @@ function renderTodayView() {
           <span style="font-size:13px;font-weight:800;color:${deptStyle(campus, dept.key).color};">${escHtml(dept.label)}</span>
         </div>
         ${lockBanner}
-        <div class="today-fields" style="margin-bottom:8px;">
+        ${(() => {
+          const hasMin = usesMinTemp(campus);
+          const nextDept = deptData[i+1];
+          const nextFirst = nextDept ? `'tf-${hasMin ? 'maxtemp' : 'temp'}-${nextDept.key}'` : 'null';
+          const attrs = `autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ${locked?'disabled':''} placeholder="—"`;
+          const live = `checkMaxTempDept('${dept.key}');refreshReasonWrap('${dept.key}')`;
+          const tempField = (label) => `
           <div class="field-group">
-            <label>溫度 (℃) <span>≦25</span></label>
-            <input type="tel" id="tf-temp-${dept.key}" inputmode="decimal" pattern="[0-9]*[.]?[0-9]*"
-              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ${locked?'disabled':''}
-              placeholder="—" value="${dept.temp}" class="${dept.tempWarn?'warn':''}"
-              oninput="filterDecimalInput(this);updateWarnClass(this,25);checkMaxTempDept('${dept.key}');refreshReasonWrap('${dept.key}');autoNextField(this,'tf-maxtemp-${dept.key}',4)"
+            <label>${label} <span>≦25</span></label>
+            <input type="tel" id="tf-temp-${dept.key}" inputmode="decimal" pattern="[0-9]*[.]?[0-9]*" ${attrs}
+              value="${dept.temp}" class="${dept.tempWarn?'warn':''}"
+              oninput="filterDecimalInput(this);updateWarnClass(this,25);${live};autoNextField(this,'tf-${hasMin?'humid':'maxtemp'}-${dept.key}',4)"
               onblur="fmtTempInput(this);setEntryByArea('${dept.areaKey}',${d},'${currentSession}','temp',this.value)">
-          </div>
+          </div>`;
+          const maxField = (label) => `
           <div class="field-group">
-            <label>最高溫度 (℃) <span>≦25</span></label>
-            <input type="tel" id="tf-maxtemp-${dept.key}" inputmode="decimal" pattern="[0-9]*[.]?[0-9]*"
-              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ${locked?'disabled':''}
-              placeholder="—" value="${dept.maxTemp}" class="${dept.maxWarn?'warn':''}"
-              oninput="filterDecimalInput(this);updateWarnClass(this,25);checkMaxTempDept('${dept.key}');refreshReasonWrap('${dept.key}');autoNextField(this,'tf-humid-${dept.key}',4)"
+            <label>${label} <span>≦25</span></label>
+            <input type="tel" id="tf-maxtemp-${dept.key}" inputmode="decimal" pattern="[0-9]*[.]?[0-9]*" ${attrs}
+              value="${dept.maxTemp}" class="${dept.maxWarn?'warn':''}"
+              oninput="filterDecimalInput(this);updateWarnClass(this,25);${live};autoNextField(this,'tf-${hasMin?'mintemp':'humid'}-${dept.key}',4)"
               onblur="fmtTempInput(this);setEntryByArea('${dept.areaKey}',${d},'${currentSession}','maxTemp',this.value)">
-          </div>
+          </div>`;
+          const minField = `
+          <div class="field-group">
+            <label>最低 (℃)</label>
+            <input type="tel" id="tf-mintemp-${dept.key}" inputmode="decimal" pattern="[0-9]*[.]?[0-9]*" ${attrs}
+              value="${dept.minTemp}"
+              oninput="filterDecimalInput(this);${live};autoNextField(this,'tf-temp-${dept.key}',4)"
+              onblur="fmtTempInput(this);setEntryByArea('${dept.areaKey}',${d},'${currentSession}','minTemp',this.value)">
+          </div>`;
+          const humidField = `
           <div class="field-group">
             <label>溼度 (%) <span>≦65</span></label>
-            <input type="tel" id="tf-humid-${dept.key}" inputmode="numeric" pattern="[0-9]*"
-              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ${locked?'disabled':''}
-              placeholder="—" value="${dept.humid}" class="${dept.humWarn?'warn':''}"
-              oninput="filterIntInput(this);updateWarnClass(this,65);refreshReasonWrap('${dept.key}');autoNextField(this,${i<deptData.length-1?`'tf-temp-${deptData[i+1]?.key}'`:'null'},3)"
+            <input type="tel" id="tf-humid-${dept.key}" inputmode="numeric" pattern="[0-9]*" ${attrs}
+              value="${dept.humid}" class="${dept.humWarn?'warn':''}"
+              oninput="filterIntInput(this);updateWarnClass(this,65);refreshReasonWrap('${dept.key}');autoNextField(this,${nextFirst},3)"
               onblur="fmtIntInput(this);setEntryByArea('${dept.areaKey}',${d},'${currentSession}','humid',this.value)">
-          </div>
-        </div>
-        <div id="maxwarn-${dept.key}" style="display:none;background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;padding:6px 10px;font-size:11px;color:var(--red);font-weight:600;margin-bottom:6px;">⛔ 最高溫度不可小於溫度</div>
+          </div>`;
+          return hasMin
+            ? `<div class="today-fields four" style="margin-bottom:8px;">${maxField('最高 (℃)')}${minField}${tempField('現在 (℃)')}${humidField}</div>`
+            : `<div class="today-fields" style="margin-bottom:8px;">${tempField('溫度 (℃)')}${maxField('最高溫度 (℃)')}${humidField}</div>`;
+        })()}
+        <div id="maxwarn-${dept.key}" style="display:none;background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;padding:6px 10px;font-size:11px;color:var(--red);font-weight:600;margin-bottom:6px;">⛔ ${usesMinTemp(campus) ? '溫度順序有誤：應為 最高 ≧ 現在 ≧ 最低' : '最高溫度不可小於溫度'}</div>
         <div id="reason-wrap-${dept.key}" style="display:${(dept.tempWarn||dept.maxWarn||dept.humWarn)?'block':'none'};margin-bottom:4px;">
           <label style="font-size:11px;color:var(--red);font-weight:700;">⚠ 異常原因（必填）</label>
           <div id="preset-reasons-${dept.key}" style="display:${(dept.reason||locked)?'none':'flex'};flex-wrap:wrap;gap:3px;margin:3px 0;">
@@ -2598,6 +2623,7 @@ async function renderNewStaffAlert() {
   if(!box) return;
   box.style.display = 'none';
   if(currentView !== 'today') return;
+  if(!usesSchedule()) return;
   if(!currentUser || !canSeeNewStaffAlert(currentUser.id)) return;
   try {
     const missing = await getRosterMissingStaff();
@@ -2616,9 +2642,20 @@ async function renderNewStaffAlert() {
   }
 }
 
+// 不需配合班表的院區：登記畫面不顯示「今日應登記人員」與新進人員提醒
+const NO_SCHEDULE_CAMPUSES = ['store'];
+function usesSchedule(campus) { return !NO_SCHEDULE_CAMPUSES.includes(campus || currentArea.split('_')[0]); }
+
 async function renderOnDutyStaff() {
-  renderNewStaffAlert();
   const box = document.getElementById('onDutyStaffBox');
+  if(!usesSchedule()) {
+    if(box) box.style.display = 'none';
+    const alertBox = document.getElementById('newStaffAlertBox');
+    if(alertBox) alertBox.style.display = 'none';
+    requestAnimationFrame(() => { if(typeof updateStickyFieldsTop === 'function') updateStickyFieldsTop(); });
+    return;
+  }
+  renderNewStaffAlert();
   if(!box) return;
   if(currentView !== 'today') { box.style.display = 'none'; return; }
   if(typeof window.getShiftCode !== 'function') { box.style.display = 'none'; return; }
@@ -2705,6 +2742,7 @@ function renderMonthView() {
 
     const days = daysInMonth(currentMonth);
     const todayStr = todayYMD();
+    const hasMinM = usesMinTemp(campus);
 
   const ro = (val, warn) => {
     if(!val) return `<span style="color:var(--gray-300)">—</span>`;
@@ -2745,16 +2783,18 @@ function renderMonthView() {
     <tr style="${rowBg}border-bottom:none;">
       <td class="date-col" rowspan="2" style="border-right:2px solid var(--teal-light);vertical-align:middle;">${d}${todayMark}</td>
       <td style="background:#deeaf122;font-size:11px;font-weight:700;color:#1a6ea8;padding:4px 8px;text-align:center;white-space:nowrap;">上午</td>
-      <td style="text-align:center">${ro(am.temp, amTW)}</td>
-      <td style="text-align:center">${ro(am.maxTemp, amMW)}</td>
+      ${hasMinM
+        ? `<td style="text-align:center">${ro(am.maxTemp, amMW)}</td><td style="text-align:center">${ro(am.minTemp, false)}</td><td style="text-align:center">${ro(am.temp, amTW)}</td>`
+        : `<td style="text-align:center">${ro(am.temp, amTW)}</td><td style="text-align:center">${ro(am.maxTemp, amMW)}</td>`}
       <td style="text-align:center">${ro(am.humid, amHW)}</td>
       <td style="text-align:center">${amSign}</td>
       <td style="text-align:center">${amReason}</td>
     </tr>
     <tr style="${rowBg}">
       <td style="background:#fce4d622;font-size:11px;font-weight:700;color:#b45309;padding:4px 8px;text-align:center;white-space:nowrap;">下午</td>
-      <td style="text-align:center">${ro(pm.temp, pmTW)}</td>
-      <td style="text-align:center">${ro(pm.maxTemp, pmMW)}</td>
+      ${hasMinM
+        ? `<td style="text-align:center">${ro(pm.maxTemp, pmMW)}</td><td style="text-align:center">${ro(pm.minTemp, false)}</td><td style="text-align:center">${ro(pm.temp, pmTW)}</td>`
+        : `<td style="text-align:center">${ro(pm.temp, pmTW)}</td><td style="text-align:center">${ro(pm.maxTemp, pmMW)}</td>`}
       <td style="text-align:center">${ro(pm.humid, pmHW)}</td>
       <td style="text-align:center">${pmSign}</td>
       <td style="text-align:center">${pmReason}</td>
@@ -2768,7 +2808,7 @@ function renderMonthView() {
       const rowAreaKey = currentArea; // 記錄此列所屬的院區/部門，避免畫面渲染完 currentArea 還原後點擊簽名按鈕誤存到別的部門
       html += `
       <tr style="background:#f0fdf4;">
-        <td colspan="7" style="padding:6px 12px;border-top:2px solid var(--teal-light);">
+        <td colspan="${hasMinM ? 8 : 7}" style="padding:6px 12px;border-top:2px solid var(--teal-light);">
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
             <span style="font-size:13px;font-weight:700;color:var(--teal);white-space:nowrap;">
               📋 第 ${wk} 週檢核（${d<=7?1:d<=14?8:d<=21?15:d<=28?22:29}日–${d}日）
@@ -2807,8 +2847,12 @@ function renderMonthView() {
         <thead>
           <tr>
             <th>日期</th><th>時段</th>
-            <th>溫度(℃)<br><span style="color:var(--red);font-weight:800">≦25</span></th>
-            <th>最高溫(℃)<br><span style="color:var(--red);font-weight:800">≦25</span></th>
+            ${usesMinTemp(campus)
+              ? `<th>最高溫度(℃)<br><span style="color:var(--red);font-weight:800">≦25</span></th>
+                 <th>最低溫度(℃)</th>
+                 <th>現在溫度(℃)<br><span style="color:var(--red);font-weight:800">≦25</span></th>`
+              : `<th>溫度(℃)<br><span style="color:var(--red);font-weight:800">≦25</span></th>
+                 <th>最高溫(℃)<br><span style="color:var(--red);font-weight:800">≦25</span></th>`}
             <th>溼度(%)<br><span style="color:var(--red);font-weight:800">≦65</span></th>
             <th>登記人員</th>
             <th>⚠ 異常原因說明</th>
@@ -3049,11 +3093,16 @@ function saveAbnormalModal() {
 }
 
 
+function tempOrderError(t, m, n) {
+  // m=最高、t=現在、n=最低；有填的欄位之間必須 最高 ≧ 現在 ≧ 最低
+  return (!isNaN(t)&&!isNaN(m)&&m<t) || (!isNaN(t)&&!isNaN(n)&&n>t) || (!isNaN(m)&&!isNaN(n)&&n>m);
+}
 function checkMaxTempDept(deptKey) {
   const t = parseFloat(document.getElementById('tf-temp-'+deptKey)?.value);
   const m = parseFloat(document.getElementById('tf-maxtemp-'+deptKey)?.value);
+  const n = parseFloat(document.getElementById('tf-mintemp-'+deptKey)?.value);
   const warn = document.getElementById('maxwarn-'+deptKey);
-  if(warn) warn.style.display = (!isNaN(t)&&!isNaN(m)&&m<t) ? 'block' : 'none';
+  if(warn) warn.style.display = tempOrderError(t, m, n) ? 'block' : 'none';
 }
 
 // 一次確認所有部門登記
@@ -3091,10 +3140,20 @@ function submitAllDepts() {
     const e = getEntry(d, session);
     const tempVal = parseFloat(document.getElementById('tf-temp-'+dept.key)?.value);
     const maxVal = parseFloat(document.getElementById('tf-maxtemp-'+dept.key)?.value);
+    const minVal = parseFloat(document.getElementById('tf-mintemp-'+dept.key)?.value);
     const humVal = parseFloat(document.getElementById('tf-humid-'+dept.key)?.value);
 
     if(isNaN(tempVal) && isNaN(humVal)) { hasError = true; showToast(dept.label + '：請填入溫溼度資料', 'warn'); break; }
-    if(!isNaN(tempVal)&&!isNaN(maxVal)&&maxVal<tempVal) { hasError = true; showToast(dept.label + '：最高溫不可小於溫度', 'error'); break; }
+    if(usesMinTemp(campus)) {
+      // 藥庫：最高、最低、現在溫度、溼度四欄都要填（與紙本紀錄表相同）
+      const miss = [];
+      if(isNaN(maxVal)) miss.push('最高溫度');
+      if(isNaN(minVal)) miss.push('最低溫度');
+      if(isNaN(tempVal)) miss.push('現在溫度');
+      if(isNaN(humVal)) miss.push('溼度');
+      if(miss.length) { hasError = true; showToast(dept.label + '：請填寫' + miss.join('、'), 'warn'); break; }
+      if(tempOrderError(tempVal, maxVal, minVal)) { hasError = true; showToast(dept.label + '：溫度順序有誤，應為 最高 ≧ 現在 ≧ 最低', 'error'); break; }
+    } else if(!isNaN(tempVal)&&!isNaN(maxVal)&&maxVal<tempVal) { hasError = true; showToast(dept.label + '：最高溫不可小於溫度', 'error'); break; }
 
     const tw = !isNaN(tempVal)&&tempVal>25;
     const mw = !isNaN(maxVal)&&maxVal>25;
@@ -3129,10 +3188,12 @@ function submitAllDepts() {
     if(checkerRec) continue; // 該部門本週已核定鎖定，不可再覆寫
     const tempV = document.getElementById('tf-temp-'+dept.key)?.value;
     const maxV  = document.getElementById('tf-maxtemp-'+dept.key)?.value;
+    const minV  = document.getElementById('tf-mintemp-'+dept.key)?.value;
     const humV  = document.getElementById('tf-humid-'+dept.key)?.value;
     const reaV  = document.getElementById('tf-reason-'+dept.key)?.value||'';
     if(tempV) setEntry(d, session, 'temp', tempV);
     if(maxV)  setEntry(d, session, 'maxTemp', maxV);
+    if(minV)  setEntry(d, session, 'minTemp', minV);
     if(humV)  setEntry(d, session, 'humid', humV);
     if(reaV)  setEntry(d, session, 'reason', reaV);
     setEntry(d, session, 'signedBy', currentUser.name);
@@ -3815,6 +3876,7 @@ function buildPDFSection(deptLabel) {
     });
   }
 
+  const pdfHasMin = usesMinTemp(currentArea.split('_')[0]);
   let logRowsFile = '';
   for(let d=1; d<=days; d++) {
     const am = getEntry(d, 'AM');
@@ -3822,15 +3884,17 @@ function buildPDFSection(deptLabel) {
     const amTW=am.temp&&parseFloat(am.temp)>25, amMW=am.maxTemp&&parseFloat(am.maxTemp)>25, amHW=am.humid&&parseFloat(am.humid)>=66;
     const pmTW=pm.temp&&parseFloat(pm.temp)>25, pmMW=pm.maxTemp&&parseFloat(pm.maxTemp)>25, pmHW=pm.humid&&parseFloat(pm.humid)>=66;
     const cv=(v,w)=>v?`<span style="${w?'color:#c0392b;font-weight:bold':''}">${v}</span>`:'<span style="color:#bbb">—</span>';
+    const tdc = inner => `<td align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${inner}</td>`;
+    const tempCells = (e, tw, mw) => pdfHasMin
+      ? tdc(cv(e.maxTemp, mw)) + tdc(cv(e.minTemp, false)) + tdc(cv(e.temp, tw))
+      : tdc(cv(e.temp, tw)) + tdc(cv(e.maxTemp, mw));
     const rowBg = (amTW||amMW||amHW||pmTW||pmMW||pmHW) ? 'background:#fff8f8;' : '';
     logRowsFile += `<tr style="${rowBg}">
       <td class="td-date" align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${String(d).padStart(2,'0')}</td>
-      <td align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${cv(am.temp,amTW)}</td>
-      <td align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${cv(am.maxTemp,amMW)}</td>
+      ${tempCells(am, amTW, amMW)}
       <td align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${cv(am.humid,amHW)}</td>
       <td align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${am.signedBy||'—'}</td>
-      <td align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${cv(pm.temp,pmTW)}</td>
-      <td align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${cv(pm.maxTemp,pmMW)}</td>
+      ${tempCells(pm, pmTW, pmMW)}
       <td align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${cv(pm.humid,pmHW)}</td>
       <td align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${pm.signedBy||'—'}</td>
     </tr>`;
@@ -3841,7 +3905,7 @@ function buildPDFSection(deptLabel) {
       const wkStart = d<=7?1:d<=14?8:d<=21?15:d<=28?22:29;
       const ck = getChecker(wkNum);
       logRowsFile += `<tr style="background:#f0fdf4;">
-        <td colspan="9" align="left" style="padding:0 4px;border-top:1px solid #2ea896;text-align:left !important;font-size:8pt;vertical-align:middle;line-height:1.4;height:3mm;">
+        <td colspan="${pdfHasMin ? 11 : 9}" align="left" style="padding:0 4px;border-top:1px solid #2ea896;text-align:left !important;font-size:8pt;vertical-align:middle;line-height:1.4;height:3mm;">
           <span style="font-weight:bold;color:#1a7f6e;">第 ${wkNum} 週檢核（${wkStart}日–${d}日）　檢核者簽名：</span>
           ${ck ? `<span style="font-weight:bold">${ck.name}</span>${ck.time && ck.time.length > 5 ? `　<span style="color:#555">${ck.time.slice(0,10)}</span>` : ''}` : '<span style="color:#aaa">　　　　　　　　</span>'}
         </td>
@@ -3858,16 +3922,18 @@ function buildPDFSection(deptLabel) {
   <thead>
     <tr>
       <th rowspan="2" style="width:20mm;text-align:center;white-space:nowrap;">日期</th>
-      <th colspan="4" class="th-am" style="text-align:center;">上午 (07:00–10:00)</th>
-      <th colspan="4" class="th-pm" style="text-align:center;">下午 (12:00–15:00)</th>
+      <th colspan="${pdfHasMin ? 5 : 4}" class="th-am" style="text-align:center;">上午 (07:00–10:00)</th>
+      <th colspan="${pdfHasMin ? 5 : 4}" class="th-pm" style="text-align:center;">下午 (12:00–15:00)</th>
     </tr>
     <tr>
-      <th class="th-am" style="text-align:center;">溫度(℃)</th>
-      <th class="th-am" style="text-align:center;">最高溫(℃)</th>
+      ${pdfHasMin
+        ? `<th class="th-am" style="text-align:center;">最高溫度(℃)</th><th class="th-am" style="text-align:center;">最低溫度(℃)</th><th class="th-am" style="text-align:center;">現在溫度(℃)</th>`
+        : `<th class="th-am" style="text-align:center;">溫度(℃)</th><th class="th-am" style="text-align:center;">最高溫(℃)</th>`}
       <th class="th-am" style="text-align:center;">溼度(%)</th>
       <th class="th-am" style="text-align:center;">登記人員</th>
-      <th class="th-pm" style="text-align:center;">溫度(℃)</th>
-      <th class="th-pm" style="text-align:center;">最高溫(℃)</th>
+      ${pdfHasMin
+        ? `<th class="th-pm" style="text-align:center;">最高溫度(℃)</th><th class="th-pm" style="text-align:center;">最低溫度(℃)</th><th class="th-pm" style="text-align:center;">現在溫度(℃)</th>`
+        : `<th class="th-pm" style="text-align:center;">溫度(℃)</th><th class="th-pm" style="text-align:center;">最高溫(℃)</th>`}
       <th class="th-pm" style="text-align:center;">溼度(%)</th>
       <th class="th-pm" style="text-align:center;">登記人員</th>
     </tr>
