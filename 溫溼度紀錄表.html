@@ -1110,6 +1110,28 @@
 </div>
 
 <!-- 異常處理彈出視窗 -->
+<!-- 月底核定完成後：提醒組長下載 PDF 存檔 -->
+<div class="modal-overlay" id="pdfRemindOverlay">
+  <div class="modal-card" onclick="event.stopPropagation()" role="dialog" aria-labelledby="pdfRemindTitle">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="pdfRemindTitle">✅ 月底核定完成</div>
+        <div class="modal-sub" id="pdfRemindSub"></div>
+      </div>
+      <button class="modal-close" onclick="closePdfRemind()" aria-label="關閉">✕</button>
+    </div>
+    <div style="padding:4px 2px 6px">
+      <div style="background:#fffbeb;border:1.5px solid #fcd34d;border-radius:10px;padding:12px 14px;font-size:14px;color:#92400e;line-height:1.7;margin-bottom:14px">
+        📄 <strong>請記得下載本月登記表 PDF 存檔。</strong><br>
+        下載後開啟檔案，選擇「列印」→「另存為 PDF」，存到單位指定的資料夾留存。
+      </div>
+      <button class="submit-btn" style="width:100%;margin-bottom:8px" onclick="closePdfRemind();exportPDF();">🖨 立即下載 PDF</button>
+      <button onclick="closePdfRemind()" style="width:100%;padding:11px;background:white;border:1.5px solid var(--gray-300);border-radius:10px;font-size:14px;font-weight:600;color:var(--gray-700);cursor:pointer;font-family:inherit">稍後再下載</button>
+      <div style="font-size:12px;color:var(--gray-500);margin-top:10px;text-align:center">之後也可以在「📅 本月」按右上角 🖨 下載</div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="abnormalModalOverlay" onclick="closeAbnormalModal(event)">
   <div class="modal-card" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -1129,7 +1151,7 @@
     <div class="adm-topbar">
       <div>
         <h2>⚙️ 系統管理</h2>
-        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-12d</span></p>
+        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-12f</span></p>
       </div>
       <button class="adm-back" onclick="closeAdminPage()">← 返回登記</button>
     </div>
@@ -1457,6 +1479,21 @@ function ensureCloudConfig() {
 const MIN_TEMP_CAMPUSES = ['store'];
 function usesMinTemp(campus) { return MIN_TEMP_CAMPUSES.includes(campus || currentArea.split('_')[0]); }
 
+// ══════════ 週末不需登記的院區 ══════════
+// 藥庫週六、週日沒有人上班：這兩天沒登記不算缺漏，週檢核與月底核定照常可以簽。
+// 週末若有人登記，資料一樣會保存並顯示。
+const WEEKEND_OFF_CAMPUSES = ['store'];
+function isOffDay(campus, ym, day) {
+  if(!WEEKEND_OFF_CAMPUSES.includes(campus)) return false;
+  const [y, m] = ym.split('-').map(Number);
+  const wd = new Date(y, m - 1, day).getDay();
+  return wd === 0 || wd === 6;
+}
+function weekdayLabel(ym, day) {
+  const [y, m] = ym.split('-').map(Number);
+  return '日一二三四五六'[new Date(y, m - 1, day).getDay()];
+}
+
 function getCampusRoles(campus) {
   campus = campus || (currentArea ? currentArea.split('_')[0] : 'douliu');
   return CAMPUS_ROLES[campus] || CAMPUS_ROLES.douliu;
@@ -1759,6 +1796,7 @@ function getSupervisorBlock() {
     const range = deptRange(dept, currentMonth); // 新增或停用的地點，只要求範圍內的日期
     if(range) {
       for(let d = range.from; d <= Math.min(range.to, checkUpTo); d++) {
+        if(isOffDay(campus, currentMonth, d)) continue; // 週末不需登記
         if(!log[d]?.AM?.signedBy) missingSlots++;
         if(!log[d]?.PM?.signedBy) missingSlots++;
       }
@@ -1818,13 +1856,23 @@ function signSupervisor() {
       };
       saveSupervisor();
       renderSupervisor();
-      showToast(`✅ ${currentUser.name} 已完成 ${currentMonth} ${getAreaLabel()} 月底核定`, 'success');
+      openPdfRemind(); // 核定完成的訊息與下載提醒一起顯示在視窗裡
     };
     reader.readAsDataURL(file);
   } else {
     showToast('請先上傳簽名照片', 'warn');
   }
 }
+function openPdfRemind() {
+  const [y, m] = currentMonth.split('-');
+  const campus = currentArea.split('_')[0];
+  document.getElementById('pdfRemindSub').textContent = `${y}年${Number(m)}月　${CAMPUS_LABEL_FULL[campus] || ''}`;
+  document.getElementById('pdfRemindOverlay').classList.add('open');
+}
+function closePdfRemind() {
+  document.getElementById('pdfRemindOverlay').classList.remove('open');
+}
+
 function clearSupervisor() {
   if(!isSupervisor(currentUser?.id) && !isAdmin(currentUser?.id)) {
     const roles = getCampusRoles();
@@ -1875,6 +1923,7 @@ function signChecker(week, areaKey) {
   const fromDay = ckRange ? Math.max(weekStart, ckRange.from) : weekStart;
   const toDay = ckRange ? Math.min(weekEnd, ckRange.to) : weekEnd;
   for(let d = fromDay; d <= toDay; d++) {
+    if(isOffDay(ckCampus, currentMonth, d)) continue; // 週末不需登記
     const am = data[d]?.AM;
     const pm = data[d]?.PM;
     if(!am?.signedBy) missing.push(`${String(d).padStart(2,'0')}日上午`);
@@ -2413,6 +2462,7 @@ function renderTodayView() {
 
     sf.innerHTML = `
       ${outOfRange ? `<div style="background:#fffbeb;border:1.5px solid #fcd34d;border-radius:8px;padding:6px 10px;font-size:11px;color:#92400e;font-weight:600;margin-bottom:6px;">⚠ 現在${rangeMsg}，如為補登請繼續填寫</div>` : ''}
+      ${isOffDay(currentArea.split('_')[0], currentMonth, d) ? `<div style="background:#f3f4f6;border:1.5px solid #d1d5db;border-radius:8px;padding:6px 10px;font-size:11px;color:var(--gray-700);font-weight:600;margin-bottom:6px;">🗓 今天是週${weekdayLabel(currentMonth, d)}，藥庫不需登記；如有登記，資料仍會保存</div>` : ''}
       ${isMakeup ? `<div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:8px;padding:6px 10px;font-size:11px;color:#1e40af;font-weight:600;margin-bottom:6px;">📝 補登：${currentMonth}-${String(d).padStart(2,'0')}</div>` : ''}
       ${deptData.map((dept,i) => {
         const locked = isFutureDay || dept.weekLocked;
@@ -2781,7 +2831,7 @@ function renderMonthView() {
 
     html += `
     <tr style="${rowBg}border-bottom:none;">
-      <td class="date-col" rowspan="2" style="border-right:2px solid var(--teal-light);vertical-align:middle;">${d}${todayMark}</td>
+      <td class="date-col" rowspan="2" style="border-right:2px solid var(--teal-light);vertical-align:middle;">${d}${todayMark}${isOffDay(campus, currentMonth, d) ? `<div style="font-size:10px;color:var(--gray-400);font-weight:600">週${weekdayLabel(currentMonth, d)}・免登記</div>` : ''}</td>
       <td style="background:#deeaf122;font-size:11px;font-weight:700;color:#1a6ea8;padding:4px 8px;text-align:center;white-space:nowrap;">上午</td>
       ${hasMinM
         ? `<td style="text-align:center">${ro(am.maxTemp, amMW)}</td><td style="text-align:center">${ro(am.minTemp, false)}</td><td style="text-align:center">${ro(am.temp, amTW)}</td>`
@@ -3890,7 +3940,7 @@ function buildPDFSection(deptLabel) {
       : tdc(cv(e.temp, tw)) + tdc(cv(e.maxTemp, mw));
     const rowBg = (amTW||amMW||amHW||pmTW||pmMW||pmHW) ? 'background:#fff8f8;' : '';
     logRowsFile += `<tr style="${rowBg}">
-      <td class="td-date" align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${String(d).padStart(2,'0')}</td>
+      <td class="td-date" align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${String(d).padStart(2,'0')}${isOffDay(currentArea.split('_')[0], currentMonth, d) ? `<span style="font-size:7pt;color:#888;font-weight:normal">（${weekdayLabel(currentMonth, d)}）</span>` : ''}</td>
       ${tempCells(am, amTW, amMW)}
       <td align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${cv(am.humid,amHW)}</td>
       <td align="center" valign="middle" style="text-align:center;vertical-align:middle;padding:1px 2px;">${am.signedBy||'—'}</td>
