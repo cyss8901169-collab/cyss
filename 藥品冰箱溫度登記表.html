@@ -1717,6 +1717,42 @@
     background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.5); color:#fff;
     border-radius:6px; width:28px; height:28px; cursor:pointer; font-size:14px;
   }
+  /* ===================== 管理員檢視院區 ===================== */
+  .admin-site-switch{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:8px; }
+  .admin-site-switch-label{ font-size:13px; font-weight:600; color:var(--muted); white-space:nowrap; }
+  .admin-site-switch-pills{ display:flex; gap:6px; flex-wrap:wrap; }
+  .admin-site-switch-pills button{
+    font-family:inherit; font-size:14px; font-weight:600; padding:6px 16px; border-radius:20px; cursor:pointer;
+    border:1px solid var(--line); background:#fff; color:var(--ink);
+  }
+  .admin-site-switch-pills button.active{ background:var(--navy); border-color:var(--navy); color:#fff; }
+  .admin-site-switch-pills button small{ font-size:11px; font-weight:500; opacity:.85; margin-left:2px; }
+  /* ===================== 疫苗冰箱曲線圖 ===================== */
+  .vchart-card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:16px 16px 12px; margin:16px 0; }
+  .vchart-head{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px; }
+  .vchart-title{ flex:1 1 260px; margin:0; font-size:18px; font-weight:700; color:var(--ink); text-align:center; }
+  .vchart-legend{ display:flex; gap:14px; font-size:13px; color:var(--muted); }
+  .vchart-legend i{ display:inline-block; width:18px; height:3px; border-radius:2px; vertical-align:middle; margin-right:5px; }
+  .vchart-legend .lim i{ height:0; border-top:2px dashed #d9534f; background:none; }
+  .vchart-pdf-btn{
+    font-family:inherit; font-size:14px; padding:7px 14px; border-radius:8px; cursor:pointer;
+    border:1px solid var(--line); background:#fff; color:var(--ink); white-space:nowrap;
+  }
+  .vchart-pdf-btn:hover{ background:var(--pale); }
+  .vchart-body{ position:relative; }
+  .vchart-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:4px; }
+  .vchart-yaxis{ position:absolute; left:0; top:0; width:40px; pointer-events:none; background:#fff; box-shadow:4px 0 6px -4px rgba(15,48,87,.25); opacity:0; transition:opacity .15s; }
+  .vchart-yaxis.shown{ opacity:1; }
+  .vchart-yaxis svg{ display:block; }
+  .vchart-scroll svg{ display:block; }
+  .vchart-note{ font-size:12px; color:var(--muted); margin-top:6px; line-height:1.6; }
+  .vchart-stamp{ cursor:default; }
+  .vchart-stamp.can{ cursor:pointer; }
+  .vchart-stamp.can:hover rect{ fill:#eef5f9; }
+  body.pdf-landscape #pdfAreaContent{ max-width:297mm; }
+  .pdf-chart-page{ padding:6mm 6mm 2mm; }
+  .pdf-chart-page h2{ text-align:center; margin:0 0 4mm; font-size:17pt; }
+  .pdf-chart-page svg{ width:100%; height:auto; display:block; }
   /* ===================== 系統管理（僅管理員） ===================== */
   .admin-open-btn{
     background:#fff; border:1px solid #fff; color:var(--navy);
@@ -1754,9 +1790,40 @@
   .admin-card-icon.i-admin{ background:#fdeee2; }
   .admin-card-icon.i-staff{ background:#e6eef8; }
   .admin-card-icon.i-fridge{ background:#e3f3f6; }
+  .admin-card-icon.i-role{ background:#f3ecfa; }
+  .role-edit-list{ border:1px solid var(--line); border-radius:10px; }
+  .role-site-row{ grid-template-columns:90px 1fr 1fr 1fr !important; }
+  .role-weekend{ grid-column:2 / -1; display:flex; align-items:center; gap:6px; font-size:13.5px; color:var(--ink); cursor:pointer; }
+  .role-weekend input{ width:18px; height:18px; margin:0; }
+  .off-day-tag{ display:inline-block; font-size:10px; color:#b3261e; font-weight:700; }
+  .role-site-row, .role-stamp-row{
+    display:grid; grid-template-columns:90px 1fr 1fr; gap:10px; align-items:end;
+    padding:10px 12px; border-top:1px solid #e6edf2;
+  }
+  .role-stamp-row{ grid-template-columns:90px 1fr 1fr 70px; align-items:center; }
+  .role-site-row:first-child, .role-stamp-row:first-child{ border-top:none; }
+  .role-site-name, .role-stamp-who{ font-weight:700; color:var(--navy); align-self:center; }
+  .role-field{ display:flex; flex-direction:column; gap:4px; font-size:12.5px; color:var(--muted); min-width:0; }
+  .admin-overlay .role-field select.admin-select, .admin-overlay .role-field input.admin-input{ width:100%; font-size:16px; padding:8px 10px; }
+  .role-sub-title{ font-size:13px; font-weight:700; color:var(--ink); margin:14px 0 6px; }
+  .role-stamp-preview{
+    width:62px; height:58px; border:2px solid #b3261e; border-radius:5px; color:#b3261e;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.15;
+    font-size:11px; justify-self:end;
+  }
+  .role-stamp-preview span{ font-family:ui-monospace,Consolas,monospace; font-weight:700; font-size:12px; }
+  @media (max-width:640px){
+    .role-site-row{ grid-template-columns:1fr !important; }
+    .role-weekend{ grid-column:auto; }
+    .role-stamp-row{ grid-template-columns:1fr 1fr; }
+    .role-stamp-who{ grid-column:1 / -1; }
+    .role-stamp-preview{ grid-column:1 / -1; justify-self:start; }
+  }
   .fridge-edit-list{ border:1px solid var(--line); border-radius:10px; }
+  .fridge-vac-toggle{ display:inline-flex; align-items:center; gap:4px; font-size:13px; color:var(--ink); white-space:nowrap; cursor:pointer; }
+  .fridge-vac-toggle input{ width:18px; height:18px; margin:0; }
   .fridge-edit-row{
-    display:grid; grid-template-columns:28px 1fr auto auto auto; gap:8px; align-items:center;
+    display:grid; grid-template-columns:28px 1fr auto auto auto auto; gap:8px; align-items:center;
     padding:8px 12px; border-top:1px solid #e6edf2;
   }
   .fridge-edit-row:first-child{ border-top:none; }
@@ -1949,8 +2016,20 @@
       </section>
 
       <section class="admin-card">
+        <h3 class="admin-card-title"><span class="admin-card-icon i-role">🧑‍⚕️</span>組長與週檢核者</h3>
+        <p class="admin-card-desc">組長負責確認異常處理、月底核定；週檢核者負責本月總覽表格的每週「檢核確認」（需本人登入）；疫苗冰箱週檢核者是曲線圖下方的印章，任何人登入後點一下就會蓋上這個人的章。可以選任何院區的員工。換人後，以前已完成的檢核與核定紀錄不會改變。</p>
+        <div class="role-edit-list" id="roleEditList"></div>
+        <div class="role-sub-title">疫苗冰箱週檢核印章</div>
+        <div class="role-edit-list" id="roleStampList"></div>
+        <div class="admin-form-row" style="margin-top:12px;">
+          <button type="button" class="admin-primary-btn" id="roleSaveBtn">儲存組長與週檢核者</button>
+          <button type="button" class="admin-ghost-btn" id="roleResetBtn">復原未儲存的修改</button>
+        </div>
+      </section>
+
+      <section class="admin-card">
         <h3 class="admin-card-title"><span class="admin-card-icon i-fridge">🧊</span>冰箱設定</h3>
-        <p class="admin-card-desc">設定每個院區要登記哪些冰箱、以及顯示順序。改名稱會套用到所有月份（含以前的報表）；新增、移除、調整順序則從你選的月份開始生效，以前的紀錄不受影響。</p>
+        <p class="admin-card-desc">設定每個院區要登記哪些冰箱、以及顯示順序。改名稱會套用到所有月份（含以前的報表）；新增、移除、調整順序則從你選的月份開始生效，以前的紀錄不受影響。勾選「疫苗」的冰箱，在「本月」總覽會另外顯示溫度曲線圖。</p>
         <div class="admin-site-filter" id="fridgeSiteTabs"></div>
         <div class="fridge-edit-list" id="fridgeEditList"></div>
         <div class="admin-form-row" style="margin-top:10px;">
@@ -2027,6 +2106,10 @@
         <input type="text" id="managerInput" style="display:none;">
         <input type="month" id="monthSelect" style="display:none;">
       </div>
+      <div class="admin-site-switch" id="adminSiteSwitch" style="display:none;">
+        <span class="admin-site-switch-label">管理員檢視院區</span>
+        <div class="admin-site-switch-pills" id="adminSiteSwitchPills" role="group" aria-label="管理員檢視院區"></div>
+      </div>
     </div>
   </div>
 
@@ -2085,6 +2168,8 @@
         </table>
       </div>
     </div>
+
+    <div id="vaccineChartsWrap"></div>
 
     <div class="abn-record-section" id="abnRecordSectionGrid">
       <div class="abn-record-title">⚠ 異常處理記錄 <span class="abn-count-badge" id="abnCountBadgeGrid">0 筆異常</span></div>
@@ -2560,12 +2645,40 @@ async function loadAdminConfig(){
       });
     }
     if(cfg && Array.isArray(cfg.admins) && cfg.admins.length){
-      ADMIN_IDS.splice(0, ADMIN_IDS.length, ...cfg.admins.map(String));
+      const list = cfg.admins.map(String);
+      if(!cfg.adminsV2) ADMIN_ADDED_V2.forEach(id=>{ if(!list.includes(id)) list.push(id); });
+      ADMIN_IDS.splice(0, ADMIN_IDS.length, ...list);
+    }
+    if(cfg && cfg.roles && typeof cfg.roles === 'object'){
+      const lead = cfg.roles.lead || {}, checker = cfg.roles.checker || {};
+      const rolesV = Number(cfg.roles.version || 1);
+      Object.keys(lead).forEach(site=>{ if(lead[site]) SITE_TEAM_LEAD_ID[site] = String(lead[site]); });
+      Object.keys(checker).forEach(site=>{
+        // 舊版設定把藥庫週檢核者存成吳秋宜；新版改為：一般週檢核＝李心愉、疫苗冰箱＝吳秋宜
+        if(rolesV < 2 && site === '藥庫' && checker[site] === 'Y00287') return;
+        if(checker[site]) SITE_DEFAULT_CHECKER_ID[site] = String(checker[site]);
+      });
+      if(cfg.roles.vaccine && typeof cfg.roles.vaccine === 'object'){
+        Object.keys(SITE_VACCINE_CHECKER_ID).forEach(k=> delete SITE_VACCINE_CHECKER_ID[k]);
+        Object.keys(cfg.roles.vaccine).forEach(site=>{ if(cfg.roles.vaccine[site]) SITE_VACCINE_CHECKER_ID[site] = String(cfg.roles.vaccine[site]); });
+      }
+      if(cfg.roles.skipWeekend && typeof cfg.roles.skipWeekend === 'object'){
+        Object.keys(SITES).forEach(site=>{ SITE_SKIP_WEEKEND[site] = !!cfg.roles.skipWeekend[site]; });
+      }
+    }
+    if(cfg && cfg.stamps && typeof cfg.stamps === 'object'){
+      Object.keys(cfg.stamps).forEach(id=>{
+        const v = cfg.stamps[id];
+        if(v && typeof v === 'object') STAMP_INFO[id] = { title: String(v.title || ''), no: String(v.no || '') };
+      });
     }
     if(cfg && cfg.fridges && typeof cfg.fridges === 'object'){
       Object.keys(cfg.fridges).forEach(site=>{
         const fc = cfg.fridges[site];
-        if(fc && fc.defs && Array.isArray(fc.versions) && fc.versions.length) FRIDGE_CFG[site] = fc;
+        if(fc && fc.defs && Array.isArray(fc.versions) && fc.versions.length){
+          if(!fc.vaccineInit) applyDefaultVaccineFlags(site, fc);
+          FRIDGE_CFG[site] = fc;
+        }
       });
     }
   }catch(e){
@@ -2580,7 +2693,11 @@ async function saveAdminConfig(){
   const cfg = {
     staff: STAFF,
     admins: ADMIN_IDS,
+    adminsV2: true,
     fridges: FRIDGE_CFG,
+    roles: { version: 2, lead: SITE_TEAM_LEAD_ID, checker: SITE_DEFAULT_CHECKER_ID,
+             vaccine: SITE_VACCINE_CHECKER_ID, skipWeekend: SITE_SKIP_WEEKEND },
+    stamps: STAMP_INFO,
     updatedAt: new Date().toISOString(),
     updatedBy: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : ''
   };
@@ -2827,13 +2944,46 @@ async function getScheduledStaffId(ym, day, ourShiftKey){
 // 各院區「每週檢核者」——只有這個指定人員可以執行檢核，不會自動預設帶入
 const SITE_DEFAULT_CHECKER_ID = {
   "斗六院區": "Y00326",
-  "藥庫": "Y00955",
+  "藥庫": "Y07944",
   "虎尾院區": "Y01644"
 };
+// 疫苗冰箱（有曲線圖的冰箱）專用的週檢核者：印章格點一下就蓋這個人的章，不需要本人登入
+const SITE_VACCINE_CHECKER_ID = {
+  "藥庫": "Y00287"
+};
+// 不使用班表系統排班提醒的院區（藥庫不排班）
+const SITE_NO_ROSTER = {
+  "藥庫": true
+};
+// 週六、日無人值班的院區：這兩天空白不算缺漏（週檢核、月底核定、完成率都會略過）
+const SITE_SKIP_WEEKEND = {
+  "藥庫": true
+};
+function isOffDay(siteName, ym, d){
+  if(!SITE_SKIP_WEEKEND[siteName]) return false;
+  const [y, m] = ym.split('-').map(Number);
+  const wd = new Date(y, m - 1, Number(d)).getDay();
+  return wd === 0 || wd === 6;
+}
+function getVaccineCheckerName(siteName){
+  const id = SITE_VACCINE_CHECKER_ID[siteName];
+  if(!id) return '';
+  const p = Object.values(STAFF).flat().find(s => s.id === id);
+  return p ? p.name : id;
+}
+// 週檢核印章內容（職稱＋號碼），以員工編號為鍵；可在「系統管理 → 組長與週檢核者」修改
+const STAMP_INFO = {
+  "Y00287": { title: "藥師", no: "16074" }
+};
+function getStampInfo(id){
+  const s = STAMP_INFO[id] || {};
+  return { title: s.title || '藥師', no: s.no || '' };
+}
 function getSiteDefaultCheckerName(siteName){
   const id = SITE_DEFAULT_CHECKER_ID[siteName];
   if(!id) return '';
-  const found = (STAFF[siteName] || []).find(s => s.id === id);
+  const found = (STAFF[siteName] || []).find(s => s.id === id) ||
+    Object.values(STAFF).flat().find(s => s.id === id);
   return found ? found.name : '';
 }
 
@@ -2847,7 +2997,9 @@ const SITE_TEAM_LEAD_ID = {
 // 判斷目前登入的人，是不是任何一個院區的組長——
 // 「指派新員工院區」這種管理性質的操作，限定只有組長本人登入才能看到、才能操作。
 // 管理員名單（跨院區，不限於自己所屬院區，都能操作「新員工指派院區」這類管理功能）
-const ADMIN_IDS = ["Y01643", "Y01644", "Y00326", "Y08215", "Y00325"];
+const ADMIN_IDS = ["Y01643", "Y01644", "Y00326", "Y08215", "Y00325", "Y06100", "Y00287", "Y00230"];
+// 2026-11 新增的管理員：舊版雲端設定裡沒有他們時，自動補上（之後若被移除就不再補）
+const ADMIN_ADDED_V2 = ["Y06100", "Y00287", "Y00230"];
 function isCurrentUserAdmin(){
   if(!currentUser || !currentUser.id) return false;
   return ADMIN_IDS.includes(currentUser.id);
@@ -2861,7 +3013,8 @@ function canManageStaff(){
   return isCurrentUserAnyTeamLead() || isCurrentUserAdmin();
 }
 function findStaffById(siteName, id){
-  return (STAFF[siteName] || []).find(s => s.id === id) || null;
+  return (STAFF[siteName] || []).find(s => s.id === id) ||
+    Object.values(STAFF).flat().find(s => s.id === id) || null;
 }
 function getSiteTeamLead(siteName){
   const id = SITE_TEAM_LEAD_ID[siteName];
@@ -3081,8 +3234,21 @@ function buildDefaultFridgeConfig(){
     const defs = {}; const ids = [];
     names.forEach((n, i)=>{ const id = 'f' + (i + 1); defs[id] = { name: n }; ids.push(id); });
     cfg[site] = { defs, versions: [{ from: '0000-00', ids }] };
+    applyDefaultVaccineFlags(site, cfg[site]);
   });
   return cfg;
+}
+// 預設疫苗冰箱（會另外顯示溫度曲線圖）：藥庫 冰箱2、冰箱7。之後可在系統管理勾選／取消
+const DEFAULT_VACCINE_FRIDGE_IDS = { "藥庫": ["f2", "f7"] };
+function applyDefaultVaccineFlags(site, fc){
+  (DEFAULT_VACCINE_FRIDGE_IDS[site] || []).forEach(id=>{
+    if(fc.defs[id] && fc.defs[id].vaccine === undefined) fc.defs[id].vaccine = true;
+  });
+  fc.vaccineInit = true;
+}
+function isVaccineFridge(site, id){
+  const c = FRIDGE_CFG[site];
+  return !!(c && c.defs && c.defs[id] && c.defs[id].vaccine);
 }
 let FRIDGE_CFG = buildDefaultFridgeConfig();
 
@@ -3797,6 +3963,34 @@ async function setShiftData(site, shiftKey, ym, data){
   await saveSiteMonthData(site, ym, blob);
 }
 
+async function getVaccineChecks(site, ym){
+  const blob = await getSiteMonthData(site, ym);
+  return blob.vaccineChecks || {};
+}
+async function setVaccineCheck(site, ym, fridgeId, weekIndex, rec){
+  const apply = obj=>{
+    if(!obj.vaccineChecks || typeof obj.vaccineChecks !== 'object') obj.vaccineChecks = {};
+    if(!obj.vaccineChecks[fridgeId]) obj.vaccineChecks[fridgeId] = {};
+    if(rec) obj.vaccineChecks[fridgeId][weekIndex] = rec;
+    else delete obj.vaccineChecks[fridgeId][weekIndex];
+    return obj;
+  };
+  const key = siteMonthKey(site, ym);
+  if(USE_CLOUD){
+    try{
+      const merged = await cloudMergeUpdate(key, server => apply(server));
+      cacheMonthBlob(key, merged);
+    }catch(err){
+      showCloudError(cloudFailMsg('儲存', err));
+      throw err;
+    }
+    return;
+  }
+  const blob = await getSiteMonthData(site, ym);
+  apply(blob);
+  await saveSiteMonthData(site, ym, blob);
+}
+
 async function getSiteCheckers(site, ym){
   const blob = await getSiteMonthData(site, ym);
   return blob.checkers || [];
@@ -3853,7 +4047,10 @@ async function renderDailyView(){
 
   // past-window note
   pastWindowNoteEl.style.display = 'none';
-  if(isToday && shiftObj){
+  if(isOffDay(siteName, ym, day)){
+    pastWindowNoteEl.textContent = `ℹ 週六、日${siteName}無人值班，空白不算缺漏；如當天有人值班，仍可照常登記`;
+    pastWindowNoteEl.style.display = 'block';
+  } else if(isToday && shiftObj){
     const times = parseShiftTimes(shiftObj.label);
     if(times){
       const nowMin = today.now.getHours()*60 + today.now.getMinutes();
@@ -4107,6 +4304,8 @@ async function renderDailyView(){
   const scheduleHintEl = document.getElementById('scheduleHintBar');
   if(scheduleHintEl){
     scheduleHintEl.style.display = 'none';
+  }
+  if(scheduleHintEl && !SITE_NO_ROSTER[siteName]){
     try{
       const scheduledId = await getScheduledStaffId(ym, day, shiftKey);
       if(scheduledId){
@@ -4586,16 +4785,18 @@ async function renderStatCards(){
     Object.keys(d.rows || {}).forEach(day=>{
       if(d.rows[day] && d.rows[day].savedAt){
         loggedDays.add(day);
-        filledShiftDayCount++;
+        if(!isOffDay(siteName, ym, day)) filledShiftDayCount++;
       }
     });
   });
+  let workDays = 0;
+  for(let dd = 1; dd <= numDays; dd++) if(!isOffDay(siteName, ym, dd)) workDays++;
   document.getElementById('statDaysLogged').textContent = loggedDays.size;
 
   const abnormalItems = await scanMonthAbnormal(siteName, ym);
   document.getElementById('statAbnormalCount').textContent = abnormalItems.length;
 
-  const totalSlots = numDays * site.shifts.length;
+  const totalSlots = workDays * site.shifts.length;
   const rate = totalSlots > 0 ? Math.round((filledShiftDayCount / totalSlots) * 100) : 0;
   const rateEl = document.getElementById('statCompletionRate');
   rateEl.textContent = `${rate}%`;
@@ -4610,9 +4811,10 @@ async function renderStatCards(){
 // 每天每個班別都要：溫度三個欄位都有填、有登記人員簽名；
 // 如果那筆有溫度異常，還必須「異常原因」與「異常處理記錄」(處理方式/是否解除/回復溫度)都填寫完整，
 // 全部滿足才算這一週「已完整」，檢核者才能夠核可。
-function isWeekComplete(site, shiftDatas, startDay, endDay){
+function isWeekComplete(site, shiftDatas, startDay, endDay, siteName, ym, onlyFridgeIdx){
   for(let d = startDay; d <= endDay; d++){
     const day = String(d);
+    if(siteName && ym && isOffDay(siteName, ym, d)) continue; // 週六日無人值班：不算缺漏
     for(const shift of site.shifts){
       const shiftData = shiftDatas[shift.key];
       const row = shiftData && shiftData.rows ? shiftData.rows[day] : null;
@@ -4621,7 +4823,8 @@ function isWeekComplete(site, shiftDatas, startDay, endDay){
       if(!row.temps || row.temps.length !== site.fridges.length) return false;
 
       let rowAbnormal = false;
-      for(const t of row.temps){
+      const tempsToCheck = (onlyFridgeIdx !== undefined) ? [row.temps[onlyFridgeIdx]] : row.temps;
+      for(const t of tempsToCheck){
         if(!t || t.min === '' || t.now === '' || t.max === '' || t.min == null || t.now == null || t.max == null){
           return false;
         }
@@ -4635,6 +4838,21 @@ function isWeekComplete(site, shiftDatas, startDay, endDay){
     }
   }
   return true;
+}
+
+// 執行週檢核（本月總覽表格的「檢核確認」和曲線圖的「蓋章」共用同一筆資料）
+async function doWeeklyCheck(siteName, ym, blockIndex){
+  const id = SITE_DEFAULT_CHECKER_ID[siteName];
+  if(!id || !currentUser || currentUser.id !== id) throw new Error('not designated checker');
+  const st = getStampInfo(id);
+  const latest = await getSiteCheckers(siteName, ym);
+  latest[blockIndex] = {
+    name: getSiteDefaultCheckerName(siteName) || currentUser.name || id,
+    id, title: st.title, no: st.no,
+    date: new Date().toISOString().slice(0,10)
+  };
+  await setSiteCheckers(siteName, ym, latest);
+  setStatus('週檢核已確認');
 }
 
 async function renderMonthlyFeed(){
@@ -4703,7 +4921,7 @@ async function renderMonthlyFeed(){
         const tdDate = document.createElement('td');
         tdDate.className = 'feed-date-cell';
         tdDate.rowSpan = site.shifts.length;
-        tdDate.innerHTML = `${d}${isToday ? '<span class="today-pin">📍</span>' : ''}`;
+        tdDate.innerHTML = `${d}${isToday ? '<span class="today-pin">📍</span>' : ''}${isOffDay(siteName, ym, d) ? '<br><small class="off-day-tag">休</small>' : ''}`;
         tr.appendChild(tdDate);
       }
 
@@ -4748,7 +4966,7 @@ async function renderMonthlyFeed(){
       const blockIndex = Math.floor((d - 1) / 7);
       const startDay = blockIndex * 7 + 1;
       const endDay = d;
-      const weekComplete = isWeekComplete(site, shiftDatas, startDay, endDay);
+      const weekComplete = isWeekComplete(site, shiftDatas, startDay, endDay, siteName, ym);
       const checkers = await getSiteCheckers(siteName, ym);
       const saved = checkers[blockIndex];
       const designatedId = SITE_DEFAULT_CHECKER_ID[siteName];
@@ -4800,10 +5018,7 @@ async function renderMonthlyFeed(){
             btn.disabled = true;
             btn.textContent = '確認中…';
             try{
-              const latest = await getSiteCheckers(siteName, ym);
-              latest[bi] = { name: designatedName, date: new Date().toISOString().slice(0,10) };
-              await setSiteCheckers(siteName, ym, latest);
-              setStatus('週檢核已確認');
+              await doWeeklyCheck(siteName, ym, bi);
               await renderMonthlyFeed();
             }catch(err){
               console.error('週檢核確認失敗', err);
@@ -4826,6 +5041,7 @@ async function renderMonthlyFeed(){
     }
   }
 
+  await renderVaccineCharts(siteName, site, ym, shiftDatas);
   await renderApprovalCard(siteName, ym);
   await renderAbnSectionGrid(siteName, ym);
 }
@@ -4961,6 +5177,7 @@ async function checkMonthComplete(siteName, ym){
   for(const shift of site.shifts){
     const data = await getShiftData(siteName, shift.key, ym);
     for(let d=1; d<=numDays; d++){
+      if(isOffDay(siteName, ym, d)) continue;
       const row = data && data.rows && data.rows[d];
       if(!row) return false;
       const hasTemps = (row.temps || []).every(t=> t && t.min && t.now && t.max);
@@ -5701,6 +5918,7 @@ function applyLogin(user){
   const site = findStaffSite(user);
   if(site){
     siteSelect.value = site;
+    try{ _prevSiteValue = site; }catch(e){}
     siteSelect.disabled = true;
     siteSelect.title = '院區已依員工所屬自動設定';
     populateShifts();
@@ -5819,6 +6037,7 @@ const openAdminBtnEl = document.getElementById('openAdminBtn');
 let _staffSiteFilter = '全部';
 
 function updateAdminButtonVisibility(){
+  if(typeof renderAdminSiteSwitch === 'function') renderAdminSiteSwitch();
   if(!openAdminBtnEl) return;
   openAdminBtnEl.style.display = isCurrentUserAdmin() ? '' : 'none';
   setTimeout(updateTopbarHeight, 50);
@@ -6026,6 +6245,7 @@ function renderStaffList(){
 function renderAdminPanel(){
   renderAdminStorageNote();
   renderAdminChips();
+  renderRoleAdmin();
   renderFridgeAdmin();
   renderStaffSiteControls();
   renderStaffList();
@@ -6094,6 +6314,7 @@ function openAdminPanel(){
 function closeAdminPanel(){
   if(!adminOverlayEl) return;
   _fridgeDraft = null;
+  _roleDraft = null;
   adminOverlayEl.classList.add('hidden');
   document.body.style.overflow = '';
 }
@@ -6135,7 +6356,7 @@ function thisYm(){ const d = new Date(); return `${d.getFullYear()}-${String(d.g
 
 function fridgeDraftFromConfig(site){
   const eff = document.getElementById('fridgeEffectiveSel').value || ymAdd(thisYm(), 1);
-  return { site, items: fridgeIdsFor(site, eff).map(id => ({ id, name: fridgeNameOf(site, id), isNew:false })) };
+  return { site, items: fridgeIdsFor(site, eff).map(id => ({ id, name: fridgeNameOf(site, id), vaccine: isVaccineFridge(site, id), isNew:false })) };
 }
 
 function renderFridgeAdmin(){
@@ -6171,6 +6392,13 @@ function renderFridgeAdmin(){
     inp.type = 'text'; inp.className = 'admin-input'; inp.value = it.name; inp.maxLength = 12;
     inp.setAttribute('aria-label', `第 ${i+1} 台冰箱名稱`);
     inp.addEventListener('input', ()=>{ it.name = inp.value; updateFridgeHint(); });
+    const vac = document.createElement('label');
+    vac.className = 'fridge-vac-toggle';
+    vac.title = '疫苗冰箱：本月總覽會另外顯示溫度曲線圖';
+    const vacCb = document.createElement('input');
+    vacCb.type = 'checkbox'; vacCb.checked = !!it.vaccine;
+    vacCb.addEventListener('change', ()=>{ it.vaccine = vacCb.checked; updateFridgeHint(); });
+    vac.append(vacCb, document.createTextNode('疫苗'));
     const up = document.createElement('button'); up.type='button'; up.className='fridge-mini-btn'; up.textContent='↑';
     up.setAttribute('aria-label','往上移'); up.disabled = i === 0;
     up.addEventListener('click', ()=>{ [_fridgeDraft.items[i-1], _fridgeDraft.items[i]] = [_fridgeDraft.items[i], _fridgeDraft.items[i-1]]; renderFridgeAdmin(); });
@@ -6181,7 +6409,7 @@ function renderFridgeAdmin(){
     del.disabled = _fridgeDraft.items.length <= 1;
     if(del.disabled) del.title = '每個院區至少要有一台冰箱';
     del.addEventListener('click', ()=>{ _fridgeDraft.items.splice(i, 1); renderFridgeAdmin(); });
-    row.append(no, inp, up, down, del);
+    row.append(no, inp, vac, up, down, del);
     list.appendChild(row);
   });
   // 已移除（之前用過、現在不在清單）的冰箱：提示可以加回來
@@ -6197,7 +6425,7 @@ function renderFridgeAdmin(){
       b.type = 'button'; b.className = 'admin-ghost-btn';
       b.style.cssText = 'padding:3px 10px;font-size:12.5px;margin:4px 0 0 6px;';
       b.textContent = '＋ ' + defs[id].name;
-      b.addEventListener('click', ()=>{ _fridgeDraft.items.push({ id, name: defs[id].name, isNew:false }); renderFridgeAdmin(); });
+      b.addEventListener('click', ()=>{ _fridgeDraft.items.push({ id, name: defs[id].name, vaccine: !!defs[id].vaccine, isNew:false }); renderFridgeAdmin(); });
       r.appendChild(b);
     });
     list.appendChild(r);
@@ -6211,7 +6439,7 @@ function fridgeDraftDirty(){
   const site = _fridgeDraft.site;
   const ids = fridgeIdsFor(site, eff);
   if(ids.join('|') !== _fridgeDraft.items.map(x=>x.id).join('|')) return true;
-  return _fridgeDraft.items.some(x => x.name.trim() !== fridgeNameOf(site, x.id));
+  return _fridgeDraft.items.some(x => x.name.trim() !== fridgeNameOf(site, x.id) || !!x.vaccine !== isVaccineFridge(site, x.id));
 }
 
 function fridgeDraftError(){
@@ -6240,6 +6468,10 @@ function updateFridgeHint(){
   if(removedNames.length) parts.push(`移除 ${removedNames.join('、')}`);
   if(listChanged && !added.length && !removedNames.length) parts.push('調整順序');
   if(renamed.length) parts.push(`改名 ${renamed.map(x => `${fridgeNameOf(site, x.id)}→${x.name.trim()}`).join('、')}`);
+  const vacOn = _fridgeDraft.items.filter(x => x.vaccine && !isVaccineFridge(site, x.id)).map(x => x.name.trim());
+  const vacOff = _fridgeDraft.items.filter(x => !x.vaccine && isVaccineFridge(site, x.id) && before.includes(x.id)).map(x => x.name.trim());
+  if(vacOn.length) parts.push(`設為疫苗冰箱 ${vacOn.join('、')}`);
+  if(vacOff.length) parts.push(`取消疫苗冰箱 ${vacOff.join('、')}`);
   hint.className = 'admin-form-hint';
   if(!parts.length){ hint.textContent = ''; return; }
   let msg = `尚未儲存：${parts.join('；')}。`;
@@ -6266,7 +6498,9 @@ async function saveFridgeConfig(){
   _fridgeDraft.items.forEach(x=>{
     if(!c.defs[x.id]) c.defs[x.id] = { name: x.name.trim() };
     else c.defs[x.id].name = x.name.trim();
+    c.defs[x.id].vaccine = !!x.vaccine;
   });
+  c.vaccineInit = true;
   if(listChanged){
     // 從生效月份開始用新清單；之後原本排定的版本一併取代
     c.versions = c.versions.filter(v => v.from < eff);
@@ -6294,7 +6528,7 @@ document.getElementById('fridgeAddBtn').addEventListener('click', ()=>{
   const inp = document.getElementById('fridgeAddName');
   const name = inp.value.trim();
   if(!name){ inp.focus(); return; }
-  _fridgeDraft.items.push({ id: 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2,5), name, isNew:true });
+  _fridgeDraft.items.push({ id: 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2,5), name, vaccine:false, isNew:true });
   inp.value = '';
   renderFridgeAdmin();
 });
@@ -6305,6 +6539,414 @@ document.getElementById('fridgeEffectiveSel').addEventListener('change', ()=>{
 });
 document.getElementById('fridgeSaveBtn').addEventListener('click', saveFridgeConfig);
 document.getElementById('fridgeResetBtn').addEventListener('click', ()=>{ _fridgeDraft = null; renderFridgeAdmin(); });
+
+/* ===================== 疫苗冰箱曲線圖 ===================== */
+const VCHART_SERIES = [
+  { key:'max', label:'高溫',     color:'#222222' },
+  { key:'min', label:'低溫',     color:'#c0392b' },
+  { key:'now', label:'現在溫度', color:'#1f6fd1' }
+];
+function rocMonthTitle(ym){ const [y, m] = ym.split('-').map(Number); return `${y - 1911}年${m}月`; }
+function shiftShortChar(shift){
+  const t = shift.label.replace(/時段|（.*?）|\(.*?\)/g, '').trim();
+  return t.charAt(0) || '?';
+}
+function givenName(full){ const n = String(full || '').trim(); return n.length >= 3 ? n.slice(-2) : n; }
+
+// 產生曲線圖 SVG（畫面與 PDF 共用）。stamps: [{weekIndex, startDay, endDay, state, saved}]
+function buildVaccineChartSvg(o){
+  const nS = o.shifts.length, nD = o.numDays;
+  const slotW = o.slotW || 16, left = 40, right = 12, top = 10, plotH = o.plotH || 300;
+  const W = left + nD * nS * slotW + right;
+  const yOf = v => top + plotH - (Math.max(0, Math.min(10, v)) / 10) * plotH;
+  const xOf = i => left + i * slotW + slotW / 2;
+  const axisY = top + plotH;
+  const shiftRowY = axisY + 14, nameRowY = axisY + 31, dayRowY = axisY + 74;
+  const stampTop = axisY + 86, stampH = 58;
+  const H = stampTop + stampH + 8;
+  const out = [];
+  out.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="Noto Sans TC, PingFang TC, Microsoft JhengHei, sans-serif" role="img" aria-label="${escapeHtml(o.title)} 溫度曲線圖">`);
+  // horizontal grid
+  for(let k = 0; k <= 100; k++){
+    const y = top + plotH - k * plotH / 100;
+    const major = k % 10 === 0, half = k % 5 === 0;
+    out.push(`<line x1="${left}" y1="${y.toFixed(1)}" x2="${W - right}" y2="${y.toFixed(1)}" stroke="${major ? '#6f7d89' : half ? '#a3b0ba' : '#cfd6dc'}" stroke-width="${major ? 1.1 : half ? 0.8 : 0.6}"/>`);
+    if(half) out.push(`<text x="${left - 6}" y="${(y + 3.5).toFixed(1)}" font-size="${major ? 11 : 9}" font-weight="${major ? 700 : 400}" fill="${major ? '#1c2b36' : '#8a99a6'}" text-anchor="end">${k % 10 === 0 ? k / 10 : (k / 10).toFixed(1)}</text>`);
+  }
+  // 週六日灰底
+  (o.offDays || []).forEach((off, d)=>{
+    if(!off) return;
+    out.push(`<rect x="${left + d * nS * slotW}" y="${top}" width="${nS * slotW}" height="${dayRowY + 6 - top}" fill="#e9edf1" opacity="0.7"/>`);
+  });
+  // day / slot separators and labels
+  for(let d = 0; d < nD; d++){
+    const x0 = left + d * nS * slotW;
+    out.push(`<line x1="${x0}" y1="${top}" x2="${x0}" y2="${dayRowY + 6}" stroke="#b9c4cc" stroke-width="0.8"/>`);
+    o.shifts.forEach((sh, si)=>{
+      const i = d * nS + si, cx = xOf(i);
+      if(si > 0) out.push(`<line x1="${x0 + si * slotW}" y1="${axisY}" x2="${x0 + si * slotW}" y2="${shiftRowY + 4}" stroke="#e1e6ea" stroke-width="0.6"/>`);
+      out.push(`<text x="${cx}" y="${shiftRowY}" font-size="10" fill="#5e7385" text-anchor="middle">${shiftShortChar(sh)}</text>`);
+    });
+    // 每天只寫一位登記者：以上午登記的人為準（上午沒登記才用其他時段的人），完整姓名直排
+    let dayName = '';
+    for(let si = 0; si < nS && !dayName; si++) dayName = String(o.signs[d * nS + si] || '').trim();
+    const dcx = x0 + nS * slotW / 2;
+    [...dayName].slice(0, 4).forEach((ch, ci)=> out.push(`<text x="${dcx}" y="${nameRowY + ci * 13}" font-size="10.5" fill="#1c2b36" text-anchor="middle">${escapeHtml(ch)}</text>`));
+    const off = o.offDays && o.offDays[d];
+    out.push(`<text x="${x0 + nS * slotW / 2}" y="${dayRowY}" font-size="11" font-weight="700" fill="${off ? '#b3261e' : '#1c2b36'}" text-anchor="middle">${d + 1}</text>`);
+  }
+  out.push(`<line x1="${W - right}" y1="${top}" x2="${W - right}" y2="${dayRowY + 6}" stroke="#b9c4cc" stroke-width="0.8"/>`);
+  out.push(`<line x1="${left}" y1="${dayRowY + 6}" x2="${W - right}" y2="${dayRowY + 6}" stroke="#b9c4cc" stroke-width="0.8"/>`);
+  // series
+  VCHART_SERIES.forEach(se=>{
+    const vals = o.values.map(t => {
+      if(!t) return null;
+      const n = parseFloat(t[se.key]);
+      return isNaN(n) ? null : n;
+    });
+    let seg = [];
+    const flush = ()=>{
+      if(seg.length > 1) out.push(`<polyline points="${seg.join(' ')}" fill="none" stroke="${se.color}" stroke-width="1.6" stroke-linejoin="round"/>`);
+      seg = [];
+    };
+    vals.forEach((v, i)=>{
+      if(v === null){ flush(); return; }
+      seg.push(`${xOf(i).toFixed(1)},${yOf(v).toFixed(1)}`);
+    });
+    flush();
+    vals.forEach((v, i)=>{
+      if(v === null) return;
+      const bad = v < 2 || v > 8;
+      const day = Math.floor(i / nS) + 1, sh = o.shifts[i % nS];
+      out.push(`<circle cx="${xOf(i).toFixed(1)}" cy="${yOf(v).toFixed(1)}" r="${bad ? 3.6 : 2.3}" fill="${se.color}" ${bad ? 'stroke="#ffcc00" stroke-width="1.5"' : ''}><title>${day}日 ${escapeHtml(shiftShortChar(sh))}午 ${se.label} ${v.toFixed(1)}℃</title></circle>`);
+    });
+  });
+  // weekly stamp boxes
+  o.stamps.forEach(st=>{
+    const anchor = st.anchorDay || st.endDay;
+    const bw = 66;
+    // 印章／蓋章格對齊該週最後一個上班日，但不超出圖的左右邊界
+    const cx = Math.min(W - right - bw / 2, Math.max(left + bw / 2, left + (anchor - 0.5) * nS * slotW));
+    const bx = cx - bw / 2;
+    if(st.saved && st.saved.name){
+      const sv = st.saved;
+      const info = sv.id ? getStampInfo(sv.id) : { title:'藥師', no:'' };
+      const title = sv.title || info.title || '藥師';
+      const no = sv.no !== undefined ? sv.no : info.no;
+      const sw = 62, sx = cx - sw / 2;
+      out.push(`<g class="vchart-stamp${o.canUnstamp ? ' can' : ''}" data-week="${st.weekIndex}" ${o.canUnstamp ? 'tabindex="0" role="button"' : ''}><title>第${st.weekIndex + 1}週檢核：${escapeHtml(sv.name)} ${escapeHtml(sv.date || '')}${o.canUnstamp ? '（管理員可點擊取消）' : ''}</title>`);
+      out.push(`<rect x="${sx}" y="${stampTop}" width="${sw}" height="${stampH}" rx="5" fill="#fff" stroke="#b3261e" stroke-width="2.2"/>`);
+      out.push(`<text x="${cx}" y="${stampTop + 15}" font-size="10" font-weight="700" fill="#b3261e" text-anchor="middle" letter-spacing="3">${escapeHtml(title)}</text>`);
+      if(no) out.push(`<text x="${cx}" y="${stampTop + 32}" font-size="13" font-weight="700" fill="#b3261e" text-anchor="middle" font-family="ui-monospace, Consolas, monospace">${escapeHtml(no)}</text>`);
+      out.push(`<text x="${cx}" y="${stampTop + (no ? 50 : 40)}" font-size="12.5" font-weight="700" fill="#b3261e" text-anchor="middle">${escapeHtml(sv.name)}</text>`);
+      out.push(`</g>`);
+    } else if(o.forPrint){
+      // 列印／PDF：還沒蓋章的週留白，不印「點此蓋章」等按鈕文字
+    } else {
+      const can = st.state === 'ready';
+      const label = can ? '點此蓋章' : `${escapeHtml(o.stampTitle)}蓋章`;
+      const tip = can ? `第${st.weekIndex + 1}週（${st.startDay}–${st.endDay}日）資料已完整，點一下蓋上${o.checkerName}的章`
+        : st.state === 'incomplete' ? `第${st.weekIndex + 1}週這台冰箱的資料尚未完整登記（含異常處理），暫時無法蓋章`
+        : st.state === 'nochecker' ? '尚未設定疫苗冰箱週檢核者'
+        : '請先登入';
+      out.push(`<g class="vchart-stamp${can ? ' can' : ''}" data-week="${st.weekIndex}" ${can ? 'tabindex="0" role="button"' : ''}><title>${escapeHtml(tip)}</title>`);
+      out.push(`<rect x="${bx}" y="${stampTop + 14}" width="${bw}" height="30" rx="7" fill="#fff" stroke="${can ? '#1f6f9c' : '#c3ccd3'}" stroke-width="${can ? 1.6 : 1}" stroke-dasharray="4 3"/>`);
+      out.push(`<text x="${cx}" y="${stampTop + 33}" font-size="11" fill="${can ? '#1f6f9c' : '#7b8d9b'}" font-weight="${can ? 700 : 400}" text-anchor="middle">${label}</text>`);
+      out.push(`</g>`);
+    }
+  });
+  out.push('</svg>');
+  return out.join('');
+}
+
+async function renderVaccineCharts(siteName, site, ym, shiftDatas){
+  const wrap = document.getElementById('vaccineChartsWrap');
+  if(!wrap) return;
+  wrap.innerHTML = '';
+  const ids = fridgeIdsFor(siteName, ym);
+  const vacIdx = ids.map((id, i)=> isVaccineFridge(siteName, id) ? i : -1).filter(i => i >= 0);
+  if(!vacIdx.length) return;
+  const numDays = daysInMonth(ym);
+  const vChecks = await getVaccineChecks(siteName, ym);
+  const checkerId = SITE_VACCINE_CHECKER_ID[siteName];
+  const checkerName = getVaccineCheckerName(siteName);
+  const stampTitle = checkerId ? getStampInfo(checkerId).title : '藥師';
+  const offDays = [];
+  for(let d = 1; d <= numDays; d++) offDays.push(isOffDay(siteName, ym, d));
+  // 曲線圖只畫上午、下午（中午、大夜的資料仍在表格裡）
+  const chartShifts = site.shifts.filter(sh => sh.key === 'am' || sh.key === 'pm');
+
+  vacIdx.forEach(fIdx=>{
+    const fid = ids[fIdx];
+    const fChecks = vChecks[fid] || {};
+    const stamps = [];
+    // 疫苗冰箱印章：依「日曆週」（週一～週日）分週，印章蓋在該週最後一個上班日
+    const [cy, cm] = ym.split('-').map(Number);
+    const weeks = [];
+    let ws = 1;
+    for(let d = 1; d <= numDays; d++){
+      if(new Date(cy, cm - 1, d).getDay() === 0 || d === numDays){ weeks.push([ws, d]); ws = d + 1; }
+    }
+    weeks.forEach(([startDay, endDay], wi)=>{
+      let anchorDay = endDay;
+      while(anchorDay > startDay && isOffDay(siteName, ym, anchorDay)) anchorDay--;
+      const key = 'cw' + startDay;
+      const saved = fChecks[key];
+      let state = 'other';
+      if(saved && saved.name) state = 'done';
+      else if(!checkerId) state = 'nochecker';
+      else if(!currentUser) state = 'other';
+      else if(!isWeekComplete(site, shiftDatas, startDay, endDay, siteName, ym, fIdx)) state = 'incomplete';
+      else state = 'ready';
+      stamps.push({ weekIndex: wi, key, startDay, endDay, anchorDay, state, saved });
+    });
+    const fname = fridgeNameOf(siteName, ids[fIdx]);
+    const values = [], signs = [];
+    for(let d = 1; d <= numDays; d++){
+      chartShifts.forEach(sh=>{
+        const row = shiftDatas[sh.key] && shiftDatas[sh.key].rows ? shiftDatas[sh.key].rows[String(d)] : null;
+        values.push(row && row.temps ? row.temps[fIdx] || null : null);
+        signs.push(row && row.sign ? row.sign : '');
+      });
+    }
+    // 抬頭比照紙本：115年10月冰箱溫度登記表(7)——括號內取冰箱名稱裡的編號，沒有數字就用名稱
+    const fnum = (String(fname).match(/\d+/) || [fname])[0];
+    const title = `${rocMonthTitle(ym)}冰箱溫度登記表(${fnum})`;
+    const opts = { title, shifts: chartShifts, numDays, values, signs, stamps, stampTitle, checkerName, offDays,
+                   canUnstamp: isCurrentUserAdmin() };
+    const card = document.createElement('section');
+    card.className = 'vchart-card';
+    card.innerHTML = `
+      <div class="vchart-head">
+        <h3 class="vchart-title">${escapeHtml(title)}</h3>
+        <div class="vchart-legend">${VCHART_SERIES.map(se=>`<span><i style="background:${se.color}"></i>${se.label}</span>`).join('')}</div>
+        <button type="button" class="vchart-pdf-btn">匯出PDF</button>
+      </div>
+      <div class="vchart-body"><div class="vchart-scroll">${buildVaccineChartSvg(opts)}</div><div class="vchart-yaxis" aria-hidden="true"></div></div>
+      <div class="vchart-note">疫苗冰箱週檢核｜檢核者：${escapeHtml(checkerName || '未設定')}。這台冰箱本週（週六日除外）都登記完成後，點一下印章格就會蓋上${escapeHtml(checkerName || '')}的章${isCurrentUserAdmin() ? '；管理員點已蓋的章可以取消' : ''}。灰底為週六、日。</div>`;
+    card.querySelector('.vchart-pdf-btn').addEventListener('click', ()=> openVaccineChartPdf(title, buildVaccineChartSvg({ ...opts, slotW: Math.max(12, Math.floor(1150 / (numDays * chartShifts.length))), plotH: 520, forPrint: true })));
+    card.querySelectorAll('.vchart-stamp.can').forEach(g=>{
+      const go = async ()=>{
+        const wi = Number(g.dataset.week);
+        const st = stamps[wi];
+        if(st.saved && st.saved.name){
+          if(!confirm(`確定要取消${fname}第 ${wi + 1} 週（${st.startDay}–${st.endDay}日）${st.saved.name}的檢核章嗎？`)) return;
+          try{
+            await setVaccineCheck(siteName, ym, fid, st.key, null);
+            await renderMonthlyFeed();
+            showSuccessToast(`已取消第 ${wi + 1} 週檢核章`);
+          }catch(err){ alert('⚠ 取消沒有成功，請確認網路後再試一次。'); }
+          return;
+        }
+        if(!confirm(`確定要在${fname}第 ${wi + 1} 週（${st.startDay}–${st.endDay}日）蓋上「${checkerName}」的檢核章嗎？`)) return;
+        try{
+          const info = getStampInfo(checkerId);
+          await setVaccineCheck(siteName, ym, fid, st.key, {
+            name: checkerName, id: checkerId, title: info.title, no: info.no,
+            date: new Date().toISOString().slice(0,10),
+            by: currentUser ? currentUser.id : ''
+          });
+          await renderMonthlyFeed();
+          showSuccessToast(`✅ 已蓋第 ${wi + 1} 週檢核章`);
+        }catch(err){
+          console.error('週檢核蓋章失敗', err);
+          alert('⚠ 蓋章沒有成功，請確認網路後再試一次。');
+        }
+      };
+      g.addEventListener('click', go);
+      g.addEventListener('keydown', e=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); } });
+    });
+    // 左側溫度刻度固定不動：複製主圖左邊 40px 疊在上面
+    const mainSvg = card.querySelector('.vchart-scroll svg');
+    const axis = card.querySelector('.vchart-yaxis');
+    const vb = mainSvg.getAttribute('viewBox').split(' ').map(Number);
+    axis.innerHTML = `<svg viewBox="0 0 40 ${vb[3]}" width="40" height="${vb[3]}">${[...mainSvg.querySelectorAll('text[text-anchor="end"]')].map(t=>t.outerHTML).join('')}</svg>`;
+    const sc0 = card.querySelector('.vchart-scroll');
+    const syncAxis = ()=>{ axis.classList.toggle('shown', sc0.scrollLeft > 2); };
+    sc0.addEventListener('scroll', syncAxis, { passive:true });
+    wrap.appendChild(card);
+    requestAnimationFrame(syncAxis);
+    // 手機上預設捲到今天附近
+    const sc = card.querySelector('.vchart-scroll');
+    const today = realTodayInfo();
+    if(ym === today.ym){
+      const frac = (Number(today.day) - 1) / numDays;
+      requestAnimationFrame(()=>{ sc.scrollLeft = Math.max(0, sc.scrollWidth * frac - sc.clientWidth / 2); });
+    }
+  });
+}
+
+function openVaccineChartPdf(title, svg){
+  const content = document.getElementById('pdfAreaContent');
+  content.innerHTML = `<div class="pdf-page pdf-chart-page"><h2>${escapeHtml(title)}</h2>${svg}
+    <div style="display:flex;gap:16px;justify-content:center;font-size:9pt;margin-top:2mm;">
+      ${VCHART_SERIES.map(se=>`<span><span style="display:inline-block;width:16px;height:3px;background:${se.color};vertical-align:middle;margin-right:4px;"></span>${se.label}</span>`).join('')}
+    </div></div>`;
+  content.querySelectorAll('svg').forEach(sv=>{ sv.removeAttribute('width'); sv.removeAttribute('height'); });
+  let st = document.getElementById('pdfLandscapeStyle');
+  if(!st){
+    st = document.createElement('style');
+    st.id = 'pdfLandscapeStyle';
+    st.textContent = '@media print{ @page{ size:A4 landscape; margin:6mm; } }';
+    document.head.appendChild(st);
+  }
+  document.body.classList.add('pdf-mode', 'pdf-landscape');
+  // 儲存成 PDF 時，預設檔名＝抬頭
+  if(!window._origDocTitle) window._origDocTitle = document.title;
+  document.title = title;
+  window.scrollTo(0, 0);
+  setStatus('PDF 預覽已開啟');
+}
+document.getElementById('pdfCloseBtn').addEventListener('click', ()=>{
+  document.body.classList.remove('pdf-landscape');
+  if(window._origDocTitle){ document.title = window._origDocTitle; window._origDocTitle = null; }
+  const st = document.getElementById('pdfLandscapeStyle');
+  if(st) st.remove();
+});
+
+/* ===================== 系統管理：組長與週檢核者 ===================== */
+let _roleDraft = null;
+function roleDraftFromConfig(){
+  const d = { lead:{}, checker:{}, vaccine:{}, skipWeekend:{}, stamps:{} };
+  Object.keys(SITES).forEach(site=>{
+    d.lead[site] = SITE_TEAM_LEAD_ID[site] || '';
+    d.checker[site] = SITE_DEFAULT_CHECKER_ID[site] || '';
+    d.vaccine[site] = SITE_VACCINE_CHECKER_ID[site] || '';
+    d.skipWeekend[site] = !!SITE_SKIP_WEEKEND[site];
+  });
+  Object.keys(STAMP_INFO).forEach(id=>{ d.stamps[id] = { ...STAMP_INFO[id] }; });
+  return d;
+}
+function staffOptionsHtml(selectedId){
+  const sites = Object.keys(STAFF);
+  return '<option value="">（未設定）</option>' + sites.map(site=>{
+    const list = [...STAFF[site]].sort((a,b)=> a.id.localeCompare(b.id));
+    return `<optgroup label="${escapeHtml(site)}">` + list.map(p=>
+      `<option value="${escapeHtml(p.id)}"${p.id === selectedId ? ' selected' : ''}>${escapeHtml(p.name)}（${escapeHtml(p.id)}）</option>`).join('') + '</optgroup>';
+  }).join('');
+}
+function renderRoleAdmin(){
+  if(!_roleDraft) _roleDraft = roleDraftFromConfig();
+  const box = document.getElementById('roleEditList');
+  box.innerHTML = '';
+  Object.keys(SITES).forEach(site=>{
+    const row = document.createElement('div');
+    row.className = 'role-site-row';
+    row.innerHTML = `<div class="role-site-name">${escapeHtml(site)}</div>
+      <label class="role-field"><span>組長</span><select class="admin-select" data-role="lead">${staffOptionsHtml(_roleDraft.lead[site])}</select></label>
+      <label class="role-field"><span>週檢核者</span><select class="admin-select" data-role="checker">${staffOptionsHtml(_roleDraft.checker[site])}</select></label>
+      <label class="role-field"><span>疫苗冰箱週檢核者（印章）</span><select class="admin-select" data-role="vaccine">${staffOptionsHtml(_roleDraft.vaccine[site])}</select></label>
+      <label class="role-weekend"><input type="checkbox" ${_roleDraft.skipWeekend[site] ? 'checked' : ''}> 週六、日無人值班（空白不算缺漏）</label>`;
+    row.querySelector('.role-weekend input').addEventListener('change', e=>{ _roleDraft.skipWeekend[site] = e.target.checked; });
+    row.querySelectorAll('select').forEach(sel=>{
+      sel.addEventListener('change', ()=>{ _roleDraft[sel.dataset.role][site] = sel.value; renderRoleAdmin(); });
+    });
+    box.appendChild(row);
+  });
+  // 印章設定：每位週檢核者
+  const stampBox = document.getElementById('roleStampList');
+  stampBox.innerHTML = '';
+  // 只有疫苗冰箱曲線圖會用到印章，其餘週檢核不需要
+  const checkerIds = [...new Set(Object.values(_roleDraft.vaccine).filter(Boolean))];
+  checkerIds.forEach(id=>{
+    const p = Object.values(STAFF).flat().find(s => s.id === id);
+    const cur = _roleDraft.stamps[id] || { title:'藥師', no:'' };
+    if(!_roleDraft.stamps[id]) _roleDraft.stamps[id] = cur;
+    const r = document.createElement('div');
+    r.className = 'role-stamp-row';
+    r.innerHTML = `<div class="role-stamp-who">${escapeHtml(p ? p.name : id)}</div>
+      <label class="role-field"><span>印章職稱</span><input type="text" class="admin-input" maxlength="6" value="${escapeHtml(cur.title || '')}" placeholder="藥師" data-k="title"></label>
+      <label class="role-field"><span>印章號碼</span><input type="text" class="admin-input" maxlength="12" value="${escapeHtml(cur.no || '')}" placeholder="例如 16074" data-k="no"></label>
+      <div class="role-stamp-preview" aria-hidden="true"></div>`;
+    const prev = r.querySelector('.role-stamp-preview');
+    const paint = ()=>{
+      const t = _roleDraft.stamps[id];
+      prev.innerHTML = `<b>${escapeHtml(t.title || '藥師')}</b>${t.no ? `<span>${escapeHtml(t.no)}</span>` : ''}<b>${escapeHtml(p ? p.name : id)}</b>`;
+    };
+    r.querySelectorAll('input').forEach(inp=>{
+      inp.addEventListener('input', ()=>{ _roleDraft.stamps[id][inp.dataset.k] = inp.value.trim(); paint(); });
+    });
+    paint();
+    stampBox.appendChild(r);
+  });
+  if(!checkerIds.length) stampBox.innerHTML = '<div class="staff-empty">尚未設定疫苗冰箱週檢核者</div>';
+}
+async function saveRoleConfig(){
+  const d = _roleDraft;
+  const missing = Object.keys(SITES).filter(site => !d.lead[site] || !d.checker[site]);
+  if(missing.length && !confirm(`${missing.join('、')} 的組長或週檢核者還沒設定，沒設定時就無法核定或檢核。\n仍要儲存嗎？`)) return;
+  const summary = Object.keys(SITES).map(site=>{
+    const ln = (findStaffById(site, d.lead[site]) || {}).name || '未設定';
+    const cn = (findStaffById(site, d.checker[site]) || {}).name || '未設定';
+    return `${site}：組長 ${ln}／週檢核者 ${cn}`;
+  }).join('\n');
+  if(!confirm(`確定要儲存嗎？\n\n${summary}\n\n已經完成的檢核與核定紀錄不會改變。`)) return;
+  const prev = { lead:{...SITE_TEAM_LEAD_ID}, checker:{...SITE_DEFAULT_CHECKER_ID}, vaccine:{...SITE_VACCINE_CHECKER_ID}, skip:{...SITE_SKIP_WEEKEND}, stamps: JSON.parse(JSON.stringify(STAMP_INFO)) };
+  Object.keys(SITES).forEach(site=>{
+    if(d.lead[site]) SITE_TEAM_LEAD_ID[site] = d.lead[site]; else delete SITE_TEAM_LEAD_ID[site];
+    if(d.checker[site]) SITE_DEFAULT_CHECKER_ID[site] = d.checker[site]; else delete SITE_DEFAULT_CHECKER_ID[site];
+    if(d.vaccine[site]) SITE_VACCINE_CHECKER_ID[site] = d.vaccine[site]; else delete SITE_VACCINE_CHECKER_ID[site];
+    SITE_SKIP_WEEKEND[site] = !!d.skipWeekend[site];
+  });
+  Object.keys(d.stamps).forEach(id=>{ STAMP_INFO[id] = { title: d.stamps[id].title || '藥師', no: d.stamps[id].no || '' }; });
+  try{
+    await saveAdminConfig();
+  }catch(e){
+    Object.keys(SITE_TEAM_LEAD_ID).forEach(k=> delete SITE_TEAM_LEAD_ID[k]); Object.assign(SITE_TEAM_LEAD_ID, prev.lead);
+    Object.keys(SITE_DEFAULT_CHECKER_ID).forEach(k=> delete SITE_DEFAULT_CHECKER_ID[k]); Object.assign(SITE_DEFAULT_CHECKER_ID, prev.checker);
+    Object.keys(STAMP_INFO).forEach(k=> delete STAMP_INFO[k]); Object.assign(STAMP_INFO, prev.stamps);
+    Object.keys(SITE_VACCINE_CHECKER_ID).forEach(k=> delete SITE_VACCINE_CHECKER_ID[k]); Object.assign(SITE_VACCINE_CHECKER_ID, prev.vaccine);
+    Object.assign(SITE_SKIP_WEEKEND, prev.skip);
+    alert('⚠ 沒有存成功，請確認網路後再試一次。');
+    return;
+  }
+  _roleDraft = null;
+  renderAdminPanel();
+  showSuccessToast('✅ 已儲存組長與週檢核者');
+  try{ await refreshAll(); }catch(e){}
+}
+document.getElementById('roleSaveBtn').addEventListener('click', saveRoleConfig);
+document.getElementById('roleResetBtn').addEventListener('click', ()=>{ _roleDraft = null; renderRoleAdmin(); });
+
+/* ===================== 管理員檢視院區 ===================== */
+// 可以切換到哪些院區：管理員＝全部；組長／週檢核者＝自己院區＋負責的院區
+function getSwitchableSites(){
+  if(!currentUser) return [];
+  if(isCurrentUserAdmin()) return Object.keys(SITES);
+  const id = currentUser.id;
+  const home = findStaffSite(currentUser);
+  return Object.keys(SITES).filter(site => site === home ||
+    SITE_TEAM_LEAD_ID[site] === id || SITE_DEFAULT_CHECKER_ID[site] === id || SITE_VACCINE_CHECKER_ID[site] === id);
+}
+function renderAdminSiteSwitch(){
+  const box = document.getElementById('adminSiteSwitch');
+  const pills = document.getElementById('adminSiteSwitchPills');
+  if(!box || !pills) return;
+  const allowed = getSwitchableSites();
+  if(allowed.length < 2){ box.style.display = 'none'; pills.innerHTML = ''; return; }
+  const home = findStaffSite(currentUser);
+  box.style.display = 'flex';
+  box.querySelector('.admin-site-switch-label').textContent = isCurrentUserAdmin() ? '管理員檢視院區' : '切換院區（負責檢核）';
+  pills.innerHTML = '';
+  allowed.forEach(site=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    const short = site.replace('院區', '');
+    b.innerHTML = escapeHtml(short) + (site === home ? '<small>（本院區）</small>' : '');
+    b.setAttribute('aria-pressed', site === siteSelect.value ? 'true' : 'false');
+    if(site === siteSelect.value) b.classList.add('active');
+    b.addEventListener('click', ()=> switchAdminSite(site));
+    pills.appendChild(b);
+  });
+  setTimeout(updateTopbarHeight, 30);
+}
+function switchAdminSite(site){
+  if(!getSwitchableSites().includes(site) || site === siteSelect.value) return;
+  siteSelect.value = site;
+  siteSelect.dispatchEvent(new Event('change')); // 沿用原本的院區切換（含「尚未儲存」提醒）
+  topbarSubtitle.textContent = `國立臺灣大學醫學院附設醫院雲林分院－藥劑部【${siteSelect.value}】`;
+  renderAdminSiteSwitch();
+}
 </script>
 
 </body>
