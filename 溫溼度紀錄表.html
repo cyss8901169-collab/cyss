@@ -918,6 +918,16 @@
     await authReadyPromise;
     await setDoc(doc(templogDb, TEMPLOG_COLLECTION, '_backups', 'daily', dateId), data);
   };
+  // 簽名照片備份：每張照片一份，只新增一次（templog/_backups/photos/{id}）
+  window._photoBackupGet = async function(id) {
+    await authReadyPromise;
+    const snap = await getDoc(doc(templogDb, TEMPLOG_COLLECTION, '_backups', 'photos', id));
+    return snap.exists() ? snap.data() : null;
+  };
+  window._photoBackupSet = async function(id, data) {
+    await authReadyPromise;
+    await setDoc(doc(templogDb, TEMPLOG_COLLECTION, '_backups', 'photos', id), data);
+  };
   window._backupDelete = async function(dateId) {
     await authReadyPromise;
     await deleteDoc(doc(templogDb, TEMPLOG_COLLECTION, '_backups', 'daily', dateId));
@@ -1178,7 +1188,7 @@
     <div class="adm-topbar">
       <div>
         <h2>⚙️ 系統管理</h2>
-        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-14f</span></p>
+        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-14g</span></p>
       </div>
       <button class="adm-back" onclick="closeAdminPage()">← 返回登記</button>
     </div>
@@ -1271,7 +1281,7 @@
     <!-- 資料備份 -->
     <div class="adm-section">
       <h3>💾 資料備份與還原</h3>
-      <div class="adm-desc">系統每天第一位同仁登入時，會自動把本月與前兩個月的登記、週檢核、核定資料（不含簽名照片）及各項設定備份一份到雲端。備份只會新增、不會被修改或刪除，下方列出最近 60 份。
+      <div class="adm-desc">系統每天第一位同仁登入時，會自動把本月與前兩個月的登記、週檢核、核定資料及各項設定備份一份到雲端；簽名照片另外備份，每張只存一次。備份只會新增、不會被修改或刪除，下方列出最近 60 份。
         「還原」只會補回目前缺少的資料，不會覆蓋或刪除現有的資料。</div>
       <div class="adm-row" style="margin-bottom:10px">
         <button class="adm-btn" onclick="adminDownloadBackup()">⬇ 下載完整備份檔</button>
@@ -1958,6 +1968,36 @@ function getSupervisorBlock() {
   };
 }
 
+// 壓縮圖片：最長邊 1200px、JPEG，必要時再降畫質，確保小於約 350KB
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = e => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        let maxSide = 1200, quality = 0.75, out = '';
+        for(let i = 0; i < 6; i++) {
+          const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          out = canvas.toDataURL('image/jpeg', quality);
+          if(out.length < 350 * 1024) break;
+          maxSide = Math.round(maxSide * 0.8); quality = Math.max(0.5, quality - 0.08);
+        }
+        resolve(out);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 function signSupervisor() {
   if(!isSupervisor(currentUser?.id)) {
     const roles = getCampusRoles();
@@ -1972,17 +2012,19 @@ function signSupervisor() {
   const photoInput = document.getElementById('supervisorPhoto');
   const file = photoInput && photoInput.files && photoInput.files[0];
   if(file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
+    // 手機照片常有 3–5MB，超過雲端單筆 1MB 的上限會存不進去；先壓縮成約 100KB 的 JPEG 再存
+    compressImage(file).then(photo => {
       if(!supervisorData[currentMonth]) supervisorData[currentMonth] = {};
       supervisorData[currentMonth][currentArea] = {
-        name: currentUser.name, id: currentUser.id, time: dateStr, comment, photo: e.target.result
+        name: currentUser.name, id: currentUser.id, time: dateStr, comment, photo
       };
       saveSupervisor();
       renderSupervisor();
       openPdfRemind(); // 核定完成的訊息與下載提醒一起顯示在視窗裡
-    };
-    reader.readAsDataURL(file);
+    }).catch(err => {
+      console.error(err);
+      showToast('簽名照片讀取失敗，請換一張照片再試', 'error');
+    });
   } else {
     showToast('請先上傳簽名照片', 'warn');
   }
@@ -2248,11 +2290,12 @@ function buildBackupSnapshot(source) {
     if(!isData && !isCfg) return;
     let v = source[k];
     if(typeof v === 'string') { try { v = JSON.parse(v); } catch(e) { return; } }
-    if(k.startsWith('supervisor_') && v && v.photo) v = { ...v, photo: '（照片未備份）' };
+    if(k.startsWith('supervisor_') && v && v.photo) v = { ...v, photo: '（照片未備份）', _photoId: k + '__' + photoHash(v.photo) }; // 照片另存於照片備份
     docs[k] = v;
   });
   return docs;
 }
+function photoHash(s) { let h = 0; for(let i = 0; i < s.length; i += 7) h = (h * 31 + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
 async function runDailyBackup(force) {
   if(!window._backupSet || !window._templogGet) return null;
   try {
@@ -2273,6 +2316,16 @@ async function runDailyBackup(force) {
       ? today + '_' + String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0') + String(now.getSeconds()).padStart(2,'0')
       : today;
     await window._backupSet(backupId, { createdAt: now.toISOString(), by: currentUser ? currentUser.id : '', months: backupMonths(), docs });
+    // 簽名照片另外備份：每份月底核定的照片只存一次（照片有變才會再存一份）
+    if(window._photoBackupSet) {
+      for(const k of Object.keys(all).filter(x => x.startsWith('supervisor_'))) {
+        const sv = all[k];
+        if(!sv || !sv.photo || String(sv.photo).length > 900 * 1024) continue;
+        const pid = k + '__' + photoHash(sv.photo);
+        try { if(!(await window._photoBackupGet(pid))) await window._photoBackupSet(pid, { doc: k, name: sv.name || '', id: sv.id || '', time: sv.time || '', photo: sv.photo, savedAt: now.toISOString() }); }
+        catch(e) { console.error('簽名照片備份失敗：', e); }
+      }
+    }
     const info = Object.assign({}, idx.info || {});
     info[backupId] = { docs: Object.keys(docs).length, days: dayCount, by: currentUser ? currentUser.id : '' };
     await window._templogSet(BACKUP_INDEX_DOC, { dates: [...idx.dates.filter(d => d !== backupId), backupId].sort(), info });
@@ -4907,7 +4960,20 @@ async function restoreDocsMissingOnly(docs, sourceLabel) {
     let b = docs[k];
     if(typeof b === 'string') { try { b = JSON.parse(b); } catch(e) { continue; } }
     if(!b || typeof b !== 'object') continue;
-    if(k.startsWith('supervisor_') && b.photo === '（照片未備份）') delete b.photo;
+    if(k.startsWith('supervisor_') && b.photo === '（照片未備份）') {
+      delete b.photo;
+      // 從照片備份找回簽名照片
+      if(window._photoBackupGet && b.time !== undefined) {
+        try {
+          const cur0 = await window._templogGet(k);
+          if(!cur0 || !cur0.photo) {
+            const hint = b._photoId ? await window._photoBackupGet(b._photoId) : null;
+            if(hint && hint.photo) b.photo = hint.photo;
+          }
+        } catch(e) {}
+      }
+    }
+    delete b._photoId;
     const cur = (await window._templogGet(k)) || {};
     const patch = missingOnlyPatch(cur, b);
     if(patch === undefined) continue;
