@@ -1252,6 +1252,8 @@
   .confirm-pending-bar.warn{ background:#fff4e5; color:#8a5a00; border-color:#f0c070; }
   .confirm-pending-bar.done{ background:#e8f5ee; color:var(--ok); border:1px solid #b9dcc8; }
   .confirm-pending-bar:empty{ display:none; }
+  #fridgeCards.daily-locked{ opacity:.55; }
+  #fridgeCards.daily-locked input{ background:#f1f3f5; cursor:not-allowed; }
   .staff-select-row{
     display:flex;
     align-items:center;
@@ -1791,6 +1793,26 @@
   .admin-card-icon.i-staff{ background:#e6eef8; }
   .admin-card-icon.i-fridge{ background:#e3f3f6; }
   .admin-card-icon.i-role{ background:#f3ecfa; }
+  .admin-card-icon.i-backup{ background:#e8f5ee; }
+  .backup-status{ font-size:14px; padding:10px 12px; border-radius:9px; margin-bottom:12px; line-height:1.6; background:#f4f7f9; color:var(--ink); }
+  .backup-status.ok{ background:#e8f5ee; color:var(--ok); }
+  .backup-status.warn{ background:#fff4e5; color:#8a5a00; }
+  .snap-list{ margin-top:10px; border:1px solid var(--line); border-radius:10px; max-height:360px; overflow-y:auto; }
+  .snap-list:empty{ display:none; }
+  .snap-row{ display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:center; padding:9px 12px; border-top:1px solid #e6edf2; font-size:14px; }
+  .snap-row:first-child{ border-top:none; }
+  .snap-row .kind{ font-size:11.5px; padding:2px 8px; border-radius:10px; background:#eef1f4; color:var(--muted); white-space:nowrap; }
+  .snap-row .kind.m{ background:#e8f0fa; color:#1f5f99; }
+  .snap-row .info{ color:var(--muted); font-size:12.5px; }
+  .backup-reminder{
+    position:fixed; left:50%; bottom:80px; transform:translateX(-50%); z-index:950;
+    max-width:min(92vw,520px); background:#fff4e5; color:#6b4600; border:1px solid #f0c070;
+    border-radius:12px; padding:12px 14px; font-size:14px; line-height:1.55;
+    box-shadow:0 6px 20px rgba(15,48,87,.18); display:flex; gap:10px; align-items:flex-start;
+  }
+  .backup-reminder button{ font-family:inherit; font-size:13px; border-radius:8px; padding:6px 10px; cursor:pointer; white-space:nowrap; }
+  .backup-reminder .go{ background:var(--navy); color:#fff; border:none; }
+  .backup-reminder .later{ background:#fff; color:var(--muted); border:1px solid var(--line); }
   .role-edit-list{ border:1px solid var(--line); border-radius:10px; }
   .role-site-row{ grid-template-columns:90px 1fr 1fr 1fr !important; }
   .role-weekend{ grid-column:2 / -1; display:flex; align-items:center; gap:6px; font-size:13.5px; color:var(--ink); cursor:pointer; }
@@ -2002,6 +2024,28 @@
   <div class="admin-scroll">
     <div class="admin-body">
       <div class="admin-storage-note" id="adminStorageNote"></div>
+
+      <section class="admin-card">
+        <h3 class="admin-card-title"><span class="admin-card-icon i-backup">💾</span>資料備份</h3>
+        <p class="admin-card-desc">把雲端上<b>所有院區、所有月份</b>的溫度登記、異常處理、週檢核、疫苗冰箱印章、組長核定（含簽名）和系統設定，下載成一個備份檔。建議<b>每月月底核定完成後備份一次</b>，存到醫院電腦或共用資料夾。</p>
+        <div class="backup-status" id="backupStatus">讀取中…</div>
+        <div class="admin-form-row">
+          <button type="button" class="admin-primary-btn" id="backupDownloadBtn">⬇ 下載完整備份</button>
+          <button type="button" class="admin-ghost-btn" id="backupRestoreBtn">從備份檔還原…</button>
+          <input type="file" id="backupRestoreFile" accept=".json,application/json" hidden>
+        </div>
+        <div class="admin-form-hint" id="backupHint"></div>
+
+        <div class="role-sub-title" style="margin-top:18px;">🕘 自動快照（每天自動保存，不用操作）</div>
+        <p class="admin-card-desc" style="margin-bottom:10px;">每天第一次有人開啟系統時，會自動保存一份前一天結束時的資料：<b>每日快照保留 90 天、每月快照永久保留</b>。資料登記錯誤或被蓋掉時，可以在這裡把某個院區某個月份回復到之前的某一天。</p>
+        <div class="backup-status" id="snapStatus">讀取中…</div>
+        <div class="admin-form-row">
+          <select class="admin-select site" id="snapTarget" style="flex:1 1 200px;"></select>
+          <input type="month" class="admin-input" id="snapMonth" style="flex:0 1 170px;">
+          <button type="button" class="admin-ghost-btn" id="snapLoadBtn">查看可回復的版本</button>
+        </div>
+        <div class="snap-list" id="snapList"></div>
+      </section>
 
       <section class="admin-card">
         <h3 class="admin-card-title"><span class="admin-card-icon i-admin">🔐</span>管理員</h3>
@@ -2344,7 +2388,9 @@ function initCloud(){
     cloudStatus = 'ok';
     hideCloudError();
     return { db, doc: fsM.doc, getDoc: fsM.getDoc, setDoc: fsM.setDoc,
-             runTransaction: fsM.runTransaction, serverTimestamp: fsM.serverTimestamp };
+             runTransaction: fsM.runTransaction, serverTimestamp: fsM.serverTimestamp,
+             collection: fsM.collection, getDocs: fsM.getDocs,
+             query: fsM.query, where: fsM.where, documentId: fsM.documentId };
   })().catch(err=>{
     cloudStatus = 'failed';
     _cloudInitPromise = null; // 下次操作時會再重試連線
@@ -2461,6 +2507,20 @@ async function cloudMergeUpdate(key, applyFn){
     if(str.length > CLOUD_DOC_LIMIT) throw new Error('資料量過大，無法儲存。');
     tx.set(ref, { value: str, updatedAt: c.serverTimestamp(), updatedBy: cloudActorId() });
     return merged;
+  });
+}
+
+// 讀最新 → 修改 → 寫回，全部在同一個交易裡完成。讀不到雲端時直接失敗，絕不拿空白資料去覆蓋
+async function cloudAtomicUpdate(key, fn){
+  const c = await initCloud();
+  const ref = c.doc(c.db, CLOUD_COLLECTION, key);
+  return await c.runTransaction(c.db, async tx=>{
+    const snap = await tx.get(ref);
+    let cur = null;
+    if(snap.exists() && typeof snap.data().value === 'string') cur = JSON.parse(snap.data().value);
+    const next = fn(cur);
+    tx.set(ref, { value: JSON.stringify(next), updatedAt: c.serverTimestamp(), updatedBy: cloudActorId() });
+    return next;
   });
 }
 
@@ -2628,12 +2688,16 @@ const IGNORED_NEW_STAFF_KEY = 'temp-log-ignored-new-staff';
 // 只要這份設定存在，就以它為準（取代程式碼裡寫死的 STAFF / ADMIN_IDS）。
 const ADMIN_CONFIG_KEY = 'temp-log-admin-config';
 
+// 開啟頁面時讀到的設定版本（更新時間）。儲存前會比對雲端版本，
+// 如果另一位管理員在這段期間已經改過，就不覆蓋，避免把對方的修改蓋掉。
+let _adminCfgLoadedAt = '';
 async function loadAdminConfig(){
   if(!(typeof hasStorage === 'function' && hasStorage())) return;
   try{
     const r = await window.storage.get(ADMIN_CONFIG_KEY, true);
     if(!r || !r.value) return;
     const cfg = JSON.parse(r.value);
+    _adminCfgLoadedAt = (cfg && cfg.updatedAt) || '';
     if(cfg && cfg.staff && typeof cfg.staff === 'object'){
       Object.keys(cfg.staff).forEach(site=>{
         if(!Array.isArray(cfg.staff[site])) return;
@@ -2701,11 +2765,42 @@ async function saveAdminConfig(){
     updatedAt: new Date().toISOString(),
     updatedBy: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : ''
   };
+  if(USE_CLOUD){
+    try{
+      await cloudMergeUpdate(ADMIN_CONFIG_KEY, server=>{
+        const serverAt = (server && server.updatedAt) || '';
+        if(serverAt && serverAt !== _adminCfgLoadedAt){
+          const e = new Error('admin-config-conflict'); e.isConflict = true; throw e;
+        }
+        return JSON.parse(JSON.stringify(cfg));
+      });
+      _adminCfgLoadedAt = cfg.updatedAt;
+    }catch(err){
+      if(err && err.isConflict){
+        alert('⚠ 另一位管理員剛剛修改過系統設定，為了不蓋掉對方的修改，這次的變更沒有儲存。\n\n按「確定」後頁面會重新整理，載入最新設定，請再操作一次。');
+        location.reload();
+        await new Promise(()=>{}); // 等待重新整理，不再往下執行
+      }
+      showCloudError(cloudFailMsg('儲存', err));
+      throw err;
+    }
+    return true;
+  }
   await storageSetWithRetry(ADMIN_CONFIG_KEY, JSON.stringify(cfg));
   return true;
 }
 
 async function removeExtraStaffEntry(id){
+  if(USE_CLOUD){
+    try{
+      await cloudAtomicUpdate(EXTRA_STAFF_KEY, cur=>{
+        const extra = (cur && typeof cur === 'object') ? cur : {};
+        Object.keys(extra).forEach(site=>{ extra[site] = (extra[site] || []).filter(p => p.id !== id); });
+        return extra;
+      });
+    }catch(e){ console.warn('更新手動新增員工清單失敗：', e); }
+    return;
+  }
   try{
     if(typeof hasStorage === 'function' && hasStorage()){
       let extra = {};
@@ -2754,13 +2849,25 @@ async function saveExtraStaffEntry(site, name, id){
   if(!STAFF[site].some(s => s.id === id)){
     STAFF[site].push({ name, id });
   }
+  if(USE_CLOUD){
+    try{
+      await cloudAtomicUpdate(EXTRA_STAFF_KEY, cur=>{
+        const extra = (cur && typeof cur === 'object') ? cur : {};
+        if(!extra[site]) extra[site] = [];
+        if(!extra[site].some(s => s.id === id)) extra[site].push({ name, id });
+        return extra;
+      });
+      await saveAdminConfig();
+    }catch(e){ console.warn('儲存手動新增員工失敗：', e); }
+    return;
+  }
   try{
     if(typeof hasStorage === 'function' && hasStorage()){
       let extra = {};
       try{
         const r = await window.storage.get(EXTRA_STAFF_KEY, true);
         if(r && r.value) extra = JSON.parse(r.value);
-      }catch(e){}
+      }catch(e){ return; } // 讀不到就不要寫，避免用空白清單蓋掉原本的資料
       if(!extra[site]) extra[site] = [];
       if(!extra[site].some(s => s.id === id)) extra[site].push({ name, id });
       await window.storage.set(EXTRA_STAFF_KEY, JSON.stringify(extra), true);
@@ -2779,6 +2886,16 @@ async function loadIgnoredNewStaffIds(){
   return [];
 }
 async function addIgnoredNewStaffId(id){
+  if(USE_CLOUD){
+    try{
+      await cloudAtomicUpdate(IGNORED_NEW_STAFF_KEY, cur=>{
+        const ids = Array.isArray(cur) ? cur : [];
+        if(!ids.includes(id)) ids.push(id);
+        return ids;
+      });
+    }catch(e){ console.warn('更新略過清單失敗：', e); }
+    return;
+  }
   try{
     if(typeof hasStorage === 'function' && hasStorage()){
       const ids = await loadIgnoredNewStaffIds();
@@ -2883,8 +3000,10 @@ const SHIFT_CODE_MAP = {
   night: ['P', 'SP', 'HP']
 };
 function mapShiftCodeToOurKey(code){
+  // 班表在週六、日／假日會在代碼後面加「#」（例如 SD#、SA2#、P#），也可能有「/備註」，比對前先去掉
+  const norm = String(code || '').trim().replace(/#.*$/, '').split('/')[0].trim();
   for(const [ourKey, codes] of Object.entries(SHIFT_CODE_MAP)){
-    if(codes.includes(code)) return ourKey;
+    if(codes.includes(norm)) return ourKey;
   }
   return null;
 }
@@ -2926,13 +3045,16 @@ async function getScheduleSummaryForMonth(ym){
  * 資料結構：entries = { "員工編號": { "01": "B8", "02": "A2", ... }, ... }
  * 找不到就回傳 null（畫面上只是不顯示提醒，不影響其他功能）。
  */
-async function getScheduledStaffId(ym, day, ourShiftKey){
+async function getScheduledStaffId(ym, day, ourShiftKey, siteName){
   const entries = await getScheduleSummaryForMonth(ym);
   if(!entries) return null;
+  // 只找這個院區名單裡的人，避免抓到其他院區的同代碼班別
+  const siteIds = siteName && STAFF[siteName] ? new Set(STAFF[siteName].map(p => p.id)) : null;
   const dayKey = String(day).padStart(2, '0');
   const dayKeyAlt = String(Number(day));
   for(const [empId, daysMap] of Object.entries(entries)){
     if(!daysMap) continue;
+    if(siteIds && !siteIds.has(empId)) continue;
     const code = daysMap[dayKey] !== undefined ? daysMap[dayKey] : daysMap[dayKeyAlt];
     if(code && mapShiftCodeToOurKey(code) === ourShiftKey){
       return empId; // 找到第一位符合這個班別的員工
@@ -4307,7 +4429,7 @@ async function renderDailyView(){
   }
   if(scheduleHintEl && !SITE_NO_ROSTER[siteName]){
     try{
-      const scheduledId = await getScheduledStaffId(ym, day, shiftKey);
+      const scheduledId = await getScheduledStaffId(ym, day, shiftKey, siteName);
       if(scheduledId){
         const matched = (STAFF[siteName] || []).find(s => s.id === scheduledId);
         const scheduledName = matched ? matched.name : scheduledId;
@@ -4391,6 +4513,47 @@ function checkCardLogicError(card, fridgeIdx){
   return !errorMsg;
 }
 
+/* ===== 未開放登記：未來日期、今天還沒到開始時間的時段 ===== */
+function dailyNotOpenReason(){
+  const siteName = siteSelect.value;
+  const site = SITES[siteName];
+  const dateStr = dateSelectEl.value;
+  if(!dateStr) return '';
+  const todayStr = todayDateValue();
+  if(dateStr > todayStr) return '🔒 未來日期不開放登記';
+  // 只鎖未來日期；當天各時段不論幾點都可以登記
+  if(false && dateStr === todayStr && site){
+    const sh = site.shifts.find(x => x.key === shiftSelect.value);
+    const t = sh ? parseShiftTimes(sh.label) : null;
+    if(t){
+      const now = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      if(nowMin < t.startMin){
+        const hh = String(Math.floor(t.startMin / 60)).padStart(2,'0'), mm = String(t.startMin % 60).padStart(2,'0');
+        return `🔒 ${sh.label.replace(/（.*?）/, '').replace('時段','')}還沒開始，${hh}:${mm} 才開放登記`;
+      }
+    }
+  }
+  return '';
+}
+function applyDailyLock(){
+  if(!fridgeCardsEl) return;
+  const reason = dailyNotOpenReason();
+  fridgeCardsEl.querySelectorAll('input, textarea, select, button').forEach(el=>{
+    if(reason){ if(!el.disabled){ el.disabled = true; el.dataset.lockDisabled = '1'; } }
+    else if(el.dataset.lockDisabled){ el.disabled = false; delete el.dataset.lockDisabled; }
+  });
+  fridgeCardsEl.classList.toggle('daily-locked', !!reason);
+  return reason;
+}
+// 每分鐘檢查一次：時間到了就自動開放；跨日時更新日曆可選的最晚日期
+setInterval(()=>{
+  try{
+    dateSelectEl.max = todayDateValue();
+    if(isDailyViewActive()){ applyDailyLock(); updateConfirmState(); }
+  }catch(e){}
+}, 60000);
+
 /* ===== 登記完整性檢查 & 離開提醒 ===== */
 let _dailySnapshot = '';
 let _dailyRowSaved = false;
@@ -4446,6 +4609,13 @@ function updateConfirmState(){
   const bar = document.getElementById('confirmPendingBar');
   if(!btn || !bar || !fridgeCardsEl) return;
   if(!fridgeCardsEl.querySelector('input[data-sub-key]')){ btn.style.display = 'none'; bar.textContent = ''; return; }
+  const lockReason = applyDailyLock();
+  if(lockReason){
+    btn.style.display = 'none';
+    bar.className = 'confirm-pending-bar';
+    bar.textContent = lockReason;
+    return;
+  }
   const msg = dailyIncompleteMessage(getDailyCompletion());
   const dirty = dailyStateString() !== _dailySnapshot;
   if(msg){
@@ -4542,6 +4712,12 @@ document.getElementById('confirmDailyBtn').addEventListener('click', async ()=>{
   const selectedDateStr = dateSelectEl.value || `${ym}-${String(day).padStart(2,'0')}`;
   if(selectedDateStr > todayDateValue()){
     alert('⚠ 無法登記未來日期的資料，請確認日期是否選擇正確。');
+    return;
+  }
+  const notOpen = dailyNotOpenReason();
+  if(notOpen){
+    alert(notOpen.replace('🔒', '⚠'));
+    updateConfirmState();
     return;
   }
 
@@ -6038,6 +6214,7 @@ let _staffSiteFilter = '全部';
 
 function updateAdminButtonVisibility(){
   if(typeof renderAdminSiteSwitch === 'function') renderAdminSiteSwitch();
+  if(typeof maybeRemindBackup === 'function') setTimeout(()=>{ maybeRemindBackup().catch(()=>{}); }, 1500);
   if(!openAdminBtnEl) return;
   openAdminBtnEl.style.display = isCurrentUserAdmin() ? '' : 'none';
   setTimeout(updateTopbarHeight, 50);
@@ -6244,6 +6421,8 @@ function renderStaffList(){
 
 function renderAdminPanel(){
   renderAdminStorageNote();
+  renderBackupStatus();
+  renderSnapControls();
   renderAdminChips();
   renderRoleAdmin();
   renderFridgeAdmin();
@@ -6946,6 +7125,374 @@ function switchAdminSite(site){
   siteSelect.dispatchEvent(new Event('change')); // 沿用原本的院區切換（含「尚未儲存」提醒）
   topbarSubtitle.textContent = `國立臺灣大學醫學院附設醫院雲林分院－藥劑部【${siteSelect.value}】`;
   renderAdminSiteSwitch();
+}
+
+/* ===================== 資料備份／還原 ===================== */
+const BACKUP_META_KEY = 'temp-log-backup-meta';
+const BACKUP_REMIND_DAYS = 31;
+const BACKUP_FORMAT = 'fridge-temp-log-backup';
+
+// 讀取鍵名在 [from, to) 範圍內的所有文件
+async function listCloudDocsRange(from, to){
+  const c = await initCloud();
+  const q = c.query(c.collection(c.db, CLOUD_COLLECTION),
+    c.where(c.documentId(), '>=', from), c.where(c.documentId(), '<', to));
+  const snap = await c.getDocs(q);
+  const docs = {};
+  snap.forEach(d=>{ docs[d.id] = d.data(); });
+  return docs;
+}
+async function listAllCloudDocs(){
+  // 只取正式資料（temp-log 開頭），不含每日／每月快照
+  const raw = await listCloudDocsRange('temp-log', 'temp-log\uf8ff');
+  const out = {};
+  Object.keys(raw).forEach(k=>{ if(typeof raw[k].value === 'string') out[k] = raw[k].value; });
+  return out;
+}
+async function getBackupMeta(){
+  try{
+    const r = await window.storage.get(BACKUP_META_KEY, true);
+    return r && r.value ? JSON.parse(r.value) : null;
+  }catch(e){ return null; }
+}
+function fmtDateTime(iso){
+  const d = new Date(iso);
+  if(isNaN(d)) return iso || '';
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function daysSince(iso){ return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); }
+
+async function renderBackupStatus(){
+  const el = document.getElementById('backupStatus');
+  if(!el) return;
+  if(!USE_CLOUD){
+    el.className = 'backup-status warn';
+    el.textContent = '目前是預覽環境（沒有連到雲端資料庫），備份功能請在正式網址使用。';
+    return;
+  }
+  const meta = await getBackupMeta();
+  if(!meta || !meta.at){
+    el.className = 'backup-status warn';
+    el.textContent = '⚠ 還沒有做過備份，建議現在先下載一份。';
+    return;
+  }
+  const days = daysSince(meta.at);
+  const who = meta.byName ? `（${meta.byName}）` : '';
+  el.className = 'backup-status ' + (days > BACKUP_REMIND_DAYS ? 'warn' : 'ok');
+  el.textContent = (days > BACKUP_REMIND_DAYS ? '⚠ ' : '✓ ') +
+    `上次備份：${fmtDateTime(meta.at)}${who}，共 ${meta.count || '?'} 筆資料` +
+    (days > BACKUP_REMIND_DAYS ? `，已經 ${days} 天沒有備份了` : '');
+}
+
+function downloadTextFile(filename, text){
+  const blob = new Blob([text], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=> URL.revokeObjectURL(url), 4000);
+}
+
+// 下載完整備份；recordMeta=false 用在「還原前自動備份」
+async function downloadFullBackup(recordMeta = true, filenameTag = ''){
+  const docs = await listAllCloudDocs();
+  const keys = Object.keys(docs).filter(k => k !== BACKUP_META_KEY);
+  const payload = {
+    format: BACKUP_FORMAT, version: 1,
+    project: FRIDGE_FIREBASE_CONFIG.projectId,
+    exportedAt: new Date().toISOString(),
+    exportedBy: currentUser ? `${currentUser.name}(${currentUser.id})` : '',
+    count: keys.length,
+    docs: Object.fromEntries(keys.sort().map(k => [k, docs[k]]))
+  };
+  const d = new Date(), p = n => String(n).padStart(2,'0');
+  const stamp = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
+  downloadTextFile(`冰箱溫度登記_${filenameTag || '完整備份'}_${stamp}.json`, JSON.stringify(payload, null, 1));
+  if(recordMeta){
+    try{
+      await window.storage.set(BACKUP_META_KEY, JSON.stringify({
+        at: payload.exportedAt, byId: currentUser ? currentUser.id : '', byName: currentUser ? currentUser.name : '', count: keys.length
+      }), true);
+    }catch(e){ console.warn('備份紀錄寫入失敗', e); }
+  }
+  return keys.length;
+}
+
+document.getElementById('backupDownloadBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('backupDownloadBtn');
+  const hint = document.getElementById('backupHint');
+  if(!USE_CLOUD){ alert('預覽環境沒有連到雲端資料庫，請在正式網址使用備份功能。'); return; }
+  btn.disabled = true; btn.textContent = '備份中…';
+  hint.className = 'admin-form-hint'; hint.textContent = '';
+  try{
+    const n = await downloadFullBackup(true);
+    hint.className = 'admin-form-hint found';
+    hint.textContent = `✓ 已下載備份檔，共 ${n} 筆資料。請把檔案存到醫院電腦或共用資料夾，不要只放在手機裡。`;
+    showSuccessToast('✅ 備份完成');
+    renderBackupStatus();
+  }catch(err){
+    console.error('備份失敗', err);
+    hint.className = 'admin-form-hint err';
+    hint.textContent = '⚠ 備份失敗：' + cloudFailMsg('讀取資料', err);
+  }finally{
+    btn.disabled = false; btn.textContent = '⬇ 下載完整備份';
+  }
+});
+
+document.getElementById('backupRestoreBtn').addEventListener('click', ()=>{
+  if(!USE_CLOUD){ alert('預覽環境沒有連到雲端資料庫，請在正式網址使用還原功能。'); return; }
+  const f = document.getElementById('backupRestoreFile');
+  f.value = '';
+  f.click();
+});
+document.getElementById('backupRestoreFile').addEventListener('change', async e=>{
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  const hint = document.getElementById('backupHint');
+  let data;
+  try{
+    data = JSON.parse(await file.text());
+  }catch(err){ alert('這個檔案不是有效的備份檔。'); return; }
+  if(!data || data.format !== BACKUP_FORMAT || !data.docs || typeof data.docs !== 'object'){
+    alert('這個檔案不是本系統的備份檔，請選擇「冰箱溫度登記_完整備份_….json」。'); return;
+  }
+  const keys = Object.keys(data.docs).filter(k => typeof data.docs[k] === 'string' && k !== BACKUP_META_KEY);
+  const months = new Set(keys.filter(k => k.startsWith('temp-log-v2:')).map(k => k.split(':').slice(1).join(' ')));
+  if(!confirm(`要用這份備份還原嗎？\n\n備份時間：${fmtDateTime(data.exportedAt)}\n備份人員：${data.exportedBy || '不明'}\n內容：${keys.length} 筆資料（${months.size} 個院區月份）\n\n⚠ 還原會用備份檔的內容「取代」雲端上同名的資料。\n備份之後才新增的登記，如果在同一個月份裡，會被蓋掉。`)) return;
+  if(!confirm('最後確認：真的要還原嗎？\n\n按「確定」後，系統會先自動下載一份「還原前」的備份，再開始還原。')) return;
+  hint.className = 'admin-form-hint'; hint.textContent = '正在下載還原前的備份…';
+  try{
+    await downloadFullBackup(false, '還原前自動備份');
+  }catch(err){
+    hint.className = 'admin-form-hint err';
+    hint.textContent = '⚠ 無法先備份目前資料，為了安全已取消還原。請確認網路後再試一次。';
+    return;
+  }
+  let ok = 0, fail = [];
+  for(const k of keys){
+    hint.textContent = `還原中… ${ok + fail.length + 1}／${keys.length}`;
+    try{ await cloudSetRaw(k, data.docs[k]); ok++; }
+    catch(err){ console.error('還原失敗', k, err); fail.push(k); }
+  }
+  Object.keys(_memCache).forEach(k=>{ delete _memCache[k]; delete _memCacheTime[k]; });
+  Object.keys(_approvalMemCache).forEach(k=>{ delete _approvalMemCache[k]; });
+  if(fail.length){
+    hint.className = 'admin-form-hint err';
+    hint.textContent = `⚠ 已還原 ${ok} 筆，有 ${fail.length} 筆失敗。請截圖給系統負責人：${fail.slice(0,5).join('、')}${fail.length > 5 ? '…' : ''}`;
+  } else {
+    hint.className = 'admin-form-hint found';
+    hint.textContent = `✓ 已還原 ${ok} 筆資料。頁面即將重新整理，套用還原後的設定。`;
+    setTimeout(()=> location.reload(), 2500);
+  }
+});
+
+// 管理員登入時：超過一個月沒備份就提醒一次（每次開啟頁面最多一次）
+let _backupReminded = false;
+async function maybeRemindBackup(){
+  if(_backupReminded || !USE_CLOUD || !isCurrentUserAdmin()) return;
+  _backupReminded = true;
+  const meta = await getBackupMeta();
+  if(meta && meta.at && daysSince(meta.at) <= BACKUP_REMIND_DAYS) return;
+  const box = document.createElement('div');
+  box.className = 'backup-reminder';
+  box.setAttribute('role', 'alert');
+  box.innerHTML = `<div style="flex:1">💾 ${meta && meta.at ? `已經 ${daysSince(meta.at)} 天沒有備份資料了` : '冰箱溫度資料還沒有做過備份'}，建議現在下載一份備份。</div>
+    <button type="button" class="go">去備份</button><button type="button" class="later">稍後</button>`;
+  box.querySelector('.go').addEventListener('click', ()=>{ box.remove(); if(confirmLeaveDaily()) openAdminPanel(); });
+  box.querySelector('.later').addEventListener('click', ()=> box.remove());
+  document.body.appendChild(box);
+  setTimeout(()=>{ if(box.isConnected) box.remove(); }, 20000);
+}
+
+/* ===================== 自動快照（每日 90 天＋每月永久） ===================== */
+// 存放方式（都在 kv 集合裡，安全規則不用改，也不需要刪除權限）：
+//   snap:{原資料鍵}:d{0..89}  每日快照，依日期輪替覆蓋，所以最多 90 份
+//   snap:{原資料鍵}:m{YYYY-MM} 每月第一次快照，永久保留
+//   snap:{原資料鍵}:r{時間}    還原前自動保存的版本
+//   snapstate                  記錄上次快照日期與每份資料的指紋（有變動才另存，節省空間）
+const SNAP_STATE_KEY = 'snapstate';
+const SNAP_DAILY_SLOTS = 90;
+
+function localDateStr(d = new Date()){
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+}
+function dayNumber(d = new Date()){ return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000); }
+function strHash(str){
+  let h1 = 0x811c9dc5, h2 = 0;
+  for(let i = 0; i < str.length; i++){
+    const c = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 16777619) >>> 0;
+    h2 = (h2 * 31 + c) >>> 0;
+  }
+  return h1.toString(36) + '.' + h2.toString(36) + '.' + str.length.toString(36);
+}
+async function writeSnapDoc(key, value, meta){
+  const c = await initCloud();
+  await c.setDoc(c.doc(c.db, CLOUD_COLLECTION, key), Object.assign({ value, updatedAt: c.serverTimestamp(), updatedBy: cloudActorId() }, meta));
+}
+
+let _snapRunning = false;
+async function runAutoSnapshot(){
+  if(!USE_CLOUD || _snapRunning) return;
+  _snapRunning = true;
+  try{
+    const today = localDateStr();
+    const curYm = today.slice(0, 7);
+    let state = {};
+    try{ const v = await cloudGetRaw(SNAP_STATE_KEY); if(v) state = JSON.parse(v) || {}; }catch(e){ state = {}; }
+    if(state.lastRun === today) return;          // 今天已經做過
+    const docs = await listAllCloudDocs();
+    const hash = state.hash || {}, mhash = state.mhash || {};
+    const slot = dayNumber() % SNAP_DAILY_SLOTS;
+    const doMonthly = state.lastMonth !== curYm;
+    let dCount = 0, mCount = 0;
+    for(const key of Object.keys(docs)){
+      if(key === BACKUP_META_KEY) continue;
+      const v = docs[key];
+      if(v.length > CLOUD_DOC_LIMIT) continue;
+      const h = strHash(v);
+      if(hash[key] !== h){
+        await writeSnapDoc(`snap:${key}:d${slot}`, v, { snapOf: key, snapDate: today, snapKind: 'daily' });
+        hash[key] = h; dCount++;
+      }
+      if(doMonthly && mhash[key] !== h){
+        await writeSnapDoc(`snap:${key}:m${curYm}`, v, { snapOf: key, snapDate: today, snapKind: 'monthly' });
+        mhash[key] = h; mCount++;
+      }
+    }
+    await cloudSetRaw(SNAP_STATE_KEY, JSON.stringify({
+      lastRun: today, lastRunAt: new Date().toISOString(), lastMonth: doMonthly ? curYm : state.lastMonth,
+      firstRun: state.firstRun || today, lastDaily: dCount, lastMonthly: mCount, hash, mhash
+    }));
+    console.info(`自動快照完成：每日 ${dCount} 份、每月 ${mCount} 份`);
+  }catch(err){
+    console.warn('自動快照失敗（不影響登記）：', err);
+  }finally{
+    _snapRunning = false;
+  }
+}
+if(USE_CLOUD){
+  initCloud().then(()=> setTimeout(runAutoSnapshot, 4000)).catch(()=>{});
+}
+
+function renderSnapControls(){
+  const tgt = document.getElementById('snapTarget');
+  if(!tgt) return;
+  const keep = tgt.value;
+  tgt.innerHTML = Object.keys(SITES).map(s=>`<option value="site:${escapeHtml(s)}">${escapeHtml(s)}｜溫度登記</option>`).join('') +
+    Object.keys(SITES).map(s=>`<option value="appr:${escapeHtml(s)}">${escapeHtml(s)}｜組長月底核定</option>`).join('') +
+    '<option value="cfg">系統設定（管理員、員工、冰箱、組長）</option>';
+  if(keep) tgt.value = keep;
+  const mEl = document.getElementById('snapMonth');
+  if(!mEl.value) mEl.value = localDateStr().slice(0, 7);
+  mEl.disabled = tgt.value === 'cfg';
+  renderSnapStatus();
+}
+async function renderSnapStatus(){
+  const el = document.getElementById('snapStatus');
+  if(!el) return;
+  if(!USE_CLOUD){ el.className = 'backup-status warn'; el.textContent = '預覽環境沒有連到雲端資料庫，自動快照只在正式網址運作。'; return; }
+  try{
+    const v = await cloudGetRaw(SNAP_STATE_KEY);
+    const st = v ? JSON.parse(v) : null;
+    if(!st || !st.lastRun){ el.className = 'backup-status warn'; el.textContent = '自動快照尚未執行過，開啟頁面幾秒後就會自動開始。'; return; }
+    el.className = 'backup-status ok';
+    el.textContent = `✓ 最近一次自動快照：${fmtDateTime(st.lastRunAt || st.lastRun)}（自 ${st.firstRun} 開始保存）`;
+  }catch(e){ el.className = 'backup-status warn'; el.textContent = '讀取快照狀態失敗。'; }
+}
+function snapTargetKey(){
+  const t = document.getElementById('snapTarget').value;
+  const ym = document.getElementById('snapMonth').value;
+  if(t === 'cfg') return ADMIN_CONFIG_KEY;
+  const [kind, site] = [t.slice(0, 4), t.slice(5)];
+  if(!ym) return null;
+  return kind === 'site' ? siteMonthKey(site, ym) : getApprovalKey(site, ym);
+}
+function summarizeSnapValue(key, value){
+  try{
+    const o = JSON.parse(value);
+    if(key.startsWith('temp-log-v2:')){
+      let n = 0;
+      Object.values(o.shifts || {}).forEach(sh => Object.values(sh.rows || {}).forEach(r=>{ if(r && r.savedAt) n++; }));
+      const wk = Object.values(o.checkers || {}).filter(c => c && c.name).length;
+      return `已登記 ${n} 個時段，週檢核 ${wk} 週`;
+    }
+    if(key.startsWith('temp-log-approval:')) return o && o.approverName ? `核定人：${o.approverName}` : (o ? '已核定' : '未核定');
+    if(key === ADMIN_CONFIG_KEY){
+      const staffN = Object.values(o.staff || {}).reduce((a, l) => a + (Array.isArray(l) ? l.length : 0), 0);
+      return `員工 ${staffN} 人、管理員 ${(o.admins || []).length} 人`;
+    }
+  }catch(e){}
+  return '';
+}
+document.getElementById('snapTarget').addEventListener('change', ()=>{
+  document.getElementById('snapMonth').disabled = document.getElementById('snapTarget').value === 'cfg';
+  document.getElementById('snapList').innerHTML = '';
+});
+document.getElementById('snapMonth').addEventListener('change', ()=>{ document.getElementById('snapList').innerHTML = ''; });
+document.getElementById('snapLoadBtn').addEventListener('click', async ()=>{
+  const list = document.getElementById('snapList');
+  if(!USE_CLOUD){ alert('預覽環境沒有連到雲端資料庫。'); return; }
+  const key = snapTargetKey();
+  if(!key){ alert('請選擇月份。'); return; }
+  list.innerHTML = '<div class="staff-empty">讀取中…</div>';
+  try{
+    const raw = await listCloudDocsRange(`snap:${key}:`, `snap:${key}:`);
+    const cutoff = localDateStr(new Date(Date.now() - SNAP_DAILY_SLOTS * 86400000));
+    const versions = Object.keys(raw).map(id => ({ id, ...raw[id] }))
+      .filter(v => typeof v.value === 'string' && v.snapDate && (v.snapKind !== 'daily' || v.snapDate >= cutoff))
+      .sort((a, b) => (b.snapDate || '').localeCompare(a.snapDate || '') || (a.snapKind === 'monthly' ? 1 : -1));
+    // 同一天、內容相同的每日／每月版本只顯示一筆
+    const seen = new Set();
+    const uniq = versions.filter(v=>{ const k = v.snapDate + '|' + strHash(v.value); if(seen.has(k)) return false; seen.add(k); return true; });
+    if(!uniq.length){ list.innerHTML = '<div class="staff-empty">這個項目還沒有快照（自動快照開始後才會有，或這個月份沒有資料）。</div>'; return; }
+    const current = await cloudGetRaw(key);
+    list.innerHTML = '';
+    uniq.forEach(v=>{
+      const row = document.createElement('div');
+      row.className = 'snap-row';
+      const kindLabel = v.snapKind === 'monthly' ? '每月' : v.snapKind === 'restore' ? '還原前' : '每日';
+      const same = current !== null && strHash(current) === strHash(v.value);
+      row.innerHTML = `<div><b>${escapeHtml(v.snapDate)}</b> ${v.snapKind === 'restore' ? '' : '開始前'}<div class="info">${escapeHtml(summarizeSnapValue(key, v.value))}${same ? '（與目前相同）' : ''}</div></div>
+        <span class="kind ${v.snapKind === 'monthly' ? 'm' : ''}">${kindLabel}</span>`;
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'admin-ghost-btn'; btn.textContent = '回復到此版本';
+      btn.style.padding = '6px 12px';
+      if(same){ btn.disabled = true; }
+      btn.addEventListener('click', ()=> restoreSnapshot(key, v));
+      row.appendChild(btn);
+      list.appendChild(row);
+    });
+  }catch(err){
+    console.error(err);
+    list.innerHTML = '<div class="staff-empty">讀取失敗，請確認網路後再試一次。</div>';
+  }
+});
+async function restoreSnapshot(key, v){
+  const label = document.getElementById('snapTarget').selectedOptions[0].textContent + (key === ADMIN_CONFIG_KEY ? '' : `（${document.getElementById('snapMonth').value}）`);
+  if(!confirm(`要把「${label}」回復到 ${v.snapDate} 開始前的狀態嗎？\n\n${summarizeSnapValue(key, v.value)}\n\n⚠ 這個項目在 ${v.snapDate} 之後的修改會被取代。\n目前的內容會先自動保存一份「還原前」版本，之後仍可再改回來。`)) return;
+  try{
+    const current = await cloudGetRaw(key);
+    if(current !== null){
+      await writeSnapDoc(`snap:${key}:r${Date.now()}`, current, { snapOf: key, snapDate: localDateStr() + ' ' + new Date().toTimeString().slice(0,5), snapKind: 'restore' });
+    }
+    await cloudSetRaw(key, v.value);
+    Object.keys(_memCache).forEach(k=>{ delete _memCache[k]; delete _memCacheTime[k]; });
+    Object.keys(_approvalMemCache).forEach(k=>{ delete _approvalMemCache[k]; });
+    showSuccessToast('✅ 已回復');
+    if(key === ADMIN_CONFIG_KEY){
+      alert('系統設定已回復，頁面將重新整理。');
+      location.reload();
+      return;
+    }
+    document.getElementById('snapLoadBtn').click();
+    try{ await refreshAll(); }catch(e){}
+  }catch(err){
+    console.error('回復失敗', err);
+    alert('⚠ 回復沒有成功，請確認網路後再試一次。');
+  }
 }
 </script>
 
