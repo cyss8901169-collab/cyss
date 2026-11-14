@@ -1806,9 +1806,9 @@
   .snap-row .info{ color:var(--muted); font-size:12.5px; }
   .backup-reminder{
     position:fixed; left:50%; bottom:80px; transform:translateX(-50%); z-index:950;
-    max-width:min(92vw,520px); background:#fff4e5; color:#6b4600; border:1px solid #f0c070;
+    width:min(92vw,520px); box-sizing:border-box; background:#fff4e5; color:#6b4600; border:1px solid #f0c070;
     border-radius:12px; padding:12px 14px; font-size:14px; line-height:1.55;
-    box-shadow:0 6px 20px rgba(15,48,87,.18); display:flex; gap:10px; align-items:flex-start;
+    box-shadow:0 6px 20px rgba(15,48,87,.18); display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:flex-end;
   }
   .backup-reminder button{ font-family:inherit; font-size:13px; border-radius:8px; padding:6px 10px; cursor:pointer; white-space:nowrap; }
   .backup-reminder .go{ background:var(--navy); color:#fff; border:none; }
@@ -3138,6 +3138,10 @@ function findStaffById(siteName, id){
   return (STAFF[siteName] || []).find(s => s.id === id) ||
     Object.values(STAFF).flat().find(s => s.id === id) || null;
 }
+// 目前登入者是不是這個院區的組長（組長確認、月底核定只限組長本人）
+function isSiteLead(siteName){
+  return !!(currentUser && currentUser.id && SITE_TEAM_LEAD_ID[siteName] === currentUser.id);
+}
 function getSiteTeamLead(siteName){
   const id = SITE_TEAM_LEAD_ID[siteName];
   if(!id) return null;
@@ -4153,7 +4157,13 @@ function isTempOutOfRange(v, subKey){
 }
 
 let _dailyLoadedSavedAt = null; // 記錄目前畫面載入時讀到的資料儲存時間，用來偵測是否被他人更新過
+// 尚未按「確認本次登記」前填寫的異常處理紀錄先暫存在這裡，按確認時才和溫度一起存到雲端，
+// 避免中途離開時，雲端留下「有異常處理紀錄、卻沒有溫度」的半筆資料。
+let _pendingAbn = null; // { key:'site|shift|date', items:{ [fridgeIdx]: record }, last:{abn,recoverTemp,resolved,reason} }
+function pendingAbnKey(){ return `${siteSelect.value}|${shiftSelect.value}|${dateSelectEl.value}`; }
+
 async function renderDailyView(){
+  _pendingAbn = null;
   const siteName = siteSelect.value;
   const site = SITES[siteName];
   const shiftKey = shiftSelect.value;
@@ -4780,6 +4790,16 @@ document.getElementById('confirmDailyBtn').addEventListener('click', async ()=>{
 
   const data = (await getShiftData(siteName, shiftKey, ym)) || { manager: '', rows: {} };
   const existingRow = data.rows[day] || { temps: site.fridges.map(()=>({min:'',now:'',max:''})), reason:'', abn:'', sign:'' };
+  // 併入確認前暫存的異常處理紀錄
+  if(_pendingAbn && _pendingAbn.key === pendingAbnKey()){
+    existingRow.fridgeAbn = Object.assign({}, existingRow.fridgeAbn || {}, _pendingAbn.items);
+    if(_pendingAbn.last){
+      existingRow.abn = _pendingAbn.last.abn;
+      existingRow.recoverTemp = _pendingAbn.last.recoverTemp;
+      existingRow.resolved = _pendingAbn.last.resolved;
+      if(!existingRow.reason) existingRow.reason = _pendingAbn.last.reason;
+    }
+  }
 
   // 重複登記防呆：這個時段只要先前已經有登記過（不論是誰、什麼時候），
   // 再次送出前就先提醒使用者確認，避免不小心重複登記蓋掉原本的資料。
@@ -4831,6 +4851,7 @@ document.getElementById('confirmDailyBtn').addEventListener('click', async ()=>{
     _dailySaving = true;
     await setShiftData(siteName, shiftKey, ym, data);
     _dailySaving = false;
+    _pendingAbn = null;
     _dailySnapshot = dailyStateString();
     _dailyRowSaved = true;
     _dailyLoadedSavedAt = data.rows[day].savedAt;
@@ -5303,6 +5324,8 @@ async function renderAbnSectionGrid(siteName, ym){
     const confirmCell = tr.querySelector('.abn-confirm-cell');
     if(item.confirmedBy){
       confirmCell.textContent = `${item.confirmedBy}${item.confirmedDate ? '　'+item.confirmedDate : ''}`;
+    } else if(!isSiteLead(siteName)){
+      confirmCell.innerHTML = `<span style="color:var(--muted);font-size:12px;">待組長${escapeHtml(getSiteTeamLeadName(siteName) ? '（' + getSiteTeamLeadName(siteName) + '）' : '')}確認</span>`;
     } else {
       const btn = document.createElement('button');
       btn.textContent = '✓ 組長確認';
@@ -5380,14 +5403,21 @@ async function renderApprovalCard(siteName, ym){
         ? `<div class="ap-detail"><div style="margin-bottom:4px;">簽名檔：</div><img src="${approval.signImageData}" style="max-width:220px;max-height:140px;border-radius:8px;border:1px solid var(--line);display:block;"></div>`
         : (approval.signFileName ? `<div class="ap-detail">簽名檔：📎 ${escapeHtml(approval.signFileName)}</div>` : '')}
       ${approval.note ? `<div class="ap-detail">備註：${escapeHtml(approval.note)}</div>` : ''}
-      <button id="reapproveBtn" style="margin-top:8px;">重新核定</button>
+      ${isSiteLead(siteName) ? '<button id="reapproveBtn" style="margin-top:8px;">重新核定</button>' : ''}
     `;
-    document.getElementById('reapproveBtn').addEventListener('click', ()=>{ renderApprovalForm(siteName, ym, approval, true); });
+    const reBtn = document.getElementById('reapproveBtn');
+    if(reBtn) reBtn.addEventListener('click', ()=>{ renderApprovalForm(siteName, ym, approval, true); });
   } else if(!isComplete){
     card.innerHTML = `
       <div class="ap-header"><span>📝 組長月底核定</span><span class="ap-meta">${escapeHtml(ym)}　${escapeHtml(siteName)}</span></div>
       <div class="ap-status pending" style="color:var(--muted);">🔒 本月資料尚未完整登記，無法核定</div>
       <div style="font-size:12px;color:var(--muted);margin-top:6px;">請確認所有日期與時段的溫度均已填寫完畢</div>
+    `;
+  } else if(!isSiteLead(siteName)){
+    const leadName = getSiteTeamLeadName(siteName);
+    card.innerHTML = `
+      <div class="ap-header"><span>📝 組長月底核定</span><span class="ap-meta">${escapeHtml(ym)}　${escapeHtml(siteName)}</span></div>
+      <div class="ap-status pending">⏳ 本月資料已完整，待組長${leadName ? '（' + escapeHtml(leadName) + '）' : ''}登入核定</div>
     `;
   } else {
     renderApprovalForm(siteName, ym, approval, false);
@@ -5422,6 +5452,7 @@ function renderApprovalForm(siteName, ym, existing, reapprove){
   });
 
   document.getElementById('submitApprovalBtn').addEventListener('click', async ()=>{
+    if(!isSiteLead(siteName)){ alert('只有本院區組長本人登入後才能核定。'); return; }
     const fileInput = document.getElementById('approvalSignFile');
     if(!fileInput.files[0]){
       alert('請上傳組長簽名檔後再確認核定');
@@ -5604,7 +5635,7 @@ async function buildPdfArea(){
 
     for(let d=1; d<=numDaysInMonth; d++){
       const day = String(d);
-      html += `<tr><td>${day}</td>`;
+      html += `<tr><td>${day}${isOffDay(siteName, ym, d) ? '<span style="font-size:7pt;color:#b3261e;margin-left:2px;">休</span>' : ''}</td>`;
 
       site.shifts.forEach(shift=>{
         const shiftData = shiftDataMap[shift.key];
@@ -5810,6 +5841,14 @@ document.getElementById('exportCsvBtn').addEventListener('click', async ()=>{
     const wb = XLSX.utils.book_new();
 
     const { aoa: tempAoa, fridgeCount } = await buildTempSheetAoa(siteName, ym);
+    // 溫度欄位存成「數字」，Excel 才能直接排序、計算平均（⚠ 標記的異常值保留文字）
+    tempAoa.forEach((row, ri)=>{
+      if(ri === 0) return;
+      for(let ci = 2; ci < 2 + fridgeCount * 3 && ci < row.length; ci++){
+        const v = row[ci];
+        if(typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v.trim())) row[ci] = Number(v);
+      }
+    });
     const tempWs = XLSX.utils.aoa_to_sheet(tempAoa);
     setSheetFreezeHeader(tempWs);
     setSheetColumnWidths(tempWs, [6, 8, ...Array(fridgeCount * 3).fill(9), 10, 24]);
@@ -6006,6 +6045,23 @@ abnRecordSubmitBtn.addEventListener('click', async ()=>{
   try{
     const data = (await getShiftData(siteName, shiftKey, ym)) || { rows: {} };
     if(!data.rows) data.rows = {};
+    const record = {
+      abn: abnProcessInput.value.trim(),
+      recoverTemp: abnRecoverInput.value.trim(),
+      resolved: document.getElementById('abnResolvedSelect').value,
+      confirmed: true,
+      savedAt: new Date().toISOString().slice(0,10)
+    };
+    // 這個時段還沒正式登記過：先暫存，等按「確認本次登記」時一起存
+    if(!data.rows[day] || !data.rows[day].savedAt){
+      const k = pendingAbnKey();
+      if(!_pendingAbn || _pendingAbn.key !== k) _pendingAbn = { key:k, items:{} };
+      _pendingAbn.items[fridgeIdx] = record;
+      _pendingAbn.last = { abn: record.abn, recoverTemp: record.recoverTemp, resolved: record.resolved,
+                           reason: (_abnRecordCtx && _abnRecordCtx.reason) || '' };
+      saveOk = true;
+      throw { pendingOnly: true };
+    }
     // 若當天這個班別的資料還沒被「確認本次登記」建立過，先建立一筆空白資料，
     // 避免下面的寫入因為 data.rows[day] 不存在而被靜默略過
     // （之前會出現：跳出「已儲存」提示，但實際上什麼都沒存到）。
@@ -6034,7 +6090,7 @@ abnRecordSubmitBtn.addEventListener('click', async ()=>{
     await setShiftData(siteName, shiftKey, ym, data);
     saveOk = true;
   }catch(err){
-    console.error('異常處理紀錄儲存失敗', err);
+    if(!(err && err.pendingOnly)) console.error('異常處理紀錄儲存失敗', err);
   }
 
   // 不論上面是否成功，都要讓彈窗確實關閉、按鈕確實有反應，
@@ -6047,8 +6103,9 @@ abnRecordSubmitBtn.addEventListener('click', async ()=>{
       _abnRecordCtx.doneBar.style.display = 'flex';
       if(_abnRecordCtx.abnBtn) _abnRecordCtx.abnBtn.style.display = 'none';
     }
-    setTimeout(()=>{ showSuccessToast('✅ 異常處理紀錄已儲存'); }, 100);
-    await renderAbnSection();
+    const pendingNow = _pendingAbn && _pendingAbn.key === pendingAbnKey() && _pendingAbn.items[_abnRecordCtx ? _abnRecordCtx.fridgeIdx : -1];
+    setTimeout(()=>{ showSuccessToast(pendingNow ? '✅ 異常處理紀錄已填寫，請按「確認本次登記」一起儲存' : '✅ 異常處理紀錄已儲存', pendingNow ? 2600 : 2000); }, 100);
+    if(!pendingNow) await renderAbnSection();
   } else {
     setStatus('儲存失敗，請稍後再試', true);
     alert('⚠ 異常處理紀錄儲存失敗，請稍後再試一次。\n（若持續發生，請重新整理頁面後再試）');
@@ -6869,6 +6926,7 @@ async function renderVaccineCharts(siteName, site, ym, shiftDatas){
     weeks.forEach(([startDay, endDay], wi)=>{
       let anchorDay = endDay;
       while(anchorDay > startDay && isOffDay(siteName, ym, anchorDay)) anchorDay--;
+      if(isOffDay(siteName, ym, anchorDay)) return; // 整週都是週六日（例如月初只有一個星期日）：不需要蓋章
       const key = 'cw' + startDay;
       const saved = fChecks[key];
       let state = 'other';
@@ -6907,7 +6965,7 @@ async function renderVaccineCharts(siteName, site, ym, shiftDatas){
     card.querySelectorAll('.vchart-stamp.can').forEach(g=>{
       const go = async ()=>{
         const wi = Number(g.dataset.week);
-        const st = stamps[wi];
+        const st = stamps.find(x => x.weekIndex === wi);
         if(st.saved && st.saved.name){
           if(!confirm(`確定要取消${fname}第 ${wi + 1} 週（${st.startDay}–${st.endDay}日）${st.saved.name}的檢核章嗎？`)) return;
           try{
@@ -7297,7 +7355,7 @@ async function maybeRemindBackup(){
   const box = document.createElement('div');
   box.className = 'backup-reminder';
   box.setAttribute('role', 'alert');
-  box.innerHTML = `<div style="flex:1">💾 ${meta && meta.at ? `已經 ${daysSince(meta.at)} 天沒有備份資料了` : '冰箱溫度資料還沒有做過備份'}，建議現在下載一份備份。</div>
+  box.innerHTML = `<div style="flex:1 1 220px;min-width:0;">💾 ${meta && meta.at ? `已經 ${daysSince(meta.at)} 天沒有備份資料了` : '冰箱溫度資料還沒有做過備份'}，建議現在下載一份備份。</div>
     <button type="button" class="go">去備份</button><button type="button" class="later">稍後</button>`;
   box.querySelector('.go').addEventListener('click', ()=>{ box.remove(); if(confirmLeaveDaily()) openAdminPanel(); });
   box.querySelector('.later').addEventListener('click', ()=> box.remove());
