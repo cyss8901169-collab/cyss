@@ -908,6 +908,20 @@
     snap.forEach(d => { result[d.id] = d.data(); });
     return result;
   };
+  // 每日備份：存在 templog/_backups/daily/{日期}（子集合，登入時不會被整包讀取，不影響速度）
+  window._backupGet = async function(dateId) {
+    await authReadyPromise;
+    const snap = await getDoc(doc(templogDb, TEMPLOG_COLLECTION, '_backups', 'daily', dateId));
+    return snap.exists() ? snap.data() : null;
+  };
+  window._backupSet = async function(dateId, data) {
+    await authReadyPromise;
+    await setDoc(doc(templogDb, TEMPLOG_COLLECTION, '_backups', 'daily', dateId), data);
+  };
+  window._backupDelete = async function(dateId) {
+    await authReadyPromise;
+    await deleteDoc(doc(templogDb, TEMPLOG_COLLECTION, '_backups', 'daily', dateId));
+  };
   window._templogFirestoreLoaded = true;
 </script>
 </head>
@@ -1164,7 +1178,7 @@
     <div class="adm-topbar">
       <div>
         <h2>⚙️ 系統管理</h2>
-        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-14</span></p>
+        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-14b</span></p>
       </div>
       <button class="adm-back" onclick="closeAdminPage()">← 返回登記</button>
     </div>
@@ -1252,6 +1266,26 @@
         <button class="adm-btn ghost" onclick="adminDeptReset()">復原未儲存的修改</button>
         <span id="admDeptDirty" style="font-size:12px;color:var(--amber);font-weight:700"></span>
       </div>
+    </div>
+
+    <!-- 資料備份 -->
+    <div class="adm-section">
+      <h3>💾 資料備份與還原</h3>
+      <div class="adm-desc">系統每天第一位同仁登入時，會自動把本月與前兩個月的登記、週檢核、核定資料（不含簽名照片）及各項設定備份一份到雲端，保留最近 60 天。
+        「還原」只會補回目前缺少的資料，不會覆蓋或刪除現有的資料。</div>
+      <div class="adm-row" style="margin-bottom:10px">
+        <button class="adm-btn" onclick="adminDownloadBackup()">⬇ 下載完整備份檔</button>
+        <button class="adm-btn ghost" onclick="adminBackupNow()">立即建立今日備份</button>
+      </div>
+      <div class="adm-desc" style="margin-bottom:6px">建議每月月底核定後下載一次備份檔，存到院內電腦。</div>
+      <div style="font-size:13px;font-weight:700;color:var(--gray-700);margin:10px 0 6px">雲端每日備份</div>
+      <div id="admBackupList" class="adm-log"></div>
+      <div style="font-size:13px;font-weight:700;color:var(--gray-700);margin:12px 0 6px">從備份檔還原</div>
+      <div class="adm-row">
+        <input type="file" id="admRestoreFile" accept=".json,application/json" class="adm-input" style="flex:1 1 220px">
+        <button class="adm-btn ghost" onclick="adminRestoreFromFile()">補回缺少的資料</button>
+      </div>
+      <div class="adm-desc" style="margin-top:6px">可使用本系統下載的備份檔，或從舊裝置匯出的 templog_backup.json。</div>
     </div>
 
     <!-- 異動紀錄 -->
@@ -2141,8 +2175,59 @@ async function doLogin() {
   resetViewState();
   try { LS.setItem('templog_session', JSON.stringify(s)); } catch(e) {}
   showApp();
+  runDailyBackup(); // 背景執行，不影響登入
 
   if(loginBtn) { loginBtn.textContent = originalBtnText; loginBtn.disabled = false; }
+}
+
+// ══════════ 資料備份 ══════════
+// 每日自動備份：每天第一位登入的人觸發，把「本月＋前兩個月」的登記、週檢核、月底核定（不含簽名照片）
+// 以及員工、管理員、地點、負責人設定，複製一份存到雲端備份區；保留最近 60 天。
+const BACKUP_INDEX_DOC = 'config_backup_index';
+const BACKUP_KEEP_DAYS = 60;
+function backupMonths() {
+  const now = new Date();
+  return [0,1,2].map(n => { const d = new Date(now.getFullYear(), now.getMonth() - n, 1); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); });
+}
+function buildBackupSnapshot(source) {
+  const months = backupMonths();
+  const docs = {};
+  Object.keys(source).forEach(k => {
+    const isData = /^(templog|checker|supervisor)_/.test(k) && months.some(m => k.endsWith('_' + m));
+    const isCfg = /^config_(staff|admins|depts|roles)$/.test(k);
+    if(!isData && !isCfg) return;
+    let v = source[k];
+    if(typeof v === 'string') { try { v = JSON.parse(v); } catch(e) { return; } }
+    if(k.startsWith('supervisor_') && v && v.photo) v = { ...v, photo: '（照片未備份）' };
+    docs[k] = v;
+  });
+  return docs;
+}
+async function runDailyBackup(force) {
+  if(!window._backupSet || !window._templogGet) return null;
+  try {
+    const today = todayYMD();
+    const idx = (await window._templogGet(BACKUP_INDEX_DOC)) || { dates: [] };
+    idx.dates = Array.isArray(idx.dates) ? idx.dates : [];
+    if(!force && idx.dates.includes(today)) return null; // 今天已備份過
+    const all = await window._templogListAll(); // 直接讀雲端最新資料，不用本機快取
+    const docs = buildBackupSnapshot(all);
+    const dayCount = Object.keys(docs).filter(k => k.startsWith('templog_')).reduce((n, k) => n + Object.keys(docs[k] || {}).length, 0);
+    await window._backupSet(today, { createdAt: new Date().toISOString(), by: currentUser ? currentUser.id : '', months: backupMonths(), docs });
+    // 更新索引並刪除超過保留天數的舊備份
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - BACKUP_KEEP_DAYS);
+    const cutoffStr = cutoff.getFullYear() + '-' + String(cutoff.getMonth()+1).padStart(2,'0') + '-' + String(cutoff.getDate()).padStart(2,'0');
+    const keep = idx.dates.filter(d => d >= cutoffStr && d !== today);
+    const old = idx.dates.filter(d => d < cutoffStr);
+    for(const d of old) { try { await window._backupDelete(d); } catch(e) {} }
+    const info = Object.assign({}, idx.info || {}); old.forEach(d => delete info[d]);
+    info[today] = { docs: Object.keys(docs).length, days: dayCount, by: currentUser ? currentUser.id : '' };
+    await window._templogSet(BACKUP_INDEX_DOC, { dates: [...keep, today].sort(), info });
+    return today;
+  } catch(e) {
+    console.error('每日備份失敗（不影響登記）：', e);
+    return null;
+  }
 }
 
 function logout() {
@@ -4385,6 +4470,7 @@ function closeAdminPage() {
 
 function renderAdminPage() {
   if(!document.getElementById('adminPage').classList.contains('active')) return;
+  renderAdminBackups();
   renderAdminRoles();
   renderAdminDepts();
   renderAdminChips();
@@ -4679,6 +4765,112 @@ function adminDeptSave() {
   }).then(applyDeptConfig), '地點設定已儲存',
     `修改登記地點設定（${when}生效）：${summary.join('；')}`)
   .then(ok => { if(ok) { deptDraftReset(eff); renderAdminDepts(); } });
+}
+
+// ── 資料備份與還原 ──
+async function renderAdminBackups() {
+  const box = document.getElementById('admBackupList');
+  if(!box) return;
+  let idx = null;
+  try { idx = await window._templogGet(BACKUP_INDEX_DOC); } catch(e) {}
+  const dates = (idx && Array.isArray(idx.dates) ? idx.dates : []).slice().sort().reverse();
+  if(!dates.length) { box.innerHTML = `<div class="adm-empty">還沒有雲端備份（下次有人登入時會自動建立）</div>`; return; }
+  box.innerHTML = dates.map(d => {
+    const info = (idx.info || {})[d] || {};
+    return `<div class="adm-pending-row"><span class="who">📦 ${d}　<span style="color:var(--gray-500)">${info.days != null ? '登記 ' + info.days + ' 天次' : ''}</span></span>
+      <button class="adm-btn ghost small" onclick="adminRestoreFromBackup('${d}')">補回缺少的資料</button>
+      <button class="adm-btn ghost small" onclick="adminDownloadDailyBackup('${d}')">下載</button></div>`;
+  }).join('');
+}
+function downloadJson(obj, filename) {
+  const blob = new Blob([JSON.stringify(obj, null, 1)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+async function adminDownloadBackup() {
+  if(!adminGuard()) return;
+  try {
+    showToast('正在讀取雲端全部資料…', 'success');
+    const all = await window._templogListAll();
+    downloadJson({ type: 'templog-full-backup', createdAt: new Date().toISOString(), by: currentUser.id, docs: all },
+      `溫溼度系統備份_${todayYMD()}.json`);
+    await adminLog('下載完整備份檔');
+    showToast('📥 備份檔已下載，請存到院內電腦', 'success');
+  } catch(e) { console.error(e); showToast('下載失敗，請確認網路後再試', 'error'); }
+}
+async function adminDownloadDailyBackup(date) {
+  if(!adminGuard()) return;
+  try {
+    const b = await window._backupGet(date);
+    if(!b) { showToast('找不到這份備份', 'warn'); return; }
+    downloadJson({ type: 'templog-daily-backup', date, ...b }, `溫溼度系統每日備份_${date}.json`);
+  } catch(e) { showToast('下載失敗，請確認網路後再試', 'error'); }
+}
+async function adminBackupNow() {
+  if(!adminGuard()) return;
+  const d = await runDailyBackup(true);
+  if(d) { showToast(`已建立 ${d} 的備份`, 'success'); await adminLog(`手動建立備份（${d}）`); renderAdminBackups(); }
+  else showToast('備份失敗，請確認網路後再試', 'error');
+}
+// 只補「目前缺少」的欄位：現有的值一律保留，不覆蓋、不刪除
+function missingOnlyPatch(current, backup) {
+  const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
+  if(!isObj(backup)) return current === undefined || current === null || current === '' ? backup : undefined;
+  if(!isObj(current)) return current === undefined || current === null ? backup : undefined;
+  const patch = {};
+  Object.keys(backup).forEach(k => {
+    const sub = missingOnlyPatch(current[k], backup[k]);
+    if(sub !== undefined) patch[k] = sub;
+  });
+  return Object.keys(patch).length ? patch : undefined;
+}
+async function restoreDocsMissingOnly(docs, sourceLabel) {
+  const keys = Object.keys(docs || {}).filter(k => /^(templog|checker|supervisor)_/.test(k));
+  let changedDocs = 0, addedSlots = 0;
+  for(const k of keys) {
+    let b = docs[k];
+    if(typeof b === 'string') { try { b = JSON.parse(b); } catch(e) { continue; } }
+    if(!b || typeof b !== 'object') continue;
+    if(k.startsWith('supervisor_') && b.photo === '（照片未備份）') delete b.photo;
+    const cur = (await window._templogGet(k)) || {};
+    const patch = missingOnlyPatch(cur, b);
+    if(patch === undefined) continue;
+    if(k.startsWith('templog_')) Object.keys(patch).forEach(day => { addedSlots += Object.keys(patch[day] || {}).filter(s => !(cur[day] && cur[day][s])).length; });
+    await window._templogMerge(k, patch);
+    changedDocs++;
+  }
+  await initCloudCache(); // 重新讀取，讓畫面顯示補回的資料
+  await adminLog(`從${sourceLabel}補回缺少的資料：${changedDocs} 份文件、${addedSlots} 個登記時段`);
+  return { changedDocs, addedSlots };
+}
+async function adminRestoreFromBackup(date) {
+  if(!adminGuard()) return;
+  if(!confirm(`要從 ${date} 的備份補回目前缺少的資料嗎？\n\n只會補上現在沒有的日期／欄位，現有的資料不會被覆蓋或刪除。`)) return;
+  try {
+    const b = await window._backupGet(date);
+    if(!b || !b.docs) { showToast('找不到這份備份', 'warn'); return; }
+    const r = await restoreDocsMissingOnly(b.docs, `${date} 雲端備份`);
+    showToast(r.changedDocs ? `已補回 ${r.addedSlots} 個登記時段` : '目前資料比備份完整，沒有需要補回的', 'success');
+    renderAdminPage();
+  } catch(e) { console.error(e); showToast('還原失敗，請確認網路後再試', 'error'); }
+}
+async function adminRestoreFromFile() {
+  if(!adminGuard()) return;
+  const f = document.getElementById('admRestoreFile').files[0];
+  if(!f) { showToast('請先選擇備份檔', 'warn'); return; }
+  let obj;
+  try { obj = JSON.parse(await f.text()); } catch(e) { showToast('檔案格式不正確', 'error'); return; }
+  const docs = obj && obj.docs ? obj.docs : obj; // 也接受舊裝置匯出的 templog_backup.json（直接是文件清單）
+  const n = Object.keys(docs || {}).filter(k => /^(templog|checker|supervisor)_/.test(k)).length;
+  if(!n) { showToast('檔案裡沒有可還原的登記資料', 'warn'); return; }
+  if(!confirm(`檔案中有 ${n} 份登記／檢核文件。\n\n要補回目前缺少的資料嗎？只會補上現在沒有的日期／欄位，現有的資料不會被覆蓋或刪除。`)) return;
+  try {
+    const r = await restoreDocsMissingOnly(docs, `備份檔「${f.name}」`);
+    showToast(r.changedDocs ? `已補回 ${r.addedSlots} 個登記時段` : '目前資料比備份完整，沒有需要補回的', 'success');
+    renderAdminPage();
+  } catch(e) { console.error(e); showToast('還原失敗，請確認網路後再試', 'error'); }
 }
 
 // ── 院區負責人 ──
