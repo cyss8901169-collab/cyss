@@ -849,7 +849,7 @@
   // ══════════ 溫溼度登記系統自己的雲端資料庫（讀寫，取代瀏覽器本機儲存）══════════
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, deleteField } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
   const templogFirebaseConfig = {
     apiKey: "AIzaSyBB29TGm1BbcMah0GbDqvfBAXY3XJXGXIw",
@@ -881,6 +881,19 @@
   window._templogSet = async function(docId, data) {
     await authReadyPromise;
     await setDoc(doc(templogDb, TEMPLOG_COLLECTION, docId), data);
+  };
+  // 只寫入「有變動的欄位」（合併寫入），不會整份覆蓋，其他人或其他日期的資料不會被清掉
+  // patch 裡的 {__templogDelete:true} 代表刪除該欄位
+  window._templogMerge = async function(docId, patch) {
+    await authReadyPromise;
+    const conv = v => {
+      if(v && typeof v === 'object' && !Array.isArray(v)) {
+        if(v.__templogDelete === true) return deleteField();
+        const o = {}; for(const k of Object.keys(v)) o[k] = conv(v[k]); return o;
+      }
+      return v;
+    };
+    await setDoc(doc(templogDb, TEMPLOG_COLLECTION, docId), conv(patch), { merge: true });
   };
   // 刪除單一文件
   window._templogDelete = async function(docId) {
@@ -1151,7 +1164,7 @@
     <div class="adm-topbar">
       <div>
         <h2>⚙️ 系統管理</h2>
-        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-12f</span></p>
+        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-14</span></p>
       </div>
       <button class="adm-back" onclick="closeAdminPage()">← 返回登記</button>
     </div>
@@ -1275,10 +1288,21 @@ const LS = {
       try { window.localStorage.setItem(key, value); } catch(e) {}
       return;
     }
+    const prevStr = Object.prototype.hasOwnProperty.call(LS_CACHE, key) ? LS_CACHE[key] : null;
     LS_CACHE[key] = value;
-    if(window._templogSet) {
-      let payload;
-      try { payload = JSON.parse(value); } catch(e) { payload = { _raw: value }; }
+    let payload, prev = null;
+    try { payload = JSON.parse(value); } catch(e) { payload = { _raw: value }; }
+    try { prev = prevStr ? JSON.parse(prevStr) : null; } catch(e) { prev = null; }
+    // 重要：只把「這次改動的欄位」合併寫入雲端，絕不整份覆蓋。
+    // 這樣即使這台裝置的快取不是最新（例如很久沒重新整理、開機時讀取逾時），也不會把別人登記的資料清掉。
+    if(window._templogMerge && payload && typeof payload === 'object' && !Array.isArray(payload) && !('_raw' in payload)) {
+      const patch = diffPatch(prev && typeof prev === 'object' ? prev : {}, payload);
+      if(patch === undefined) return; // 沒有變動
+      window._templogMerge(key, patch).catch(err => {
+        console.error('雲端寫入失敗（'+key+'）：', err);
+        showToast('⚠️ 雲端儲存失敗，請確認網路後重新登記', 'error');
+      });
+    } else if(window._templogSet) {
       window._templogSet(key, payload).catch(err => console.error('雲端寫入失敗（'+key+'）：', err));
     }
   },
@@ -1296,19 +1320,42 @@ const LS = {
   key(i) { return Object.keys(LS_CACHE)[i] || null; }
 };
 
-// 開機時把雲端資料整包抓下來，重建本機快取；設定逾時上限，避免網路不好時系統卡住打不開
+// 比較兩份資料，只取出有變動的部分（刪除的欄位以 {__templogDelete:true} 表示）
+function diffPatch(prev, next) {
+  const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
+  if(isObj(prev) && isObj(next)) {
+    const patch = {};
+    Object.keys(next).forEach(k => {
+      const sub = diffPatch(prev[k], next[k]);
+      if(sub !== undefined) patch[k] = sub;
+    });
+    Object.keys(prev).forEach(k => { if(!(k in next)) patch[k] = { __templogDelete: true }; });
+    return Object.keys(patch).length ? patch : undefined;
+  }
+  if(JSON.stringify(prev) === JSON.stringify(next)) return undefined;
+  if(isObj(next) && !isObj(prev)) return next; // 新增整個區塊
+  return next;
+}
+
+// 把雲端資料整包抓下來，重建本機快取。回傳 true＝讀取成功；false＝失敗或逾時
+let cloudCacheLoadedAt = 0;
 async function initCloudCache() {
-  if(!window._templogListAll) return; // Firebase 模組還沒載入完成，跳過（開機仍可用，只是資料是空的）
-  const timeoutPromise = new Promise(resolve => setTimeout(resolve, 8000));
+  if(!window._templogListAll) return false;
+  const timeoutPromise = new Promise(resolve => setTimeout(() => resolve('timeout'), 25000));
   try {
     const fetchPromise = window._templogListAll().then(all => {
       for(const [docId, data] of Object.entries(all)) {
         LS_CACHE[docId] = (data && Object.prototype.hasOwnProperty.call(data, '_raw')) ? data._raw : JSON.stringify(data);
       }
+      return 'ok';
     });
-    await Promise.race([fetchPromise, timeoutPromise]);
+    const r = await Promise.race([fetchPromise, timeoutPromise]);
+    if(r !== 'ok') throw new Error('讀取逾時');
+    cloudCacheLoadedAt = Date.now();
+    return true;
   } catch(e) {
-    console.error('雲端資料初始讀取失敗（將以空白資料開機）：', e);
+    console.error('雲端資料讀取失敗：', e);
+    return false;
   }
 }
 
@@ -2082,7 +2129,13 @@ async function doLogin() {
   }
   err.style.display='none';
 
-  await initCloudCache();
+  // 每次登入都重新讀取雲端最新資料；讀不到就不讓登入，避免在資料不完整的狀態下登記
+  const cacheOk = await initCloudCache();
+  if(!cacheOk) {
+    if(loginBtn) { loginBtn.textContent = originalBtnText; loginBtn.disabled = false; }
+    showToast('⚠️ 無法讀取雲端資料（網路不穩），請稍候再按一次登入', 'error');
+    return;
+  }
 
   currentUser = s;
   resetViewState();
