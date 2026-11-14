@@ -1178,7 +1178,7 @@
     <div class="adm-topbar">
       <div>
         <h2>⚙️ 系統管理</h2>
-        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-14b</span></p>
+        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-14e</span></p>
       </div>
       <button class="adm-back" onclick="closeAdminPage()">← 返回登記</button>
     </div>
@@ -1308,6 +1308,14 @@
 // 除了登入身分（templog_session）留在本機裝置，其餘資料都會同步到雲端資料庫，
 // 讓所有使用這個連結的人打開時看到的是同一份最新資料。
 const LS_CACHE = {};
+// 進行中的雲端寫入：登出重新整理前要等它們寫完，避免最後一筆登記沒存到
+const PENDING_WRITES = new Set();
+function trackWrite(p) { PENDING_WRITES.add(p); p.finally(() => PENDING_WRITES.delete(p)); return p; }
+async function waitPendingWrites(ms) {
+  if(!PENDING_WRITES.size) return;
+  await Promise.race([Promise.allSettled([...PENDING_WRITES]), new Promise(r => setTimeout(r, ms))]);
+}
+const PAGE_LOADED_AT = Date.now();
 function isDeviceLocalKey(key) { return key === 'templog_session' || key === 'templog_hidden_since'; }
 
 const LS = {
@@ -1332,12 +1340,12 @@ const LS = {
     if(window._templogMerge && payload && typeof payload === 'object' && !Array.isArray(payload) && !('_raw' in payload)) {
       const patch = diffPatch(prev && typeof prev === 'object' ? prev : {}, payload);
       if(patch === undefined) return; // 沒有變動
-      window._templogMerge(key, patch).catch(err => {
+      trackWrite(window._templogMerge(key, patch).catch(err => {
         console.error('雲端寫入失敗（'+key+'）：', err);
         showToast('⚠️ 雲端儲存失敗，請確認網路後重新登記', 'error');
-      });
+      }));
     } else if(window._templogSet) {
-      window._templogSet(key, payload).catch(err => console.error('雲端寫入失敗（'+key+'）：', err));
+      trackWrite(window._templogSet(key, payload).catch(err => console.error('雲端寫入失敗（'+key+'）：', err)));
     }
   },
   removeItem(key) {
@@ -1371,26 +1379,61 @@ function diffPatch(prev, next) {
   return next;
 }
 
-// 把雲端資料整包抓下來，重建本機快取。回傳 true＝讀取成功；false＝失敗或逾時
+// ══════════ 只讀取需要的資料 ══════════
+// 以前登入時會把整個資料庫全部讀一次，資料越多越慢、也越耗讀取額度。
+// 現在只讀：各項設定＋「本月與上個月」三個院區的登記／週檢核／核定資料；
+// 查看更早的月份時，才另外讀那一個月（每次大約 20 筆，固定不會隨時間變多）。
+const CONFIG_DOC_IDS = ['config_staff','config_admins','config_depts','config_roles','config_audit','config_backup_index'];
+const LOADED_MONTHS = new Set();
+function monthDocIds(ym) {
+  const ids = [];
+  Object.keys(CAMPUS_DEPTS).forEach(c => (CAMPUS_DEPTS[c] || []).forEach(d => {
+    ['templog_','checker_','supervisor_'].forEach(p => ids.push(p + c + '_' + d.key + '_' + ym));
+  }));
+  return ids;
+}
+function cacheDoc(id, data) {
+  if(data) LS_CACHE[id] = Object.prototype.hasOwnProperty.call(data, '_raw') ? data._raw : JSON.stringify(data);
+  else delete LS_CACHE[id]; // 雲端已沒有這份文件
+}
+async function fetchDocsIntoCache(ids) {
+  await Promise.all(ids.map(id => window._templogGet(id).then(d => cacheDoc(id, d))));
+}
+function withTimeout(promise, ms) {
+  return Promise.race([promise.then(() => 'ok'), new Promise(r => setTimeout(() => r('timeout'), ms))]);
+}
+function prevMonthOf(ym) {
+  const [y, m] = ym.split('-').map(Number);
+  const d = new Date(y, m - 2, 1);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+
+// 登入時重建本機快取。回傳 true＝讀取成功；false＝失敗或逾時
 let cloudCacheLoadedAt = 0;
 async function initCloudCache() {
-  if(!window._templogListAll) return false;
-  const timeoutPromise = new Promise(resolve => setTimeout(() => resolve('timeout'), 25000));
+  if(!window._templogGet) return false;
   try {
-    const fetchPromise = window._templogListAll().then(all => {
-      for(const [docId, data] of Object.entries(all)) {
-        LS_CACHE[docId] = (data && Object.prototype.hasOwnProperty.call(data, '_raw')) ? data._raw : JSON.stringify(data);
-      }
-      return 'ok';
-    });
-    const r = await Promise.race([fetchPromise, timeoutPromise]);
+    const now = new Date();
+    const thisYm = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    const months = [thisYm, prevMonthOf(thisYm)];
+    LOADED_MONTHS.clear();
+    const r = await withTimeout(fetchDocsIntoCache([...CONFIG_DOC_IDS, ...months.flatMap(monthDocIds)]), 25000);
     if(r !== 'ok') throw new Error('讀取逾時');
+    months.forEach(m => LOADED_MONTHS.add(m));
     cloudCacheLoadedAt = Date.now();
     return true;
   } catch(e) {
     console.error('雲端資料讀取失敗：', e);
     return false;
   }
+}
+// 切換到還沒讀過的月份時，先讀取那個月的資料
+async function ensureMonthLoaded(ym) {
+  if(LOADED_MONTHS.has(ym)) return true;
+  const r = await withTimeout(fetchDocsIntoCache(monthDocIds(ym)), 20000).catch(() => 'error');
+  if(r !== 'ok') return false;
+  LOADED_MONTHS.add(ym);
+  return true;
 }
 
 // ══════════ STAFF DATA ══════════
@@ -2090,8 +2133,9 @@ window.onload = function() {
           if(stored) since = parseInt(stored, 10);
         } catch(e) {}
       }
-      if(since && currentUser && (Date.now() - since >= AUTO_LOGOUT_MS)) {
-        logout();
+      if(since && (Date.now() - since >= AUTO_LOGOUT_MS)) {
+        if(currentUser) logout();          // 登出後會自動重新整理
+        else waitPendingWrites(8000).then(() => { try { location.reload(); } catch(e) {} }); // 停在登入畫面很久，也重新整理
       }
       hiddenAt = null;
       try { LS.removeItem('templog_hidden_since'); } catch(e) {}
@@ -2146,6 +2190,12 @@ function resetViewState() {
 }
 
 async function doLogin() {
+  // 頁面已開超過 6 小時：先重新整理載入最新版，再請使用者登入
+  if(Date.now() - PAGE_LOADED_AT > 6 * 60 * 60 * 1000) {
+    showToast('系統更新中，請稍候再登入一次', 'warn');
+    setTimeout(() => location.reload(), 800);
+    return;
+  }
   const raw = document.getElementById('loginIdInput').value.trim();
   const id = ('Y' + raw).toUpperCase();
   const err = document.getElementById('loginError');
@@ -2210,7 +2260,10 @@ async function runDailyBackup(force) {
     const idx = (await window._templogGet(BACKUP_INDEX_DOC)) || { dates: [] };
     idx.dates = Array.isArray(idx.dates) ? idx.dates : [];
     if(!force && idx.dates.includes(today)) return null; // 今天已備份過
-    const all = await window._templogListAll(); // 直接讀雲端最新資料，不用本機快取
+    // 直接從雲端讀最新資料（只讀要備份的月份與設定，不讀整個資料庫）
+    const ids = [...CONFIG_DOC_IDS.filter(x => /^config_(staff|admins|depts|roles)$/.test(x)), ...backupMonths().flatMap(monthDocIds)];
+    const all = {};
+    await Promise.all(ids.map(id => window._templogGet(id).then(d => { if(d) all[id] = d; })));
     const docs = buildBackupSnapshot(all);
     const dayCount = Object.keys(docs).filter(k => k.startsWith('templog_')).reduce((n, k) => n + Object.keys(docs[k] || {}).length, 0);
     await window._backupSet(today, { createdAt: new Date().toISOString(), by: currentUser ? currentUser.id : '', months: backupMonths(), docs });
@@ -2253,6 +2306,8 @@ function logout() {
   if(loginErr) loginErr.style.display = 'none';
   showToast('已登出系統', 'success');
   if(idInput) idInput.focus();
+  // 登出後重新整理頁面，確保下次登入一定是最新版的程式（先等雲端寫入完成）
+  waitPendingWrites(8000).then(() => { try { location.reload(); } catch(e) {} });
 }
 
 function showApp() {
@@ -2354,8 +2409,20 @@ function setSession(s, btn) {
 }
 
 // ══════════ MONTH / TABLE ══════════
-function onDatePickerChange(val) {
+async function onDatePickerChange(val) {
   if(!val) return;
+  // 還沒讀過的月份：先從雲端讀取（讀不到就不切換，避免在資料不完整的月份登記）
+  const wantYm = val.slice(0, 7);
+  if(!LOADED_MONTHS.has(wantYm)) {
+    showToast('正在讀取 ' + wantYm + ' 的資料…', 'success');
+    const ok = await ensureMonthLoaded(wantYm);
+    if(!ok) {
+      showToast('⚠️ 無法讀取 ' + wantYm + ' 的資料，請確認網路後再試', 'error');
+      const mp = document.getElementById('monthPicker');
+      if(mp) mp.value = currentMonth + '-' + String(currentDay || 1).padStart(2,'0');
+      return;
+    }
+  }
   // val 格式是 YYYY-MM-DD
   const now = new Date();
   const todayYMD = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
@@ -2735,6 +2802,13 @@ async function syncStaffNamesFromSchedule() {
 // ══════════ 新進人員提醒（唯讀比對班表，不會自動新增任何人員）══════════
 // 比對「本月班表上有 B8/SD/HD 班別的員編」與員工名單，找出班表上有班、但還沒加入名單的人。
 function normShift(code) { return String(code == null ? '' : code).trim().toUpperCase(); }
+// 班別「主代碼」：班表上週末的班別會加「#」（如 SD#、HD#），有些班別後面會加「/E」「/1」等註記（如 B8/E），
+// 比對應登記班別時只看主代碼，所以 SD#、B8/E 都算 SD、B8
+function baseShift(code) { return normShift(code).split('/')[0].replace(/#+$/, '').trim(); }
+function isOnDutyShift(code) {
+  const codes = (window.ON_DUTY_SHIFT_CODES || []).map(normShift);
+  return codes.includes(baseShift(code));
+}
 function normEmpId(id) { return String(id == null ? '' : id).trim().toUpperCase(); }
 function currentMonthKey() {
   const now = new Date();
@@ -2765,7 +2839,7 @@ async function scanRosterForNewStaff() {
   const sched = {};
   Object.keys(entries || {}).forEach(raw => {
     const days = entries[raw] || {};
-    if(Object.values(days).some(code => codes.includes(normShift(code)))) result.onDuty++;
+    if(Object.values(days).some(code => isOnDutyShift(code))) result.onDuty++;
     if(Object.values(days).some(code => normShift(code) !== '')) sched[normEmpId(raw)] = true;
   });
   result.total = Object.keys(sched).length;
@@ -2861,7 +2935,7 @@ async function renderOnDutyStaff() {
       const code = await window.getShiftCode(s.id, dateStr);
       return { name: s.name, code };
     }));
-    const onDuty = results.filter(r => r.code && window.ON_DUTY_SHIFT_CODES.includes(r.code));
+    const onDuty = results.filter(r => r.code && isOnDutyShift(r.code));
     if(onDuty.length) {
       box.innerHTML = `📋 <strong>依班表，今日應登記人員：</strong>${onDuty.map(r => r.name).join('、')}`;
     } else {
