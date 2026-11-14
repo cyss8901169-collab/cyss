@@ -1178,7 +1178,7 @@
     <div class="adm-topbar">
       <div>
         <h2>⚙️ 系統管理</h2>
-        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-14e</span></p>
+        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-14f</span></p>
       </div>
       <button class="adm-back" onclick="closeAdminPage()">← 返回登記</button>
     </div>
@@ -1271,7 +1271,7 @@
     <!-- 資料備份 -->
     <div class="adm-section">
       <h3>💾 資料備份與還原</h3>
-      <div class="adm-desc">系統每天第一位同仁登入時，會自動把本月與前兩個月的登記、週檢核、核定資料（不含簽名照片）及各項設定備份一份到雲端，保留最近 60 天。
+      <div class="adm-desc">系統每天第一位同仁登入時，會自動把本月與前兩個月的登記、週檢核、核定資料（不含簽名照片）及各項設定備份一份到雲端。備份只會新增、不會被修改或刪除，下方列出最近 60 份。
         「還原」只會補回目前缺少的資料，不會覆蓋或刪除現有的資料。</div>
       <div class="adm-row" style="margin-bottom:10px">
         <button class="adm-btn" onclick="adminDownloadBackup()">⬇ 下載完整備份檔</button>
@@ -2266,17 +2266,17 @@ async function runDailyBackup(force) {
     await Promise.all(ids.map(id => window._templogGet(id).then(d => { if(d) all[id] = d; })));
     const docs = buildBackupSnapshot(all);
     const dayCount = Object.keys(docs).filter(k => k.startsWith('templog_')).reduce((n, k) => n + Object.keys(docs[k] || {}).length, 0);
-    await window._backupSet(today, { createdAt: new Date().toISOString(), by: currentUser ? currentUser.id : '', months: backupMonths(), docs });
-    // 更新索引並刪除超過保留天數的舊備份
-    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - BACKUP_KEEP_DAYS);
-    const cutoffStr = cutoff.getFullYear() + '-' + String(cutoff.getMonth()+1).padStart(2,'0') + '-' + String(cutoff.getDate()).padStart(2,'0');
-    const keep = idx.dates.filter(d => d >= cutoffStr && d !== today);
-    const old = idx.dates.filter(d => d < cutoffStr);
-    for(const d of old) { try { await window._backupDelete(d); } catch(e) {} }
-    const info = Object.assign({}, idx.info || {}); old.forEach(d => delete info[d]);
-    info[today] = { docs: Object.keys(docs).length, days: dayCount, by: currentUser ? currentUser.id : '' };
-    await window._templogSet(BACKUP_INDEX_DOC, { dates: [...keep, today].sort(), info });
-    return today;
+    // 備份只新增、不覆蓋也不刪除（資料庫規則禁止修改或刪除備份）。
+    // 每日自動備份用「日期」命名；手動建立的備份用「日期_時分秒」，不會蓋掉當天的自動備份。
+    const now = new Date();
+    const backupId = force
+      ? today + '_' + String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0') + String(now.getSeconds()).padStart(2,'0')
+      : today;
+    await window._backupSet(backupId, { createdAt: now.toISOString(), by: currentUser ? currentUser.id : '', months: backupMonths(), docs });
+    const info = Object.assign({}, idx.info || {});
+    info[backupId] = { docs: Object.keys(docs).length, days: dayCount, by: currentUser ? currentUser.id : '' };
+    await window._templogSet(BACKUP_INDEX_DOC, { dates: [...idx.dates.filter(d => d !== backupId), backupId].sort(), info });
+    return backupId;
   } catch(e) {
     console.error('每日備份失敗（不影響登記）：', e);
     return null;
@@ -4847,7 +4847,7 @@ async function renderAdminBackups() {
   if(!box) return;
   let idx = null;
   try { idx = await window._templogGet(BACKUP_INDEX_DOC); } catch(e) {}
-  const dates = (idx && Array.isArray(idx.dates) ? idx.dates : []).slice().sort().reverse();
+  const dates = (idx && Array.isArray(idx.dates) ? idx.dates : []).slice().sort().reverse().slice(0, BACKUP_KEEP_DAYS); // 只列出最近 60 份
   if(!dates.length) { box.innerHTML = `<div class="adm-empty">還沒有雲端備份（下次有人登入時會自動建立）</div>`; return; }
   box.innerHTML = dates.map(d => {
     const info = (idx.info || {})[d] || {};
