@@ -398,6 +398,16 @@
   }
   .field-group { display: flex; flex-direction: column; gap: 6px; }
   .today-fields.four { grid-template-columns: repeat(4, 1fr); gap: 5px; }
+  .floor-bar { display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  .floor-bar .floor-label { font-size:13px; font-weight:700; color:var(--gray-700); margin-right:2px; }
+  .floor-bar button { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    min-width:84px; padding:9px 16px; border-radius:16px; border:2px solid #cbd5e1; background:white; color:#1e293b;
+    cursor:pointer; font-family:inherit; line-height:1.15; }
+  .floor-bar button .fb-name { font-size:18px; font-weight:800; }
+  .floor-bar button .fb-sub { font-size:11px; color:var(--gray-500); font-weight:600; }
+  .floor-bar button.active { background:#1e3a5f; border-color:#1e3a5f; color:white; box-shadow:0 2px 6px rgba(30,58,95,.25); }
+  .floor-bar button.active .fb-sub { color:#dbe4f0; }
+  .floor-bar button.empty { cursor:default; opacity:.6; border-style:dashed; }
   .today-fields.four .field-group label { font-size: 11px; white-space: nowrap; }
   @media (max-width: 360px) { .today-fields.four { grid-template-columns: repeat(2, 1fr); } }
   .field-group label {
@@ -633,6 +643,7 @@
   .dept-edit-row:last-child { border-bottom:none; }
   .dept-edit-row .num { width:22px; text-align:center; font-weight:700; color:var(--gray-500); font-variant-numeric:tabular-nums; }
   .dept-edit-row .adm-input { flex:1; min-width:0; }
+  .dept-edit-row .floor-select { flex:0 0 76px; padding:8px 6px; font-weight:700; }
   .dept-edit-row .tag { font-size:11px; color:var(--gray-500); white-space:nowrap; }
   .arrow-btn { width:36px; height:36px; border-radius:8px; border:1.5px solid var(--gray-200); background:white; color:#1d4ed8;
     font-size:16px; cursor:pointer; font-family:inherit; flex-shrink:0; }
@@ -1025,7 +1036,7 @@
           <div class="value" id="statToday" style="font-size:16px">—</div>
         </div>
         <div class="stat-card" id="statCardDays">
-          <div class="label">本月登記天數</div>
+          <div class="label">本月完成登記天數</div>
           <div class="value" id="statDays" style="font-size:20px">0</div>
         </div>
         <div class="stat-card amber" id="statCardTemp">
@@ -1188,7 +1199,7 @@
     <div class="adm-topbar">
       <div>
         <h2>⚙️ 系統管理</h2>
-        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-14g</span></p>
+        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-19c</span></p>
       </div>
       <button class="adm-back" onclick="closeAdminPage()">← 返回登記</button>
     </div>
@@ -1258,8 +1269,15 @@
     <!-- 登記地點 -->
     <div class="adm-section">
       <h3>📍 登記地點設定</h3>
-      <div class="adm-desc">設定每個院區要登記哪些地點，以及顯示順序。標準一律為溫度 ≦25℃、溼度 ≦65%。改名稱會套用到所有月份（含以前的報表）；新增、移除、調整順序則從你選的月份開始生效，以前的紀錄不受影響。第 1 個原始地點為主地點（月底核定存在它底下），不可移除。</div>
+      <div class="adm-desc">設定每個院區要登記哪些地點，以及顯示順序。標準一律為溫度 ≦25℃、溼度 ≦65%。改名稱會套用到所有月份（含以前的報表）；新增、移除、調整順序則從你選的月份開始生效，以前的紀錄不受影響。第 1 個原始地點為主地點（月底核定存在它底下），不可移除。<br>先在「樓層選項」加入 1F、B1 等，再替每個地點選樓層：同一院區有兩個以上樓層時，登記畫面上方會出現樓層選單，同仁先選樓層再登記該樓層的地點；選「不分」的地點每個樓層都會顯示。</div>
       <div class="adm-tabs" id="admDeptTabs"></div>
+      <div class="adm-row" style="margin-bottom:10px">
+        <span style="font-size:13px;font-weight:700;color:var(--gray-700);white-space:nowrap">樓層選項：</span>
+        <span class="adm-chips" id="admFloorChips" style="margin:0"></span>
+        <input class="adm-input" id="admFloorName" placeholder="例如 2F" maxlength="6" style="flex:0 1 110px"
+          oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter') adminFloorAdd()">
+        <button class="adm-btn ghost small" onclick="adminFloorAdd()">＋ 新增樓層</button>
+      </div>
       <div class="dept-edit-list" id="admDeptRows"></div>
       <div class="adm-row" style="margin-top:10px">
         <input class="adm-input" id="admDeptName" placeholder="新地點名稱，例如 調劑室" maxlength="20" style="flex:1 1 200px"
@@ -1672,8 +1690,10 @@ let CAMPUS_DEPTS = {
 // 每個院區的第一個地點是「主地點」，月底核定紀錄存在它底下，因此不可停用。
 const CAMPUS_DEPTS_DEFAULT = JSON.parse(JSON.stringify(CAMPUS_DEPTS));
 const CFG_DEPTS_DOC = 'config_depts';
+let DEPT_FLOORS = {}; // 院區 → 樓層選項，例如 { huwei: ['1F','B1'] }
 function applyDeptConfig(data) {
   if(!data || !data.campuses) return;
+  DEPT_FLOORS = data.floors ? JSON.parse(JSON.stringify(data.floors)) : {};
   DEPT_ORDERS = data.orders ? JSON.parse(JSON.stringify(data.orders)) : {};
   Object.keys(CAMPUS_DEPTS).forEach(c => {
     const list = data.campuses[c];
@@ -1715,6 +1735,56 @@ function deptsForMonth(campus, ym) {
   return sortDeptsFor(campus, ym, (CAMPUS_DEPTS[campus] || []).filter(d => deptRange(d, ym) || deptHasData(campus, d, ym)));
 }
 // 今日登記用：這一天需要登記的地點
+// ══════════ 樓層（例如虎尾的 1F／B1）══════════
+// 地點可設定「樓層」。同一院區有兩個以上樓層時，今日登記上方會出現樓層選單，只顯示該樓層的地點。
+// 沒設定樓層的地點，每個樓層都會顯示。樓層在「系統管理 → 登記地點設定」編輯。
+// 地點的樓層：有設定就用設定的；沒設定時，從名稱開頭判斷（例如「1F 門診藥局」「B1 藥庫」）
+const FLOOR_PREFIX_RE = /^\s*(B\d{1,2}|\d{1,2}F)[\s　]+(.+)$/i;
+function deptFloor(dept) {
+  if(!dept) return '';
+  if(dept.floor) return String(dept.floor).trim().toUpperCase();
+  const m = String(dept.label || '').match(FLOOR_PREFIX_RE);
+  return m ? m[1].toUpperCase() : '';
+}
+function deptName(dept) {
+  if(!dept) return '';
+  const f = deptFloor(dept);
+  let label = String(dept.label || '');
+  const m = label.match(FLOOR_PREFIX_RE);
+  if(m && m[1].toUpperCase() === f) label = m[2]; // 名稱開頭已有樓層，不重複顯示
+  return (f ? f + '　' : '') + label;
+}
+function floorsOf(list) {
+  const out = [];
+  list.forEach(d => { const f = deptFloor(d); if(f && !out.includes(f)) out.push(f); });
+  return out;
+}
+// 院區的樓層選項：管理員設定的清單；沒設定時，依地點上填的樓層自動整理
+function floorOptions(campus) {
+  const set = Array.isArray(DEPT_FLOORS[campus]) ? DEPT_FLOORS[campus].filter(Boolean) : [];
+  const fromDepts = floorsOf(CAMPUS_DEPTS[campus] || []);
+  return set.length ? set.concat(fromDepts.filter(f => !set.includes(f))) : fromDepts;
+}
+let currentFloor = {}; // 院區 → 目前選的樓層
+function getFloorPref(campus) { try { return window.localStorage.getItem('templog_floor_' + campus) || ''; } catch(e) { return ''; } }
+function setFloorPref(campus, f) { try { window.localStorage.setItem('templog_floor_' + campus, f); } catch(e) {} }
+// 今日登記實際要顯示／送出的地點（依樓層篩選）
+function visibleTodayDepts(campus, ym, day) {
+  const all = deptsForDay(campus, ym, day);
+  const floors = floorOptions(campus).filter(f => all.some(d => deptFloor(d) === f)); // 有地點的樓層
+  if(floorOptions(campus).length < 2 || !floors.length) return all;
+  let f = currentFloor[campus] || getFloorPref(campus);
+  if(!floors.includes(f)) f = floors[0];
+  currentFloor[campus] = f;
+  return all.filter(d => !deptFloor(d) || deptFloor(d) === f);
+}
+function selectFloor(campus, f) {
+  currentFloor[campus] = f;
+  setFloorPref(campus, f);
+  renderTable();
+  requestAnimationFrame(() => { updateStickyFieldsTop(); setTimeout(updateStickyFieldsTop, 150); });
+}
+
 function deptsForDay(campus, ym, day) {
   return sortDeptsFor(campus, ym, (CAMPUS_DEPTS[campus] || []).filter(d => { const r = deptRange(d, ym); return r && day >= r.from && day <= r.to; }));
 }
@@ -1743,7 +1813,8 @@ function getPDFAreaLabel() {
   const parts = currentArea.split('_');
   const campus = parts[0];
   const deptKey = parts.slice(1).join('_');
-  const deptLabel = (CAMPUS_DEPTS[campus]||[]).find(d=>d.key===deptKey)?.label || deptKey;
+  const deptObj = (CAMPUS_DEPTS[campus]||[]).find(d=>d.key===deptKey);
+  const deptLabel = deptObj ? deptName(deptObj) : deptKey;
   if(campus === 'store') return '藥庫　' + deptLabel; // 藥庫下再分儲藥區／試驗用藥區
   const campusFull = CAMPUS_LABEL_FULL[campus] || CAMPUS_LABEL[campus] || campus;
   return campusFull + '　' + deptLabel;
@@ -2220,6 +2291,7 @@ function onIdInput(val) {
 
 // ══════════ LOGIN / LOGOUT ══════════
 function resetViewState() {
+  SIGNED_EDIT.clear();
   // 每次登入都是全新開始，不沿用上一位使用者瀏覽到的頁面/日期/月份
   const now = new Date();
   currentMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
@@ -2688,7 +2760,8 @@ function renderTodayView() {
   if(sf) {
     sf.style.display = 'block';
     const campus = currentArea.split('_')[0];
-    const depts = deptsForDay(campus, currentMonth, d);
+    const depts = visibleTodayDepts(campus, currentMonth, d);
+    const dayFloors = floorOptions(campus);
 
     // 為每個部門取得資料
     const weekNum = Math.ceil(d / 7);
@@ -2703,7 +2776,7 @@ function renderTodayView() {
       loadData(currentMonth); // 還原成目前實際檢視部門的資料
       const fT = v => (v!==''&&v!==undefined&&v!==null&&!isNaN(parseFloat(v))) ? parseFloat(v).toFixed(1) : '';
       return {
-        key: dept.key, label: dept.label, areaKey,
+        key: dept.key, label: dept.label, floor: dept.floor || '', areaKey,
         temp: fT(entry.temp), maxTemp: fT(entry.maxTemp), minTemp: fT(entry.minTemp), humid: entry.humid||'',
         reason: entry.reason||'',
         tempWarn: entry.temp!==''&&parseFloat(entry.temp)>25,
@@ -2719,23 +2792,47 @@ function renderTodayView() {
     const needAnyReason = deptData.some(d=>d.tempWarn||d.maxWarn||d.humWarn);
 
     sf.innerHTML = `
+      ${dayFloors.length >= 2 ? `<div class="floor-bar" role="tablist" aria-label="選擇樓層">
+        <span class="floor-label">樓層</span>
+        ${dayFloors.map(f => {
+          const fd = deptsForDay(campus, currentMonth, d).filter(x => deptFloor(x) === f);
+          const done = fd.length && fd.every(x => { try { return !!JSON.parse(LS.getItem('templog_' + campus + '_' + x.key + '_' + currentMonth) || '{}')[d]?.[currentSession]?.signedBy; } catch(e) { return false; } });
+          const on = f === currentFloor[campus];
+          if(!fd.length) return `<button type="button" class="empty" disabled aria-disabled="true">
+            <span class="fb-name">${escHtml(f)}</span><span class="fb-sub">無登記地點</span></button>`;
+          return `<button type="button" role="tab" aria-selected="${on}" class="${on?'active':''}" onclick="selectFloor('${campus}','${escHtml(f).replace(/'/g,'')}')">
+            <span class="fb-name">${escHtml(f)}</span>
+            <span class="fb-sub">${done ? '✓ 已登記' : fd.length + ' 處'}</span>
+          </button>`;
+        }).join('')}
+      </div>` : ''}
       ${outOfRange ? `<div style="background:#fffbeb;border:1.5px solid #fcd34d;border-radius:8px;padding:6px 10px;font-size:11px;color:#92400e;font-weight:600;margin-bottom:6px;">⚠ 現在${rangeMsg}，如為補登請繼續填寫</div>` : ''}
       ${isOffDay(currentArea.split('_')[0], currentMonth, d) ? `<div style="background:#f3f4f6;border:1.5px solid #d1d5db;border-radius:8px;padding:6px 10px;font-size:11px;color:var(--gray-700);font-weight:600;margin-bottom:6px;">🗓 今天是週${weekdayLabel(currentMonth, d)}，藥庫不需登記；如有登記，資料仍會保存</div>` : ''}
       ${isMakeup ? `<div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:8px;padding:6px 10px;font-size:11px;color:#1e40af;font-weight:600;margin-bottom:6px;">📝 補登：${currentMonth}-${String(d).padStart(2,'0')}</div>` : ''}
       ${deptData.map((dept,i) => {
-        const locked = isFutureDay || dept.weekLocked;
+        const signedLock = !!dept.signedBy && !SIGNED_EDIT.has(signedEditKey(dept.areaKey, currentMonth, d, currentSession));
+        const editing = !!dept.signedBy && !signedLock;
+        const locked = isFutureDay || dept.weekLocked || signedLock;
+        const signedBanner = (dept.signedBy && !isFutureDay && !dept.weekLocked)
+          ? (signedLock
+            ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:6px;padding:5px 8px;font-size:11px;color:#166534;font-weight:600;margin-bottom:5px;">
+                 <span>✅ 已由 ${escHtml(dept.signedBy)} 於 ${escHtml(dept.time)} 確認登記</span>
+                 <button type="button" onclick="startSignedEdit('${dept.areaKey}',${d},'${currentSession}','${escHtml(dept.signedBy).replace(/'/g,'')}')" style="padding:3px 10px;border:1.5px solid #16a34a;background:white;color:#16a34a;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">修改</button>
+               </div>`
+            : `<div style="background:#fffbeb;border:1.5px solid #fcd34d;border-radius:6px;padding:5px 8px;font-size:11px;color:#92400e;font-weight:600;margin-bottom:5px;">✏️ 修改中（原登記：${escHtml(dept.signedBy)} ${escHtml(dept.time)}），改好後請按「確認本次登記」</div>`)
+          : '';
         const lockBanner = isFutureDay
           ? `<div style="background:#f3f4f6;border:1.5px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:10px;color:var(--gray-500);font-weight:600;margin-bottom:5px;">🔒 未來日期不可登記</div>`
           : dept.weekLocked
             ? `<div style="background:#f3f4f6;border:1.5px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:10px;color:var(--gray-500);font-weight:600;margin-bottom:5px;">🔒 本週已由 ${dept.weekCheckerName} 完成核定，資料已鎖定無法修改</div>`
             : '';
         return `
-      <div id="deptCard-${dept.key}" class="dept-today-card" style="background:white;border-radius:10px;padding:16px 12px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:4px solid ${deptStyle(campus, dept.key).color};${locked?'opacity:.75;':''}">
+      <div id="deptCard-${dept.key}" class="dept-today-card" data-editing="${editing?1:0}" style="background:white;border-radius:10px;padding:16px 12px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:4px solid ${deptStyle(campus, dept.key).color};${locked?'opacity:.75;':''}">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:7px 10px;border-radius:8px;background:${deptStyle(campus, dept.key).bg};">
           <span style="font-size:14px;">${deptStyle(campus, dept.key).icon}</span>
-          <span style="font-size:13px;font-weight:800;color:${deptStyle(campus, dept.key).color};">${escHtml(dept.label)}</span>
+          <span style="font-size:13px;font-weight:800;color:${deptStyle(campus, dept.key).color};">${escHtml(deptName(dept))}</span>
         </div>
-        ${lockBanner}
+        ${lockBanner}${signedBanner}
         ${(() => {
           const hasMin = usesMinTemp(campus);
           const nextDept = deptData[i+1];
@@ -3156,7 +3253,7 @@ function renderMonthView() {
     <div style="margin-bottom:20px;">
       <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:white;border-radius:10px 10px 0 0;border-left:4px solid ${deptColor};border-bottom:2px solid ${deptColor};margin-bottom:0;">
         <span style="font-size:16px;">${deptIcon}</span>
-        <span style="font-size:15px;font-weight:800;color:${deptColor};">${dept.label}</span>
+        <span style="font-size:15px;font-weight:800;color:${deptColor};">${escHtml(deptName(dept))}</span>
       </div>
       <table style="width:100%;border-collapse:collapse;table-layout:auto;">
         <thead>
@@ -3198,7 +3295,33 @@ function renderMonthView() {
 
 // ── 手機數字輸入輔助函數 ──
 // 依指定 area 儲存資料
+// ══════════ 已簽名的登記不能被直接改動 ══════════
+// 已確認登記（有簽名）的時段，欄位會鎖住；要修改必須先按「修改」，確認時簽名改成修改的人，並保留修改前的紀錄。
+const SIGNED_EDIT = new Set();
+function signedEditKey(areaKey, ym, day, session) { return areaKey + '|' + ym + '|' + day + '|' + session; }
+function isSignedLocked(areaKey, day, session) {
+  const savedArea = currentArea;
+  currentArea = areaKey; loadData(currentMonth);
+  const signed = !!getEntry(day, session).signedBy;
+  currentArea = savedArea; loadData(currentMonth);
+  return signed && !SIGNED_EDIT.has(signedEditKey(areaKey, currentMonth, day, session));
+}
+function isSigned(areaKey, day, session) {
+  const savedArea = currentArea;
+  currentArea = areaKey; loadData(currentMonth);
+  const signed = !!getEntry(day, session).signedBy;
+  currentArea = savedArea; loadData(currentMonth);
+  return signed;
+}
+function startSignedEdit(areaKey, day, session, signer) {
+  if(!confirm(`這個時段已由「${signer}」確認登記。\n\n確定要修改嗎？修改後按「確認本次登記」，簽名會改為您本人，修改前的數值會保留在紀錄中。`)) return;
+  SIGNED_EDIT.add(signedEditKey(areaKey, currentMonth, day, session));
+  renderTable();
+}
+
 function setEntryByArea(areaKey, day, session, field, value) {
+  // 已簽名的時段，溫溼度數值不會在輸入時即時寫入；要按「修改」→「確認本次登記」才會寫入（並保留修改前的紀錄）
+  if(['temp','maxTemp','minTemp','humid','reason'].includes(field) && isSigned(areaKey, day, session)) return;
   const savedArea = currentArea;
   currentArea = areaKey;
   loadData(currentMonth);
@@ -3427,7 +3550,7 @@ function submitAllDepts() {
   const d = currentDay;
   const session = currentSession;
   const campus = currentArea.split('_')[0];
-  const depts = deptsForDay(campus, currentMonth, d);
+  const depts = visibleTodayDepts(campus, currentMonth, d); // 只送出目前樓層顯示的地點
   const savedArea = currentArea;
   let hasError = false;
   let hasAbnormal = false;
@@ -3450,6 +3573,7 @@ function submitAllDepts() {
     loadData(currentMonth);
     const checkerRec = getChecker(weekNum);
     if(checkerRec) continue; // 該部門本週已核定鎖定，跳過驗證
+    if(getEntry(d, session).signedBy && !SIGNED_EDIT.has(signedEditKey(areaKey, currentMonth, d, session))) continue; // 已簽名、沒有要修改，跳過
     allLocked = false;
 
     const e = getEntry(d, session);
@@ -3487,7 +3611,12 @@ function submitAllDepts() {
 
   if(allLocked) {
     currentArea = savedArea; loadData(currentMonth);
-    showToast('🔒 本週已完成核定，資料已鎖定無法修改', 'warn');
+    let weekLockedCount = 0;
+    depts.forEach(dp => { currentArea = campus + '_' + dp.key; loadData(currentMonth); if(getChecker(weekNum)) weekLockedCount++; });
+    currentArea = savedArea; loadData(currentMonth);
+    showToast(weekLockedCount === depts.length
+      ? '🔒 本週已完成核定，資料已鎖定無法修改'
+      : '✅ 這個時段已經登記完成；如需修改請按卡片上的「修改」', 'warn');
     return;
   }
 
@@ -3501,6 +3630,17 @@ function submitAllDepts() {
     loadData(currentMonth); // 確保 logData 是該部門的資料
     const checkerRec = getChecker(weekNum);
     if(checkerRec) continue; // 該部門本週已核定鎖定，不可再覆寫
+    const editKey = signedEditKey(areaKey, currentMonth, d, session);
+    const prevEntry = getEntry(d, session);
+    if(prevEntry.signedBy && !SIGNED_EDIT.has(editKey)) continue; // 已簽名、沒有要修改，不覆寫
+    if(prevEntry.signedBy) {
+      // 修改已簽名的登記：保留修改前的數值與原登記人
+      const hist = Array.isArray(prevEntry.history) ? prevEntry.history.slice() : [];
+      hist.push({ temp: prevEntry.temp||'', maxTemp: prevEntry.maxTemp||'', minTemp: prevEntry.minTemp||'', humid: prevEntry.humid||'',
+        signedBy: prevEntry.signedBy, signedId: prevEntry.signedId||'', time: prevEntry.time||'',
+        editedBy: currentUser.name, editedId: currentUser.id, editedAt: nowYMD + ' ' + timeStr });
+      setEntry(d, session, 'history', hist);
+    }
     const tempV = document.getElementById('tf-temp-'+dept.key)?.value;
     const maxV  = document.getElementById('tf-maxtemp-'+dept.key)?.value;
     const minV  = document.getElementById('tf-mintemp-'+dept.key)?.value;
@@ -3512,8 +3652,10 @@ function submitAllDepts() {
     if(humV)  setEntry(d, session, 'humid', humV);
     if(reaV)  setEntry(d, session, 'reason', reaV);
     setEntry(d, session, 'signedBy', currentUser.name);
+    setEntry(d, session, 'signedId', currentUser.id);
     setEntry(d, session, 'time', timeStr);
     saveData();
+    SIGNED_EDIT.delete(editKey);
     savedDeptKeys.push(dept.key);
   }
 
@@ -3524,6 +3666,7 @@ function submitAllDepts() {
   showToast(`登記確認完成<br>（${session==='AM'?'上午':'下午'}）`, 'success');
   renderStats();
   renderAbnormal();
+  renderTable(); // 重新顯示卡片：已登記的時段改為鎖定並顯示登記人
 
   // 短暫綠色高亮已成功登記的卡片，給予明確的「已存好」視覺回饋
   savedDeptKeys.forEach(key => {
@@ -3693,33 +3836,43 @@ function showSessionAlert(msg) {
 
 // ══════════ STATS ══════════
 function renderStats() {
-  const data = logData[currentMonth] || {};
-  let days = 0, tempWarn = 0, humWarn = 0;
-  const todayStr = todayYMD();
+  // 統計整個院區（所有登記地點），不是只看第一個地點
+  let tempWarn = 0, humWarn = 0;
   const todayDay = new Date().getDate();
   const nowYM = new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
-
-  Object.keys(data).forEach(day => {
-    ['AM','PM'].forEach(s => {
-      const e = data[day][s];
-      if(!e) return;
-      if(e.temp || e.humid) days++;
-      if((e.temp && parseFloat(e.temp) > 25) || (e.maxTemp && parseFloat(e.maxTemp) > 25)) tempWarn++;
-      if(e.humid && parseFloat(e.humid) >= 66) humWarn++;
-    });
+  const campus = currentArea.split('_')[0];
+  const deptList = deptsForMonth(campus, currentMonth);
+  const logs = deptList.map(dp => {
+    try { return JSON.parse(LS.getItem('templog_' + campus + '_' + dp.key + '_' + currentMonth) || '{}'); } catch(e) { return {}; }
   });
+  logs.forEach(data => Object.keys(data).forEach(day => ['AM','PM'].forEach(s => {
+    const e = data[day] && data[day][s];
+    if(!e) return;
+    if((e.temp && parseFloat(e.temp) > 25) || (e.maxTemp && parseFloat(e.maxTemp) > 25)) tempWarn++;
+    if(e.humid && parseFloat(e.humid) >= 66) humWarn++;
+  })));
+  // 完成登記天數：這一天每個需要登記的地點，上午、下午都已確認登記
+  const daysInM = daysInMonth(currentMonth);
+  let days = 0;
+  for(let dd = 1; dd <= daysInM; dd++) {
+    const need = deptList.map((dp, i) => ({ dp, i })).filter(({ dp }) => { const r = deptRange(dp, currentMonth); return r && dd >= r.from && dd <= r.to; });
+    if(!need.length) continue;
+    if(need.every(({ i }) => logs[i][dd]?.AM?.signedBy && logs[i][dd]?.PM?.signedBy)) days++;
+  }
+  const getAll = (dd, s) => deptList.map((dp, i) => ({ dp, e: logs[i][dd]?.[s] })).filter(({ dp }) => { const r = deptRange(dp, currentMonth); return r && dd >= r.from && dd <= r.to; });
 
-  document.getElementById('statDays').textContent = Math.ceil(days/2) || 0;
+  document.getElementById('statDays').textContent = days;
   document.getElementById('statTempWarn').textContent = tempWarn;
   document.getElementById('statHumWarn').textContent = humWarn;
 
   // today
   let todayStatus = '—';
   if(currentMonth === nowYM) {
-    const am = getEntry(todayDay, 'AM');
-    const pm = getEntry(todayDay, 'PM');
-    if(am.signedBy && pm.signedBy) todayStatus = '✅ 完成';
-    else if(am.signedBy || pm.signedBy) todayStatus = '⚡ 部分';
+    const slots = [...getAll(todayDay, 'AM'), ...getAll(todayDay, 'PM')];
+    const signed = slots.filter(x => x.e && x.e.signedBy).length;
+    if(slots.length && signed === slots.length) todayStatus = '✅ 完成';
+    else if(signed > 0) todayStatus = '⚡ 部分';
+    else if(isOffDay(campus, currentMonth, todayDay)) todayStatus = '🗓 週末免登記';
     else todayStatus = '❌ 未登記';
   }
   document.getElementById('statToday').textContent = todayStatus;
@@ -3764,7 +3917,7 @@ function renderAbnormal() {
           if(humWarn) parts.push('溼度 '+e.humid+'%');
           rows.push({
             day, sessionKey: s, session: s==='AM'?'上午':'下午',
-            deptLabel: dept.label, areaKey,
+            deptLabel: deptName(dept), areaKey,
             abnormal: parts.join('、'), reason: e.reason||'',
             signed: e.signedBy||'—',
             resolved: e.resolved||'', handling: e.handling||'', recovery: e.recovery||'',
@@ -4006,7 +4159,7 @@ function exportPDF() {
   for(const dept of depts) {
     currentArea = campus + '_' + dept.key;
     loadData(currentMonth);
-    allSections += buildPDFSection(dept.label);
+    allSections += buildPDFSection(deptName(dept));
   }
   currentArea = savedArea;
   loadData(currentMonth);
@@ -4714,7 +4867,7 @@ function deptActiveAt(d, ymd) { return (!d.since || d.since <= ymd) && (!d.until
 function deptBaseList(campus, ym) {
   const at = effStartOf(ym);
   return sortDeptsFor(campus, ym, (CAMPUS_DEPTS[campus] || []).filter(d => deptActiveAt(d, at)))
-    .map(d => ({ key: d.key, label: d.label }));
+    .map(d => ({ key: d.key, label: d.label, floor: deptFloor(d) }));
 }
 function addMonths(ym, n) {
   const [y, m] = ym.split('-').map(Number);
@@ -4724,11 +4877,14 @@ function addMonths(ym, n) {
 function deptDraftReset(eff, campus) {
   const lists = {};
   DEPT_CAMPUSES.forEach(c => { lists[c] = deptBaseList(c, eff); });
-  deptDraft = { eff, campus: campus || (deptDraft ? deptDraft.campus : 'douliu'), lists };
+  const floors = {};
+  DEPT_CAMPUSES.forEach(c => { floors[c] = floorOptions(c).slice(); });
+  deptDraft = { eff, campus: campus || (deptDraft ? deptDraft.campus : 'douliu'), lists, floors };
 }
 function deptDraftDirty() {
   if(!deptDraft) return false;
-  return DEPT_CAMPUSES.some(c => JSON.stringify(deptDraft.lists[c]) !== JSON.stringify(deptBaseList(c, deptDraft.eff)));
+  return DEPT_CAMPUSES.some(c => JSON.stringify(deptDraft.lists[c]) !== JSON.stringify(deptBaseList(c, deptDraft.eff))
+    || JSON.stringify(deptDraft.floors[c]) !== JSON.stringify(floorOptions(c)));
 }
 function mainDeptKey(c) { return (CAMPUS_DEPTS[c] || [])[0]?.key; }
 
@@ -4740,10 +4896,18 @@ function renderAdminDepts() {
     `<button class="adm-tab ${k===c?'active':''}" onclick="adminDeptTab('${k}')">${CAMPUS_LABEL_FULL[k]}（${deptDraft.lists[k].length} 處）</button>`).join('');
   const list = deptDraft.lists[c];
   const mainKey = mainDeptKey(c);
+  const fl = deptDraft.floors[c] || [];
+  document.getElementById('admFloorChips').innerHTML = fl.length
+    ? fl.map((f, i) => `<span class="adm-chip"><span class="cid">${escHtml(f)}</span><button title="移除樓層" aria-label="移除樓層 ${escHtml(f)}" onclick="adminFloorRemove(${i})">✕</button></span>`).join('')
+    : `<span class="adm-desc" style="margin:0">（不分樓層）</span>`;
   document.getElementById('admDeptRows').innerHTML = list.length ? list.map((d, i) => {
     const isMain = d.key && d.key === mainKey;
     return `<div class="dept-edit-row ${d.key ? '' : 'is-new'}">
       <span class="num">${i+1}</span>
+      ${fl.length ? `<select class="adm-select floor-select" aria-label="第 ${i+1} 個地點的樓層" onchange="adminDraftFloor(${i}, this.value)">
+        <option value="" ${!d.floor?'selected':''}>不分</option>
+        ${fl.map(f => `<option value="${escHtml(f)}" ${d.floor===f?'selected':''}>${escHtml(f)}</option>`).join('')}
+      </select>` : ''}
       <input class="adm-input" value="${escHtml(d.label)}" maxlength="20" aria-label="第 ${i+1} 個地點名稱"
         oninput="adminDraftRename(${i}, this.value)">
       ${d.key ? '' : '<span class="tag">新增</span>'}${isMain ? '<span class="tag">主地點</span>' : ''}
@@ -4780,6 +4944,29 @@ function adminDraftRename(i, v) {
   deptDraft.lists[deptDraft.campus][i].label = v;
   document.getElementById('admDeptDirty').textContent = deptDraftDirty() ? '● 有尚未儲存的修改' : '';
 }
+function adminFloorAdd() {
+  const input = document.getElementById('admFloorName');
+  const f = (input.value || '').trim().toUpperCase();
+  if(!f) { showToast('請輸入樓層，例如 2F', 'warn'); return; }
+  if(/[<>&"'`\\]/.test(f) || f.length > 6) { showToast('樓層名稱最多 6 個字，且不可包含符號', 'warn'); return; }
+  const fl = deptDraft.floors[deptDraft.campus];
+  if(fl.includes(f)) { showToast(`已有「${f}」`, 'warn'); return; }
+  fl.push(f); input.value = '';
+  renderAdminDepts();
+}
+function adminFloorRemove(i) {
+  const c = deptDraft.campus;
+  const f = deptDraft.floors[c][i];
+  const used = deptDraft.lists[c].filter(d => d.floor === f);
+  if(used.length && !confirm(`「${f}」目前有 ${used.length} 個地點（${used.map(d => d.label).join('、')}）。\n移除後這些地點會改成「不分樓層」，確定嗎？`)) return;
+  used.forEach(d => { d.floor = ''; });
+  deptDraft.floors[c].splice(i, 1);
+  renderAdminDepts();
+}
+function adminDraftFloor(i, v) {
+  deptDraft.lists[deptDraft.campus][i].floor = v.toUpperCase().trim();
+  document.getElementById('admDeptDirty').textContent = deptDraftDirty() ? '● 有尚未儲存的修改' : '';
+}
 function adminDraftMove(i, dir) {
   const list = deptDraft.lists[deptDraft.campus];
   const j = i + dir;
@@ -4799,7 +4986,7 @@ function adminDraftAdd() {
   if(!validDeptName(name)) return;
   const list = deptDraft.lists[deptDraft.campus];
   if(list.some(d => d.label.trim() === name)) { showToast(`清單裡已有「${name}」`, 'warn'); return; }
-  list.push({ key: null, label: name });
+  list.push({ key: null, label: name, floor: '' });
   input.value = '';
   renderAdminDepts();
 }
@@ -4847,8 +5034,10 @@ function adminDeptSave() {
       if(!d.key) { summary.push(`${L}：新增「${d.label.trim()}」`); return; }
       const b = base.find(x => x.key === d.key);
       if(b && b.label !== d.label.trim()) summary.push(`${L}：「${b.label}」改名為「${d.label.trim()}」（所有月份）`);
+      if(b && (b.floor || '') !== (d.floor || '')) summary.push(`${L}：「${d.label.trim()}」樓層改為「${d.floor || '（無）'}」`);
     });
     base.filter(b => !draft.some(d => d.key === b.key)).forEach(b => summary.push(`${L}：移除「${b.label}」`));
+    if(JSON.stringify(deptDraft.floors[c]) !== JSON.stringify(floorOptions(c))) summary.push(`${L}：樓層選項改為「${deptDraft.floors[c].join('、') || '不分樓層'}」`);
     const bk = base.map(x => x.key).filter(k => draft.some(d => d.key === k));
     const dk = draft.filter(d => d.key).map(d => d.key);
     if(JSON.stringify(bk) !== JSON.stringify(dk)) summary.push(`${L}：調整顯示順序`);
@@ -4859,13 +5048,15 @@ function adminDeptSave() {
   adminRun(() => adminMutate(CFG_DEPTS_DOC, deptsDocDefault, doc => {
     if(!doc.campuses) doc.campuses = JSON.parse(JSON.stringify(CAMPUS_DEPTS_DEFAULT));
     if(!doc.orders) doc.orders = {};
+    doc.floors = Object.assign({}, doc.floors || {});
+    DEPT_CAMPUSES.forEach(c => { doc.floors[c] = (deptDraft.floors[c] || []).slice(); });
     DEPT_CAMPUSES.forEach(c => {
       if(!Array.isArray(doc.campuses[c]) || !doc.campuses[c].length) doc.campuses[c] = JSON.parse(JSON.stringify(CAMPUS_DEPTS_DEFAULT[c]));
       const all = doc.campuses[c];
       const draft = deptDraft.lists[c];
       const base = deptBaseList(c, eff);
       // 改名（套用所有月份）
-      draft.filter(d => d.key).forEach(d => { const t = all.find(x => x.key === d.key); if(t) t.label = d.label.trim(); });
+      draft.filter(d => d.key).forEach(d => { const t = all.find(x => x.key === d.key); if(t) { t.label = d.label.trim(); if(d.floor) t.floor = d.floor; else delete t.floor; } });
       // 移除（從生效日起不再要求登記；還沒開始就被移除、也沒有資料的，直接刪掉）
       base.filter(b => !draft.some(d => d.key === b.key)).forEach(b => {
         const i = all.findIndex(x => x.key === b.key);
@@ -4881,7 +5072,7 @@ function adminDeptSave() {
         const name = d.label.trim();
         const old = all.find(x => x.label === name && x.until && x.until <= effStart);
         if(old) { delete old.until; old.since = effStart; d.key = old.key; }
-        else { d.key = 'L' + Date.now().toString(36).toUpperCase() + Math.floor(Math.random()*36*36).toString(36).toUpperCase(); all.push({ key: d.key, label: name, since: effStart }); }
+        else { d.key = 'L' + Date.now().toString(36).toUpperCase() + Math.floor(Math.random()*36*36).toString(36).toUpperCase(); all.push(Object.assign({ key: d.key, label: name, since: effStart }, d.floor ? { floor: d.floor } : {})); }
       });
       // 顯示順序（從生效月份起）
       const keys = draft.map(d => d.key);
