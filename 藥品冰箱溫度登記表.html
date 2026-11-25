@@ -1259,7 +1259,7 @@
     border:2px solid var(--line); background:#fff; color:var(--ink); min-width:76px;
   }
   .area-pills-bar button.active{ background:var(--navy); border-color:var(--navy); color:#fff; }
-  .area-pills-bar button .st{ display:block; font-size:11px; font-weight:500; margin-top:1px; }
+  .area-pills-bar button .st{ display:block; font-size:14px; font-weight:700; margin-top:2px; letter-spacing:.5px; }
   .area-pills-bar button .st.ok{ color:var(--ok); }
   .area-pills-bar button.active .st.ok{ color:#b9f0cf; }
   .fridge-card.area-hidden{ display:none !important; }
@@ -1765,7 +1765,9 @@
   .vchart-stamp.can:hover rect{ fill:#eef5f9; }
   body.pdf-landscape #pdfAreaContent{ max-width:297mm; }
   .pdf-chart-page{ padding:6mm 6mm 2mm; }
-  .pdf-chart-page h2{ text-align:center; margin:0 0 4mm; font-size:17pt; }
+  .pdf-chart-page h2{ text-align:center; margin:0 0 1mm; font-size:17pt; }
+  .pdf-chart-fname{ text-align:center; font-size:12pt; font-weight:700; margin:0 0 3mm; color:#1c2b36; }
+  .vchart-fname{ display:block; font-size:14px; font-weight:600; color:var(--muted); margin-top:2px; }
   .pdf-chart-page svg{ width:100%; height:auto; display:block; }
   /* ===================== 系統管理（僅管理員） ===================== */
   .admin-open-btn{
@@ -1854,6 +1856,9 @@
     .role-stamp-preview{ grid-column:1 / -1; justify-self:start; }
   }
   .fridge-edit-list{ border:1px solid var(--line); border-radius:10px; }
+  .fridge-perfridge-toggle{ display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600; color:var(--ink); margin:6px 0 10px; cursor:pointer; }
+  .fridge-perfridge-toggle input{ width:20px; height:20px; margin:0; }
+  .fridge-saved-badge{ margin-left:8px; font-size:11.5px; font-weight:600; padding:1px 8px; border-radius:10px; background:rgba(255,255,255,.85); color:var(--ok); }
   .fridge-area-editor{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:4px 0 10px; font-size:13.5px; }
   .fridge-area-editor .lbl{ font-weight:700; color:var(--ink); }
   .fridge-area-chip{ display:inline-flex; align-items:center; gap:4px; padding:4px 6px 4px 12px; border-radius:16px; background:#e6eef8; color:var(--navy); font-weight:700; }
@@ -2092,8 +2097,9 @@
 
       <section class="admin-card">
         <h3 class="admin-card-title"><span class="admin-card-icon i-fridge">🧊</span>冰箱設定</h3>
-        <p class="admin-card-desc">設定每個院區要登記哪些冰箱、以及顯示順序。改名稱會套用到所有月份（含以前的報表）；新增、移除、調整順序則從你選的月份開始生效，以前的紀錄不受影響。勾選「疫苗」的冰箱，在「本月」總覽會另外顯示溫度曲線圖。<br>「冰箱位置」可設定樓層或區域（例如 1F、B1），每台冰箱選一個位置；登記時先點位置，只會顯示那個位置的冰箱，各位置分開確認登記。</p>
+        <p class="admin-card-desc">設定每個院區要登記哪些冰箱、以及顯示順序。改名稱會套用到所有月份（含以前的報表）；新增、移除、調整順序則從你選的月份開始生效，以前的紀錄不受影響。勾選「曲線圖」的冰箱（例如疫苗冰箱、試驗用藥冰箱），在「本月」總覽會另外顯示溫度曲線圖與週檢核印章。<br>「冰箱位置」可設定樓層或區域（例如 1F、B1），每台冰箱選一個位置；登記時先點位置，只會顯示那個位置的冰箱，各位置分開確認登記。</p>
         <div class="admin-site-filter" id="fridgeSiteTabs"></div>
+        <label class="fridge-perfridge-toggle"><input type="checkbox" id="fridgePerFridgeCb"> 每台冰箱填完就可以儲存（不用等全部冰箱都填完，適合很多人分頭登記）</label>
         <div class="fridge-area-editor" id="fridgeAreaEditor"></div>
         <div class="fridge-edit-list" id="fridgeEditList"></div>
         <div class="admin-form-row" style="margin-top:10px;">
@@ -3353,9 +3359,9 @@ const SITES = {
   },
   "虎尾院區": {
     shifts: [
-      {key:"am", label:"上午時段（7:00～10:00）"},
-      {key:"pm", label:"下午時段（12:00～15:00）"},
-      {key:"night", label:"大夜時段（23:00～24:00）"}
+      {key:"am", label:"上午時段（08:00～10:00）"},
+      {key:"pm", label:"下午時段（16:00～18:00）"},
+      {key:"night", label:"大夜時段（24:00～02:00）"}  // 跨午夜：凌晨 0～2 點量的，算前一天的大夜
     ]
   },
   "藥庫": {
@@ -3400,6 +3406,15 @@ const DEFAULT_SITE_AREAS = { "虎尾院區": ["1F", "B1"] };
 function applyDefaultAreas(site, fc){
   if(!Array.isArray(fc.areas)) fc.areas = [...(DEFAULT_SITE_AREAS[site] || [])];
   fc.areasInit = true;
+}
+// 逐台儲存：每台冰箱填完就可以儲存，不必等全部冰箱都填完（虎尾預設開啟，可在系統管理切換）
+// 2026-11-25 起虎尾改為「每層樓一位藥師、該層冰箱全部填完才能儲存」，所以預設都不開；
+// 之前存過的開關（沒有 perFridgeV2 標記）不再沿用，管理員重新勾選儲存後才會生效。
+const DEFAULT_PER_FRIDGE_SAVE = {};
+function isPerFridgeSave(site){
+  const c = FRIDGE_CFG[site];
+  if(c && c.perFridgeV2 && typeof c.perFridgeSave === 'boolean') return c.perFridgeSave;
+  return !!DEFAULT_PER_FRIDGE_SAVE[site];
 }
 function siteAreas(site){
   const c = FRIDGE_CFG[site];
@@ -3972,7 +3987,34 @@ function parseShiftTimes(label){
     const [h,m] = t.split(':').map(Number);
     return h*60+m;
   };
-  return { startMin: toMinutes(matches[0]), endMin: toMinutes(matches[1]) };
+  let startMin = toMinutes(matches[0]), endMin = toMinutes(matches[1]);
+  // 跨午夜的時段（例如 24:00～02:00）：結束時間算到隔天，所以「當天」不會被判定為已超過
+  if(endMin <= startMin || startMin >= 1440){ startMin = startMin % 1440 === 0 && startMin > 0 ? 1440 : startMin; endMin += 1440; }
+  return { startMin, endMin, overnight: endMin > 1440 };
+}
+function currentShiftKeyByTime(siteName){
+  const site = SITES[siteName];
+  if(!site || !site.shifts.length) return null;
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  let pick = site.shifts[0].key;
+  for(const sh of site.shifts){
+    const t = parseShiftTimes(sh.label);
+    if(t && nowMin >= t.startMin) pick = sh.key;
+  }
+  return pick;
+}
+// 凌晨還在跨午夜大夜時段內（例如 01:30）：回傳那個時段，登入時自動切到「前一天」的大夜
+function overnightShiftNow(siteName){
+  const site = SITES[siteName];
+  if(!site) return null;
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  for(const sh of site.shifts){
+    const t = parseShiftTimes(sh.label);
+    if(t && t.overnight && nowMin + 1440 >= Math.min(t.startMin, 1440) && nowMin + 1440 <= t.endMin + 60) return sh; // 結束後 1 小時內也算
+  }
+  return null;
 }
 
 function populateDailyDateOptions(){
@@ -4253,6 +4295,7 @@ async function renderDailyView(){
     const title = document.createElement('div');
     title.className = 'fridge-card-title';
     title.textContent = f;
+    title.dataset.name = f;
     title.style.background = color.titleBg;
     card.appendChild(title);
 
@@ -4473,6 +4516,7 @@ async function renderDailyView(){
 
   // 記下每格載入時的值：切換區域放棄未儲存的內容時，用來還原
   fridgeCardsEl.querySelectorAll('input[data-sub-key], .reason-text-input').forEach(inp=>{ inp.dataset.initial = inp.value; });
+  renderFridgeSavedBadges(row);
   _dailyLoadedRow = row ? JSON.parse(JSON.stringify(row)) : null;
   renderAreaPills();
   _dailySnapshot = dailyStateString();
@@ -4570,6 +4614,41 @@ function checkCardLogicError(card, fridgeIdx){
   return !errorMsg;
 }
 
+/* ===== 逐台儲存：每張冰箱卡片的狀態 ===== */
+function renderFridgeSavedBadges(row){
+  const per = isPerFridgeSave(siteSelect.value);
+  fridgeCardsEl.querySelectorAll('.fridge-card').forEach((card, idx)=>{
+    const title = card.querySelector('.fridge-card-title');
+    if(!title) return;
+    const old = title.querySelector('.fridge-saved-badge'); if(old) old.remove();
+    if(!per) return;
+    const st = cardState(card);
+    if(!st.wasSaved) return;
+    const fs = row && row.fridgeSigns && row.fridgeSigns[idx];
+    const b = document.createElement('span');
+    b.className = 'fridge-saved-badge';
+    const tm = fs && fs.at ? new Date(fs.at).toTimeString().slice(0,5) : '';
+    b.textContent = `✓ 已登記${fs && fs.name ? '｜' + fs.name : ''}${tm ? ' ' + tm : ''}`;
+    title.appendChild(b);
+  });
+}
+function cardInputs(card){ return [...card.querySelectorAll('input[data-sub-key]')]; }
+function cardState(card){
+  const ins = cardInputs(card);
+  const filled = ins.filter(i => i.value.trim() !== '').length;
+  const changed = ins.some(i => i.value !== (i.dataset.initial || ''));
+  const wasSaved = ins.every(i => (i.dataset.initial || '').trim() !== '');
+  return { filled, total: ins.length, complete: filled === ins.length, empty: filled === 0, changed, wasSaved };
+}
+function fridgeNameOfCard(card){ const t = card.querySelector('.fridge-card-title'); return t ? t.dataset.name || t.textContent : ''; }
+// 這台冰箱是誰登記的
+function signerForFridge(row, idx, area){
+  if(!row) return '';
+  if(row.fridgeSigns && row.fridgeSigns[idx] && row.fridgeSigns[idx].name) return row.fridgeSigns[idx].name;
+  if(area && row.areaSigns && row.areaSigns[area]) return row.areaSigns[area];
+  return row.sign || '';
+}
+
 /* ===== 樓層／區域切換（例如虎尾 1F／B1） ===== */
 let _dailyLoadedRow = null;
 const _dailyAreaBySite = {};
@@ -4583,6 +4662,14 @@ function currentDailyArea(){
 // 這個區域在這個時段是否已經登記過
 function isAreaSaved(row, area){
   if(!row || !row.savedAt) return false;
+  if(isPerFridgeSave(siteSelect.value)){
+    const cards = [...fridgeCardsEl.querySelectorAll('.fridge-card')];
+    return cards.every((card, idx)=>{
+      if(area && card.dataset.area !== area) return true;
+      const t = row.temps && row.temps[idx];
+      return t && ['min','now','max'].every(k => String(t[k] || '').trim() !== '');
+    });
+  }
   if(!area) return true;
   if(row.areaSaved && row.areaSaved[area]) return true;
   if(row.areaSaved && Object.keys(row.areaSaved).length) return false;
@@ -4608,20 +4695,38 @@ function renderAreaPills(){
     return;
   }
   const cur = currentDailyArea();
+  _dailyAreaBySite[siteSelect.value] = cur; // 固定這個分頁目前的位置，不受其他分頁影響
   bar.style.display = 'flex';
   bar.innerHTML = '<span class="lbl">冰箱位置</span>';
   areas.forEach(a=>{
     const n = [...fridgeCardsEl.querySelectorAll('.fridge-card')].filter(c => c.dataset.area === a).length;
-    const saved = isAreaSaved(_dailyLoadedRow, a);
     const b = document.createElement('button');
     b.type = 'button';
-    b.innerHTML = `${escapeHtml(a)}<span class="st ${saved ? 'ok' : ''}">${n ? (saved ? '✓ 已登記' : `${n} 台`) : '無冰箱'}</span>`;
+    b.dataset.area = a;
+    b.innerHTML = `${escapeHtml(a)}<span class="st"></span>`;
     if(a === cur) b.classList.add('active');
     b.setAttribute('aria-pressed', a === cur ? 'true' : 'false');
     b.addEventListener('click', ()=> switchDailyArea(a));
     bar.appendChild(b);
   });
   fridgeCardsEl.querySelectorAll('.fridge-card').forEach(c => c.classList.toggle('area-hidden', c.dataset.area !== cur));
+  updateAreaPillCounts();
+}
+// 樓層按鈕上的進度：畫面上已填完（最低／現在／最高都有）的冰箱數／該層冰箱數，例如 3/5
+function updateAreaPillCounts(){
+  const bar = document.getElementById('areaPillsBar');
+  if(!bar || bar.style.display === 'none') return;
+  const cards = [...fridgeCardsEl.querySelectorAll('.fridge-card')];
+  bar.querySelectorAll('button[data-area]').forEach(b=>{
+    const a = b.dataset.area;
+    const mine = cards.filter(c => c.dataset.area === a);
+    const done = mine.filter(c => [...c.querySelectorAll('input[data-sub-key]')].every(i => i.value.trim() !== '')).length;
+    const saved = isAreaSaved(_dailyLoadedRow, a) && mine.every(c => [...c.querySelectorAll('input[data-sub-key]')].every(i => i.value === (i.dataset.initial || '')));
+    const st = b.querySelector('.st');
+    st.className = 'st' + (saved ? ' ok' : '');
+    st.textContent = !mine.length ? '無冰箱' : `${saved ? '✓ ' : ''}${done}/${mine.length}`;
+    b.setAttribute('aria-label', `${a}，已填 ${done} 台，共 ${mine.length} 台${saved ? '，已登記' : ''}`);
+  });
 }
 function switchDailyArea(area){
   const cur = currentDailyArea();
@@ -4708,6 +4813,7 @@ function isDailyDirty(){
 
 // 回傳尚未完成的項目；全部空陣列 = 可以送出
 function getDailyCompletion(){
+  if(isPerFridgeSave(siteSelect.value)) return getPerFridgeCompletion();
   const res = { emptyCount:0, invalidCount:0, logicError:false, missingReason:false, missingHandling:false };
   fridgeCardsEl.querySelectorAll('.fridge-card:not(.area-hidden) input[data-sub-key]').forEach(inp=>{
     const v = inp.value.trim();
@@ -4726,7 +4832,36 @@ function getDailyCompletion(){
   }
   return res;
 }
+function getPerFridgeCompletion(){
+  const res = { perFridge:true, partial:[], invalidCount:0, logicError:false, missingReason:false, missingHandling:false, ready:[], emptyCount:0 };
+  fridgeCardsEl.querySelectorAll('.fridge-card:not(.area-hidden)').forEach(card=>{
+    const st = cardState(card);
+    if(st.empty) return;
+    const name = fridgeNameOfCard(card);
+    if(!st.complete){ if(st.changed) res.partial.push(name); return; }
+    cardInputs(card).forEach(i=>{ if(!/^-?\d+(\.\d+)?$/.test(i.value.trim())) res.invalidCount++; });
+    if(card.querySelector('.has-logic-error, .logic-error, input.input-error')) res.logicError = true;
+    const sec = card.querySelector('.fridge-reason-section');
+    if(sec && sec.style.display !== 'none'){
+      const r = sec.querySelector('.reason-text-input');
+      if(!r || !r.value.trim()) res.missingReason = true;
+      const done = sec.querySelector('.abn-done-bar');
+      if(!done || done.style.display !== 'flex') res.missingHandling = true;
+    }
+    if(st.changed) res.ready.push(name);
+  });
+  res.logicError = res.logicError || dailyHasAnyError();
+  return res;
+}
 function dailyIncompleteMessage(c){
+  if(c.perFridge){
+    if(c.partial.length) return `${c.partial.join('、')} 還沒填完（最低／現在／最高都要填），請填完或清空`;
+    if(c.invalidCount) return `有 ${c.invalidCount} 格不是數字，請修正`;
+    if(c.logicError) return '「現在溫度」不可高於最高溫度或低於最低溫度，請檢查橘色欄位';
+    if(c.missingReason) return '溫度超出 2℃～8℃，請填寫「異常原因」';
+    if(c.missingHandling) return '請完成「異常處理記錄」後才能確認登記';
+    return '';
+  }
   if(c.emptyCount) return `還有 ${c.emptyCount} 格溫度未填寫，全部填完才能確認登記`;
   if(c.invalidCount) return `有 ${c.invalidCount} 格不是數字，請修正`;
   if(c.logicError) return '「現在溫度」不可高於最高溫度或低於最低溫度，請檢查橘色欄位';
@@ -4747,16 +4882,41 @@ function updateConfirmState(){
     bar.textContent = lockReason;
     return;
   }
-  const msg = dailyIncompleteMessage(getDailyCompletion());
+  updateAreaPillCounts();
+  const comp = getDailyCompletion();
+  const msg = dailyIncompleteMessage(comp);
   const dirty = dailyStateString() !== _dailySnapshot;
+  if(comp.perFridge){
+    const allCards = [...fridgeCardsEl.querySelectorAll('.fridge-card:not(.area-hidden)')];
+    const savedN = allCards.filter(c => cardState(c).wasSaved).length;
+    if(msg){
+      btn.style.display = 'none';
+      bar.className = 'confirm-pending-bar' + (dirty ? ' warn' : '');
+      bar.textContent = (dirty ? '⚠ 尚未儲存｜' : '') + msg;
+    } else if(comp.ready.length){
+      bar.textContent = '';
+      btn.textContent = `✓ 確認登記（${comp.ready.length} 台：${comp.ready.slice(0,3).join('、')}${comp.ready.length > 3 ? '…' : ''}）`;
+      btn.style.display = '';
+    } else {
+      btn.style.display = 'none';
+      const all = savedN === allCards.length && allCards.length > 0;
+      bar.className = 'confirm-pending-bar' + (all ? ' done' : '');
+      const areaTxt = currentDailyArea();
+      bar.textContent = all ? `✓ 這個時段${areaTxt ? ' ' + areaTxt + ' ' : ''}的冰箱都已登記完成`
+        : `${areaTxt ? areaTxt + '：' : ''}已登記 ${savedN}／${allCards.length} 台｜每台冰箱填完最低、現在、最高，就可以單獨儲存`;
+    }
+    return;
+  }
+  const areaNow = currentDailyArea();
+  btn.textContent = areaNow ? `✓ 確認登記（${areaNow} 全部冰箱）` : '✓ 確認本次登記';
   if(msg){
     btn.style.display = 'none';
     bar.className = 'confirm-pending-bar' + (dirty ? ' warn' : '');
-    bar.textContent = (dirty ? '⚠ 尚未儲存｜' : '') + msg;
+    bar.textContent = (dirty ? '⚠ 尚未儲存｜' : '') + (areaNow ? areaNow + '：' : '') + msg;
   } else if(_dailyRowSaved && !dirty){
     btn.style.display = 'none';
     bar.className = 'confirm-pending-bar done';
-    bar.textContent = '✓ 本時段已登記完成';
+    bar.textContent = areaNow ? `✓ 本時段 ${areaNow} 已登記完成` : '✓ 本時段已登記完成';
   } else {
     bar.textContent = '';
     btn.style.display = '';
@@ -4854,7 +5014,11 @@ document.getElementById('confirmDailyBtn').addEventListener('click', async ()=>{
 
   // 防呆檢查 0：每一台冰箱的最低／現在／最高都要填寫
   const completion = getDailyCompletion();
-  if(completion.emptyCount || completion.invalidCount){
+  if(completion.perFridge){
+    const m = dailyIncompleteMessage(completion);
+    if(m){ alert('⚠ ' + m); updateConfirmState(); return; }
+    if(!completion.ready.length){ alert('⚠ 還沒有填完任何一台冰箱。'); updateConfirmState(); return; }
+  } else if(completion.emptyCount || completion.invalidCount){
     alert('⚠ ' + dailyIncompleteMessage(completion));
     updateConfirmState();
     return;
@@ -4909,7 +5073,10 @@ document.getElementById('confirmDailyBtn').addEventListener('click', async ()=>{
     }
   }
 
+  // 存檔前一定重新讀一次雲端最新資料，才能發現「別人剛剛已經登記過」並跳出提醒
+  { const mk = siteMonthKey(siteName, ym); if(typeof _memCacheTime !== 'undefined') delete _memCacheTime[mk]; }
   const data = (await getShiftData(siteName, shiftKey, ym)) || { manager: '', rows: {} };
+  if(!data.rows) data.rows = {};
   const existingRow = data.rows[day] || { temps: site.fridges.map(()=>({min:'',now:'',max:''})), reason:'', abn:'', sign:'' };
   // 併入確認前暫存的異常處理紀錄
   if(_pendingAbn && _pendingAbn.key === pendingAbnKey()){
@@ -4925,13 +5092,27 @@ document.getElementById('confirmDailyBtn').addEventListener('click', async ()=>{
   // 重複登記防呆：這個時段只要先前已經有登記過（不論是誰、什麼時候），
   // 再次送出前就先提醒使用者確認，避免不小心重複登記蓋掉原本的資料。
   const curArea = currentDailyArea();
-  if(isAreaSaved(existingRow.savedAt ? existingRow : null, curArea)){
+  const perFridge = isPerFridgeSave(siteName);
+  // 逐台儲存：這次要存的冰箱（填完且有修改）
+  const saveIdx = perFridge ? [...fridgeCardsEl.querySelectorAll('.fridge-card')].map((c, i)=>({c, i}))
+    .filter(({c}) => !c.classList.contains('area-hidden') && cardState(c).complete && cardState(c).changed).map(({i}) => i) : [];
+  if(perFridge){
+    // 雲端上這台冰箱已經有人登記（包含在我打開畫面之後才登記的）
+    const overwrite = saveIdx.filter(i=>{
+      const t = existingRow.temps && existingRow.temps[i];
+      return t && ['min','now','max'].some(k => String(t[k] || '').trim() !== '');
+    });
+    if(overwrite.length){
+      const who = overwrite.map(i => `${site.fridges[i]}${existingRow.fridgeSigns && existingRow.fridgeSigns[i] ? '（' + existingRow.fridgeSigns[i].name + '）' : ''}`).join('、');
+      if(!confirm(`⚠ 重複登記：${who} 已經有登記資料。\n\n按「確定」：以這次（最後一筆）的數字為準，覆蓋原本的資料。\n按「取消」：不儲存，保留原本的資料。`)) return;
+    }
+  } else if(isAreaSaved(existingRow.savedAt ? existingRow : null, curArea)){
     const areaWho = curArea && existingRow.areaSigns && existingRow.areaSigns[curArea];
     const areaAt = curArea && existingRow.areaSaved && existingRow.areaSaved[curArea];
     const whoName = areaWho || existingRow.savedBy;
     const whoAt = areaAt || existingRow.savedAt;
     const who = whoName ? `（登記人員：${whoName}，${new Date(whoAt).toLocaleString('zh-TW')}）` : '';
-    const proceed = confirm(`⚠ 這個時段${curArea ? ' ' + curArea + ' ' : ''}先前已經登記過${who}。\n\n是否仍要繼續，用目前畫面上的內容覆蓋儲存？`);
+    const proceed = confirm(`⚠ 重複登記：這個時段${curArea ? ' ' + curArea + ' ' : ''}已經登記過${who}。\n\n按「確定」：以這次（最後一筆）的內容為準，覆蓋原本的資料。\n按「取消」：不儲存，保留原本的資料。`);
     if(!proceed) return;
   }
 
@@ -4971,7 +5152,21 @@ document.getElementById('confirmDailyBtn').addEventListener('click', async ()=>{
     savedAt: new Date().toISOString(),
     savedBy: staffName
   };
-  if(curArea){
+  if(perFridge){
+    // 逐台儲存：沒有要存的冰箱維持雲端原本的數字（這裡放回載入時的值，存檔時只會更新有修改的冰箱）
+    const loadedTemps = (_dailyLoadedRow && _dailyLoadedRow.temps) || [];
+    data.rows[day].temps = temps.map((t, i) => saveIdx.includes(i) ? t : (loadedTemps[i] || existingRow.temps && existingRow.temps[i] || {min:'',now:'',max:''}));
+    const fridgeSigns = Object.assign({}, existingRow.fridgeSigns || {});
+    saveIdx.forEach(i=>{ fridgeSigns[i] = { name: staffName, at: data.rows[day].savedAt }; });
+    data.rows[day].fridgeSigns = fridgeSigns;
+    const names = Object.keys(fridgeSigns).sort((a,b)=>a-b).map(k => fridgeSigns[k].name).filter(Boolean);
+    data.rows[day].sign = [...new Set(names.length ? names : [staffName])].join('、');
+    if(curArea){
+      const areaSigns = Object.assign({}, existingRow.areaSigns || {});
+      areaSigns[curArea] = staffName;
+      data.rows[day].areaSigns = areaSigns;
+    }
+  } else if(curArea){
     // 分區登記：記下每個區域是誰、何時登記的；簽名欄顯示所有登記人
     const areaSaved = Object.assign({}, existingRow.areaSaved || {});
     const areaSigns = Object.assign({}, existingRow.areaSigns || {});
@@ -4984,15 +5179,36 @@ document.getElementById('confirmDailyBtn').addEventListener('click', async ()=>{
   }
   data.manager = staffName || data.manager || '';
 
+  // 合併的比較基準一定要用「這個畫面當初載入的內容」，不能用剛剛重新讀到的最新資料：
+  // 否則別人在這段期間存的冰箱（畫面上還是空白）會被當成「我改成空白」而被清掉。
+  if(typeof _cloudBaseOf !== 'undefined'){
+    const base = JSON.parse(JSON.stringify(data));
+    if(!base.rows) base.rows = {};
+    // 畫面載入時這個時段還沒有資料：基準就是「全部空白」，這樣沒動到的空白欄位不會蓋掉別人剛存的數字
+    base.rows[day] = _dailyLoadedRow ? JSON.parse(JSON.stringify(_dailyLoadedRow))
+      : { temps: site.fridges.map(()=>({min:'',now:'',max:''})), reason:'', abn:'', sign:'' };
+    _cloudBaseOf.set(data, JSON.stringify(base));
+  }
   try{
     _dailySaving = true;
     await setShiftData(siteName, shiftKey, ym, data);
     _dailySaving = false;
     _pendingAbn = null;
     _dailyLoadedRow = JSON.parse(JSON.stringify(data.rows[day]));
-    fridgeCardsEl.querySelectorAll('input[data-sub-key], .reason-text-input').forEach(inp=>{ inp.dataset.initial = inp.value; });
+    if(perFridge){
+      // 只有這次存的冰箱算「已儲存」；其他還沒填完的冰箱維持未儲存
+      const cardsNow = [...fridgeCardsEl.querySelectorAll('.fridge-card')];
+      saveIdx.forEach(i => cardInputs(cardsNow[i]).forEach(inp=>{ inp.dataset.initial = inp.value; }));
+      cardsNow.forEach(c => c.querySelectorAll('.reason-text-input').forEach(inp=>{ inp.dataset.initial = inp.value; }));
+      renderFridgeSavedBadges(data.rows[day]);
+    } else {
+      fridgeCardsEl.querySelectorAll('input[data-sub-key], .reason-text-input').forEach(inp=>{ inp.dataset.initial = inp.value; });
+    }
     renderAreaPills();
-    _dailySnapshot = dailyStateString();
+    _dailySnapshot = perFridge
+      ? [...fridgeCardsEl.querySelectorAll('input[data-sub-key]')].map(i => (i.dataset.initial || '').trim())
+          .concat([...fridgeCardsEl.querySelectorAll('.reason-text-input')].map(i => (i.dataset.initial || '').trim())).join('|')
+      : dailyStateString();
     _dailyRowSaved = true;
     _dailyLoadedSavedAt = data.rows[day].savedAt;
     updateConfirmState();
@@ -5192,6 +5408,16 @@ async function doWeeklyCheck(siteName, ym, blockIndex){
   setStatus('週檢核已確認');
 }
 
+const _monthAreaBySite = {};
+// 某一樓層的登記人：有分樓層紀錄就取該樓層，舊資料（沒有分樓層紀錄）就用整筆的簽名
+function signerForArea(row, area){
+  if(!row) return '';
+  if(!area) return row.sign || '';
+  if(row.areaSigns && row.areaSigns[area]) return row.areaSigns[area];
+  if(row.areaSaved && Object.keys(row.areaSaved).length) return '';
+  return row.sign || '';
+}
+
 async function renderMonthlyFeed(){
   const siteName = siteSelect.value;
   const site = SITES[siteName];
@@ -5201,7 +5427,31 @@ async function renderMonthlyFeed(){
   const today = realTodayInfo();
   const isCurrentMonth = ym === today.ym;
 
-  document.getElementById('feedHeaderBar').innerHTML = '';
+  // 分樓層的院區：上方顯示「全部／1F／B1」，表格只列出選到那一層的冰箱與登記人
+  const feedBar = document.getElementById('feedHeaderBar');
+  feedBar.innerHTML = '';
+  const feedAreas = siteAreas(siteName);
+  const feedIds = fridgeIdsFor(siteName, ym);
+  let feedArea = '';
+  if(feedAreas.length >= 2){
+    feedArea = _monthAreaBySite[siteName] !== undefined ? _monthAreaBySite[siteName] : currentDailyArea();
+    if(feedArea && !feedAreas.includes(feedArea)) feedArea = '';
+    const bar = document.createElement('div');
+    bar.className = 'area-pills-bar';
+    bar.innerHTML = '<span class="lbl">冰箱位置</span>';
+    [['', '全部'], ...feedAreas.map(a => [a, a])].forEach(([val, label])=>{
+      const b = document.createElement('button');
+      b.type = 'button';
+      const n = val ? feedIds.filter(id => fridgeAreaOf(siteName, id) === val).length : feedIds.length;
+      b.innerHTML = `${escapeHtml(label)}<span class="st">${n} 台</span>`;
+      if(val === feedArea) b.classList.add('active');
+      b.setAttribute('aria-pressed', val === feedArea ? 'true' : 'false');
+      b.addEventListener('click', ()=>{ _monthAreaBySite[siteName] = val; renderMonthlyFeed(); });
+      bar.appendChild(b);
+    });
+    feedBar.appendChild(bar);
+  }
+  const feedIdx = site.fridges.map((_, i) => i).filter(i => !feedArea || fridgeAreaOf(siteName, feedIds[i]) === feedArea);
 
   const shiftDatas = {};
   for(const shift of site.shifts){
@@ -5228,14 +5478,15 @@ async function renderMonthlyFeed(){
   headRow.innerHTML = '';
   addTh('日期');
   addTh('時段');
-  site.fridges.forEach((f, fIdx)=>{
+  feedIdx.forEach(fIdx=>{
+    const f = site.fridges[fIdx];
     const color = FRIDGE_COLORS[fIdx % FRIDGE_COLORS.length];
     const styleAttr = `background:${color.inputBg};color:${color.border};`;
     SUB_FIELDS.forEach(sf=>{
       addTh(f, sf.label, styleAttr);
     });
   });
-  addTh('登記人員');
+  addTh(feedArea ? `登記人員（${feedArea}）` : '登記人員');
   addTh('異常原因說明');
 
   // clear feedStickyHead (no longer needed)
@@ -5269,7 +5520,7 @@ async function renderMonthlyFeed(){
 
       const row = shiftDatas[shift.key].rows ? shiftDatas[shift.key].rows[day] : null;
 
-      site.fridges.forEach((f, idx)=>{
+      feedIdx.forEach(idx=>{
         const t = row && row.temps && row.temps[idx] ? row.temps[idx] : null;
         SUB_FIELDS.forEach(sf=>{
           const td = document.createElement('td');
@@ -5286,8 +5537,11 @@ async function renderMonthlyFeed(){
       });
 
       const tdSign = document.createElement('td');
-      tdSign.textContent = (row && row.sign) ? row.sign : '—';
-      if(!row || !row.sign) tdSign.className = 'feed-empty';
+      const signTxt = (row && row.fridgeSigns)
+        ? [...new Set(feedIdx.map(i => row.fridgeSigns[i] && row.fridgeSigns[i].name).filter(Boolean))].join('、')
+        : signerForArea(row, feedArea);
+      tdSign.textContent = signTxt || '—';
+      if(!signTxt) tdSign.className = 'feed-empty';
       tr.appendChild(tdSign);
 
       const tdReason = document.createElement('td');
@@ -5309,7 +5563,7 @@ async function renderMonthlyFeed(){
       const designatedId = SITE_DEFAULT_CHECKER_ID[siteName];
       const designatedName = getSiteDefaultCheckerName(siteName);
       const isDesignatedUser = designatedId && currentUser && currentUser.id === designatedId;
-      const colCount = 2 + site.fridges.length * 3 + 2;
+      const colCount = 2 + feedIdx.length * 3 + 2;
 
       const checkerTr = document.createElement('tr');
       checkerTr.className = 'checker-inline-row';
@@ -5748,11 +6002,14 @@ async function buildPdfArea(){
 
   let html = '';
 
+  const pdfFridgeIds = fridgeIdsFor(siteName, ym);
   fridges.forEach((fridgeName, fridgeIdx)=>{
+    // 分樓層的院區：這台冰箱在哪一層，簽名欄就只放那一層的登記人
+    const pdfArea = fridgeAreaOf(siteName, pdfFridgeIds[fridgeIdx]);
     html += `<div class="pdf-page">`;
     html += `<div class="pdf-header">
       <p class="pdf-org">國立臺灣大學醫學院附設醫院雲林分院－藥劑部</p>
-      <p class="pdf-title">${y} 年 ${m} 月　${escapeHtml(siteName)}－${escapeHtml(fridgeName)}　冰箱溫度紀錄表</p>
+      <p class="pdf-title">${y} 年 ${m} 月　${escapeHtml(siteName)}－${escapeHtml(fridgeName)}${pdfArea ? `（${escapeHtml(pdfArea)}）` : ''}　冰箱溫度紀錄表</p>
     </div>`;
 
     // main table: one row per day, column groups per shift
@@ -5781,7 +6038,7 @@ async function buildPdfArea(){
         const shiftData = shiftDataMap[shift.key];
         const row = shiftData.rows ? shiftData.rows[day] : null;
         const t = row && row.temps && row.temps[fridgeIdx] ? row.temps[fridgeIdx] : {min:'',now:'',max:''};
-        const sign = row ? (row.sign || '') : '';
+        const sign = signerForFridge(row, fridgeIdx, pdfArea);
 
         let rowAbnormal = false;
         const detailParts = [];
@@ -6300,6 +6557,21 @@ function applyLogin(user){
   topbarSubtitle.textContent = `國立臺灣大學醫學院附設醫院雲林分院－藥劑部【${siteSelect.value}】`;
   const dss = document.getElementById('dailyStaffSelect');
   if(dss) dss.value = user.name;
+  // 凌晨登記大夜（例如虎尾 24:00～02:00）：日期自動改成前一天、時段改成大夜
+  const ovn = overnightShiftNow(siteSelect.value);
+  if(ovn){
+    const y = new Date(); y.setDate(y.getDate() - 1);
+    const ys = `${y.getFullYear()}-${String(y.getMonth()+1).padStart(2,'0')}-${String(y.getDate()).padStart(2,'0')}`;
+    dateSelectEl.value = ys;
+    try{ _prevDateValue = ys; }catch(e){}
+    monthSelect.value = ys.slice(0, 7);
+    shiftSelect.value = ovn.key;
+    setTimeout(()=> showSuccessToast(`🌙 已自動切換到 ${Number(ys.slice(5,7))}/${Number(ys.slice(8))} 的大夜時段（凌晨登記算前一天）`, 3500), 600);
+  } else {
+    // 依登入時間自動選時段：選「已經開始」的最後一個時段（例如 16:30 → 下午；還沒到第一個時段 → 上午）
+    const autoKey = currentShiftKeyByTime(siteSelect.value);
+    if(autoKey && dateSelectEl.value === todayDateValue()) shiftSelect.value = autoKey;
+  }
   refreshAll();
   setTimeout(updateTopbarHeight, 50);
   if(typeof detectNewStaff === 'function'){
@@ -6337,17 +6609,23 @@ logoutBtn.addEventListener('click', ()=>{
 
 // 閒置自動登出：畫面超過2分鐘沒有任何操作（滑鼠/鍵盤/觸控/捲動），就自動登出，
 // 避免忘記登出、離開座位時被別人看到已登入的畫面。
-const INACTIVITY_LIMIT_MS = 2 * 60 * 1000;
+// 虎尾冰箱較多、登記較久，閒置 5 分鐘才登出；其他院區維持 2 分鐘
+const SITE_IDLE_MINUTES = { "虎尾院區": 5 };
+const DEFAULT_IDLE_MINUTES = 2;
+function idleMinutesForCurrentSite(){
+  return SITE_IDLE_MINUTES[siteSelect.value] || DEFAULT_IDLE_MINUTES;
+}
 let inactivityTimer = null;
 function resetInactivityTimer(){
   clearTimeout(inactivityTimer);
   if(!currentUser) return; // 沒有人登入就不用計時
+  const mins = idleMinutesForCurrentSite();
   inactivityTimer = setTimeout(()=>{
     if(currentUser){
       performLogout();
-      alert('已閒置超過2分鐘，為了資料安全已自動登出，請重新登入。');
+      alert(`已閒置超過 ${mins} 分鐘，為了資料安全已自動登出，請重新登入。`);
     }
-  }, INACTIVITY_LIMIT_MS);
+  }, mins * 60 * 1000);
 }
 ['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(evtName=>{
   window.addEventListener(evtName, resetInactivityTimer, { passive: true });
@@ -6732,7 +7010,7 @@ function thisYm(){ const d = new Date(); return `${d.getFullYear()}-${String(d.g
 
 function fridgeDraftFromConfig(site){
   const eff = document.getElementById('fridgeEffectiveSel').value || ymAdd(thisYm(), 1);
-  return { site, areas: [...siteAreas(site)],
+  return { site, areas: [...siteAreas(site)], perFridgeSave: isPerFridgeSave(site),
     items: fridgeIdsFor(site, eff).map(id => ({ id, name: fridgeNameOf(site, id), vaccine: isVaccineFridge(site, id), area: fridgeAreaOf(site, id), isNew:false })) };
 }
 
@@ -6760,6 +7038,9 @@ function renderFridgeAdmin(){
 
   if(!_fridgeDraft || _fridgeDraft.site !== _fridgeSite) _fridgeDraft = fridgeDraftFromConfig(_fridgeSite);
   renderFridgeAreaEditor();
+  const pfCb = document.getElementById('fridgePerFridgeCb');
+  pfCb.checked = !!_fridgeDraft.perFridgeSave;
+  pfCb.onchange = ()=>{ _fridgeDraft.perFridgeSave = pfCb.checked; updateFridgeHint(); };
   const draftAreas = _fridgeDraft.areas || [];
   const list = document.getElementById('fridgeEditList');
   list.innerHTML = '';
@@ -6773,11 +7054,11 @@ function renderFridgeAdmin(){
     inp.addEventListener('input', ()=>{ it.name = inp.value; updateFridgeHint(); });
     const vac = document.createElement('label');
     vac.className = 'fridge-vac-toggle';
-    vac.title = '疫苗冰箱：本月總覽會另外顯示溫度曲線圖';
+    vac.title = '勾選後，本月總覽會另外顯示這台冰箱的溫度曲線圖與週檢核印章（例如疫苗冰箱、試驗用藥冰箱）';
     const vacCb = document.createElement('input');
     vacCb.type = 'checkbox'; vacCb.checked = !!it.vaccine;
     vacCb.addEventListener('change', ()=>{ it.vaccine = vacCb.checked; updateFridgeHint(); });
-    vac.append(vacCb, document.createTextNode('疫苗'));
+    vac.append(vacCb, document.createTextNode('曲線圖'));
     const up = document.createElement('button'); up.type='button'; up.className='fridge-mini-btn'; up.textContent='↑';
     up.setAttribute('aria-label','往上移'); up.disabled = i === 0;
     up.addEventListener('click', ()=>{ [_fridgeDraft.items[i-1], _fridgeDraft.items[i]] = [_fridgeDraft.items[i], _fridgeDraft.items[i-1]]; renderFridgeAdmin(); });
@@ -6828,6 +7109,7 @@ function fridgeDraftDirty(){
   const ids = fridgeIdsFor(site, eff);
   if(ids.join('|') !== _fridgeDraft.items.map(x=>x.id).join('|')) return true;
   if((_fridgeDraft.areas || []).join('|') !== siteAreas(site).join('|')) return true;
+  if(!!_fridgeDraft.perFridgeSave !== isPerFridgeSave(site)) return true;
   return _fridgeDraft.items.some(x => x.name.trim() !== fridgeNameOf(site, x.id) || !!x.vaccine !== isVaccineFridge(site, x.id) ||
     ((_fridgeDraft.areas || []).length >= 2 && x.area !== fridgeAreaOf(site, x.id)));
 }
@@ -6860,13 +7142,14 @@ function updateFridgeHint(){
   if(renamed.length) parts.push(`改名 ${renamed.map(x => `${fridgeNameOf(site, x.id)}→${x.name.trim()}`).join('、')}`);
   const vacOn = _fridgeDraft.items.filter(x => x.vaccine && !isVaccineFridge(site, x.id)).map(x => x.name.trim());
   const vacOff = _fridgeDraft.items.filter(x => !x.vaccine && isVaccineFridge(site, x.id) && before.includes(x.id)).map(x => x.name.trim());
-  if(vacOn.length) parts.push(`設為疫苗冰箱 ${vacOn.join('、')}`);
+  if(vacOn.length) parts.push(`加上曲線圖 ${vacOn.join('、')}`);
+  if(!!_fridgeDraft.perFridgeSave !== isPerFridgeSave(site)) parts.push(_fridgeDraft.perFridgeSave ? '改為每台填完就可以儲存' : '改為全部填完才能儲存');
   if((_fridgeDraft.areas || []).join('|') !== siteAreas(site).join('|')) parts.push(`位置選項改為 ${(_fridgeDraft.areas || []).join('／') || '（不分區）'}`);
   if((_fridgeDraft.areas || []).length >= 2){
     const moved = _fridgeDraft.items.filter(x => before.includes(x.id) && x.area !== fridgeAreaOf(site, x.id));
     if(moved.length) parts.push(`位置 ${moved.map(x => `${x.name.trim()}→${x.area}`).join('、')}`);
   }
-  if(vacOff.length) parts.push(`取消疫苗冰箱 ${vacOff.join('、')}`);
+  if(vacOff.length) parts.push(`取消曲線圖 ${vacOff.join('、')}`);
   hint.className = 'admin-form-hint';
   if(!parts.length){ hint.textContent = ''; return; }
   let msg = `尚未儲存：${parts.join('；')}。`;
@@ -6899,6 +7182,8 @@ async function saveFridgeConfig(){
   c.vaccineInit = true;
   c.areas = [...(_fridgeDraft.areas || [])];
   c.areasInit = true;
+  c.perFridgeSave = !!_fridgeDraft.perFridgeSave;
+  c.perFridgeV2 = true;
   if(listChanged){
     // 從生效月份開始用新清單；之後原本排定的版本一併取代
     c.versions = c.versions.filter(v => v.from < eff);
@@ -7105,7 +7390,9 @@ async function renderVaccineCharts(siteName, site, ym, shiftDatas){
       chartShifts.forEach(sh=>{
         const row = shiftDatas[sh.key] && shiftDatas[sh.key].rows ? shiftDatas[sh.key].rows[String(d)] : null;
         values.push(row && row.temps ? row.temps[fIdx] || null : null);
-        signs.push(row && row.sign ? row.sign : '');
+        // 分樓層登記時，取這台冰箱所在位置的登記人（例如 1F 的人），不要把 1F、B1 兩人的名字混在一起
+        const fArea = fridgeAreaOf(siteName, ids[fIdx]);
+        signs.push(signerForFridge(row, fIdx, fArea));
       });
     }
     // 抬頭比照紙本：115年10月冰箱溫度登記表(7)——括號內取冰箱名稱裡的編號，沒有數字就用名稱
@@ -7117,13 +7404,13 @@ async function renderVaccineCharts(siteName, site, ym, shiftDatas){
     card.className = 'vchart-card';
     card.innerHTML = `
       <div class="vchart-head">
-        <h3 class="vchart-title">${escapeHtml(title)}</h3>
+        <h3 class="vchart-title">${escapeHtml(title)}<span class="vchart-fname">${escapeHtml(fname)}</span></h3>
         <div class="vchart-legend">${VCHART_SERIES.map(se=>`<span><i style="background:${se.color}"></i>${se.label}</span>`).join('')}</div>
         <button type="button" class="vchart-pdf-btn">匯出PDF</button>
       </div>
       <div class="vchart-body"><div class="vchart-scroll">${buildVaccineChartSvg(opts)}</div><div class="vchart-yaxis" aria-hidden="true"></div></div>
-      <div class="vchart-note">疫苗冰箱週檢核｜檢核者：${escapeHtml(checkerName || '未設定')}。這台冰箱本週（週六日除外）都登記完成後，點一下印章格就會蓋上${escapeHtml(checkerName || '')}的章${isCurrentUserAdmin() ? '；管理員點已蓋的章可以取消' : ''}。灰底為週六、日。</div>`;
-    card.querySelector('.vchart-pdf-btn').addEventListener('click', ()=> openVaccineChartPdf(title, buildVaccineChartSvg({ ...opts, slotW: Math.max(12, Math.floor(1150 / (numDays * chartShifts.length))), plotH: 520, forPrint: true })));
+      <div class="vchart-note">曲線圖週檢核｜檢核者：${escapeHtml(checkerName || '未設定')}。這台冰箱本週（週六日除外）都登記完成後，點一下印章格就會蓋上${escapeHtml(checkerName || '')}的章${isCurrentUserAdmin() ? '；管理員點已蓋的章可以取消' : ''}。灰底為週六、日。</div>`;
+    card.querySelector('.vchart-pdf-btn').addEventListener('click', ()=> openVaccineChartPdf(title, fname, buildVaccineChartSvg({ ...opts, slotW: Math.max(12, Math.floor(1150 / (numDays * chartShifts.length))), plotH: 520, forPrint: true })));
     card.querySelectorAll('.vchart-stamp.can').forEach(g=>{
       const go = async ()=>{
         const wi = Number(g.dataset.week);
@@ -7175,9 +7462,9 @@ async function renderVaccineCharts(siteName, site, ym, shiftDatas){
   });
 }
 
-function openVaccineChartPdf(title, svg){
+function openVaccineChartPdf(title, fname, svg){
   const content = document.getElementById('pdfAreaContent');
-  content.innerHTML = `<div class="pdf-page pdf-chart-page"><h2>${escapeHtml(title)}</h2>${svg}
+  content.innerHTML = `<div class="pdf-page pdf-chart-page"><h2>${escapeHtml(title)}</h2><div class="pdf-chart-fname">冰箱：${escapeHtml(fname)}</div>${svg}
     <div style="display:flex;gap:16px;justify-content:center;font-size:9pt;margin-top:2mm;">
       ${VCHART_SERIES.map(se=>`<span><span style="display:inline-block;width:16px;height:3px;background:${se.color};vertical-align:middle;margin-right:4px;"></span>${se.label}</span>`).join('')}
     </div></div>`;
@@ -7192,7 +7479,7 @@ function openVaccineChartPdf(title, svg){
   document.body.classList.add('pdf-mode', 'pdf-landscape');
   // 儲存成 PDF 時，預設檔名＝抬頭
   if(!window._origDocTitle) window._origDocTitle = document.title;
-  document.title = title;
+  document.title = `${title}_${fname}`;
   window.scrollTo(0, 0);
   setStatus('PDF 預覽已開啟');
 }
