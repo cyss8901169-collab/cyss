@@ -1199,7 +1199,7 @@
     <div class="adm-topbar">
       <div>
         <h2>⚙️ 系統管理</h2>
-        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-19c</span></p>
+        <p>這裡的設定會存到雲端，所有裝置立即生效。只有管理員看得到這個頁面。<span style="margin-left:8px;color:var(--gray-400)">程式版本：2026-11-25</span></p>
       </div>
       <button class="adm-back" onclick="closeAdminPage()">← 返回登記</button>
     </div>
@@ -1644,6 +1644,25 @@ function isOffDay(campus, ym, day) {
 function weekdayLabel(ym, day) {
   const [y, m] = ym.split('-').map(Number);
   return '日一二三四五六'[new Date(y, m - 1, day).getDay()];
+}
+
+// ══════════ 各院區的登記時段與自動登出時間 ══════════
+const CAMPUS_SETTINGS = {
+  douliu: { am: ['07:00','10:00'], pm: ['12:00','15:00'], idleMin: 2 },
+  huwei:  { am: ['08:00','10:00'], pm: ['16:00','18:00'], idleMin: 5 },
+  store:  { am: ['07:00','10:00'], pm: ['12:00','15:00'], idleMin: 2 },
+};
+function campusSetting(campus) { return CAMPUS_SETTINGS[campus || currentArea.split('_')[0]] || CAMPUS_SETTINGS.douliu; }
+function hmToMin(s) { const [h, m] = s.split(':').map(Number); return h * 60 + m; }
+// 時段：{ from, to（分鐘）, text：「08:00–10:00」}
+function sessionWindow(session, campus) {
+  const w = campusSetting(campus)[session === 'AM' ? 'am' : 'pm'];
+  return { from: hmToMin(w[0]), to: hmToMin(w[1]), text: w[0] + '–' + w[1] };
+}
+function sessionText(session, campus, paren) {
+  const t = (session === 'AM' ? '上午' : '下午');
+  const w = sessionWindow(session, campus).text;
+  return paren === 'full' ? `${t}（${w}）` : `${t} (${w})`;
 }
 
 function getCampusRoles(campus) {
@@ -2232,8 +2251,20 @@ window.onload = function() {
   // ── 離開頁面一段時間後自動登出（避免共用裝置一直保持登入狀態）──
   // 手機瀏覽器切到背景時會暫停/凍結 setTimeout，無法可靠地在背景倒數計時，
   // 所以改成：記錄離開的時間點，等使用者「回到畫面」時再檢查經過多久，超過就立即登出。
-  const AUTO_LOGOUT_MS = 2 * 60 * 1000; // 2 分鐘
+  // 自動登出時間依登入者的院區（斗六、藥庫 2 分鐘；虎尾 5 分鐘），未登入時以 2 分鐘計
+  const idleMs = () => (currentUser ? campusSetting(currentUser.campus).idleMin : 2) * 60 * 1000;
   let hiddenAt = null;
+  // 畫面一直開著、但沒有人操作超過設定時間，也會自動登出（共用電腦常見情況）
+  let lastActiveAt = Date.now();
+  ['pointerdown','keydown','touchstart','wheel','scroll','input'].forEach(ev =>
+    document.addEventListener(ev, () => { lastActiveAt = Date.now(); }, { passive: true, capture: true }));
+  setInterval(() => {
+    if(!currentUser || document.hidden) return;
+    if(Date.now() - lastActiveAt >= idleMs()) {
+      showToast(`超過 ${idleMs()/60000} 分鐘未操作，已自動登出`, 'warn');
+      logout();
+    }
+  }, 15000);
   document.addEventListener('visibilitychange', () => {
     if(document.hidden) {
       hiddenAt = Date.now();
@@ -2246,7 +2277,8 @@ window.onload = function() {
           if(stored) since = parseInt(stored, 10);
         } catch(e) {}
       }
-      if(since && (Date.now() - since >= AUTO_LOGOUT_MS)) {
+      lastActiveAt = Date.now();
+      if(since && (Date.now() - since >= idleMs())) {
         if(currentUser) logout();          // 登出後會自動重新整理
         else waitPendingWrites(8000).then(() => { try { location.reload(); } catch(e) {} }); // 停在登入畫面很久，也重新整理
       }
@@ -2664,7 +2696,7 @@ function setView(v, btn) {
 }
 
 function renderTable() {
-  const sessionLabel = currentSession === 'AM' ? '上午 (07:00–10:00)' : '下午 (12:00–15:00)';
+  const sessionLabel = sessionText(currentSession);
   const areaLabel = '【'+getAreaLabel()+'】';
 
 
@@ -2716,14 +2748,14 @@ function renderTodayView() {
 
   // Time-range warning for selected day
   const nowTotal = now.getHours() * 60 + now.getMinutes();
-  const inAM = nowTotal >= 7*60 && nowTotal <= 10*60;
-  const inPM = nowTotal >= 12*60 && nowTotal <= 15*60;
+  const amW = sessionWindow('AM'), pmW = sessionWindow('PM');
+  const inAM = nowTotal >= amW.from && nowTotal <= amW.to;
+  const inPM = nowTotal >= pmW.from && nowTotal <= pmW.to;
   const isSelectedToday = isCurrentMonth && d === todayRealDay;
   const outOfRange = isSelectedToday && ((currentSession === 'AM' && !inAM) || (currentSession === 'PM' && !inPM));
   const isMakeup = isCurrentMonth && d < todayRealDay;
-  const rangeMsg = currentSession === 'AM'
-    ? (nowTotal < 7*60 ? '尚未到上午登記時段（07:00–10:00）' : '已超過上午登記時段（07:00–10:00）')
-    : (nowTotal < 12*60 ? '尚未到下午登記時段（12:00–15:00）' : '已超過下午登記時段（12:00–15:00）');
+  const curW = currentSession === 'AM' ? amW : pmW;
+  const rangeMsg = (nowTotal < curW.from ? '尚未到' : '已超過') + (currentSession === 'AM' ? '上午' : '下午') + '登記時段（' + curW.text + '）';
 
   const dateLabel = `${currentMonth}-${String(d).padStart(2,'0')}${isSelectedToday ? '（今日）' : isMakeup ? '（補登）' : ''}`;
 
@@ -2796,13 +2828,14 @@ function renderTodayView() {
         <span class="floor-label">樓層</span>
         ${dayFloors.map(f => {
           const fd = deptsForDay(campus, currentMonth, d).filter(x => deptFloor(x) === f);
-          const done = fd.length && fd.every(x => { try { return !!JSON.parse(LS.getItem('templog_' + campus + '_' + x.key + '_' + currentMonth) || '{}')[d]?.[currentSession]?.signedBy; } catch(e) { return false; } });
+          const signedN = fd.filter(x => { try { return !!JSON.parse(LS.getItem('templog_' + campus + '_' + x.key + '_' + currentMonth) || '{}')[d]?.[currentSession]?.signedBy; } catch(e) { return false; } }).length;
+          const done = fd.length && signedN === fd.length;
           const on = f === currentFloor[campus];
           if(!fd.length) return `<button type="button" class="empty" disabled aria-disabled="true">
             <span class="fb-name">${escHtml(f)}</span><span class="fb-sub">無登記地點</span></button>`;
           return `<button type="button" role="tab" aria-selected="${on}" class="${on?'active':''}" onclick="selectFloor('${campus}','${escHtml(f).replace(/'/g,'')}')">
             <span class="fb-name">${escHtml(f)}</span>
-            <span class="fb-sub">${done ? '✓ 已登記' : fd.length + ' 處'}</span>
+            <span class="fb-sub">${signedN}/${fd.length}${done ? ' ✓' : ''}</span>
           </button>`;
         }).join('')}
       </div>` : ''}
@@ -3055,7 +3088,7 @@ async function renderNewStaffAlert() {
 }
 
 // 不需配合班表的院區：登記畫面不顯示「今日應登記人員」與新進人員提醒
-const NO_SCHEDULE_CAMPUSES = ['store'];
+const NO_SCHEDULE_CAMPUSES = ['store', 'huwei'];
 function usesSchedule(campus) { return !NO_SCHEDULE_CAMPUSES.includes(campus || currentArea.split('_')[0]); }
 
 async function renderOnDutyStaff() {
@@ -4106,7 +4139,7 @@ function confirmAbnormal(areaKey, day, session) {
 function sendAbnormalMail(day, session) {
   const e = logData[currentMonth]?.[day]?.[session] || {};
   const dateStr = currentMonth + '-' + String(day).padStart(2,'0');
-  const sessionLabel = session === 'AM' ? '上午（07:00–10:00）' : '下午（12:00–15:00）';
+  const sessionLabel = sessionText(session, null, 'full');
   const areaLabel = getAreaLabel();
 
   // 整理異常數值
@@ -4390,8 +4423,8 @@ function buildPDFSection(deptLabel) {
   <thead>
     <tr>
       <th rowspan="2" style="width:20mm;text-align:center;white-space:nowrap;">日期</th>
-      <th colspan="${pdfHasMin ? 5 : 4}" class="th-am" style="text-align:center;">上午 (07:00–10:00)</th>
-      <th colspan="${pdfHasMin ? 5 : 4}" class="th-pm" style="text-align:center;">下午 (12:00–15:00)</th>
+      <th colspan="${pdfHasMin ? 5 : 4}" class="th-am" style="text-align:center;">${sessionText('AM')}</th>
+      <th colspan="${pdfHasMin ? 5 : 4}" class="th-pm" style="text-align:center;">${sessionText('PM')}</th>
     </tr>
     <tr>
       ${pdfHasMin
